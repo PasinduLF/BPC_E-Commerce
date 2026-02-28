@@ -90,7 +90,91 @@ const getWholesalePurchases = async (req, res) => {
     }
 };
 
+// @desc    Get single wholesale purchase by ID
+// @route   GET /api/wholesale/:id
+// @access  Private/Admin
+const getWholesalePurchaseById = async (req, res) => {
+    try {
+        const purchase = await WholesalePurchase.findById(req.params.id)
+            .populate('items.product', 'name price image images')
+            .populate('adminUser', 'name');
+
+        if (!purchase) {
+            return res.status(404).json({ message: 'Wholesale purchase not found' });
+        }
+
+        res.json(purchase);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching wholesale record details' });
+    }
+};
+
+// @desc    Delete a wholesale purchase (Revert stock)
+// @route   DELETE /api/wholesale/:id
+// @access  Private/Admin
+const deleteWholesalePurchase = async (req, res) => {
+    try {
+        const purchase = await WholesalePurchase.findById(req.params.id);
+
+        if (!purchase) {
+            return res.status(404).json({ message: 'Wholesale purchase not found' });
+        }
+
+        // Revert the stock additions
+        for (const item of purchase.items) {
+            const productRecord = await Product.findById(item.product);
+            if (!productRecord) continue;
+
+            if (item.variantId) {
+                const variant = productRecord.variants.id(item.variantId);
+                if (variant) {
+                    variant.stock -= item.quantityReceived;
+                    if (variant.stock < 0) variant.stock = 0;
+                }
+            } else {
+                productRecord.stock -= item.quantityReceived;
+                if (productRecord.stock < 0) productRecord.stock = 0;
+            }
+
+            await productRecord.save();
+        }
+
+        await purchase.deleteOne();
+        res.json({ message: 'Wholesale purchase removed and stock reverted' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting wholesale record' });
+    }
+};
+
+// @desc    Update a wholesale purchase
+// @route   PUT /api/wholesale/:id
+// @access  Private/Admin
+const updateWholesalePurchase = async (req, res) => {
+    try {
+        const purchase = await WholesalePurchase.findById(req.params.id);
+
+        if (!purchase) {
+            return res.status(404).json({ message: 'Wholesale purchase not found' });
+        }
+
+        const { supplierName, paymentMethod, notes } = req.body;
+
+        purchase.supplierName = supplierName || purchase.supplierName;
+        purchase.paymentMethod = paymentMethod || purchase.paymentMethod;
+        purchase.notes = notes !== undefined ? notes : purchase.notes;
+
+        const updatedPurchase = await purchase.save();
+        res.json(updatedPurchase);
+
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating wholesale record' });
+    }
+};
+
 module.exports = {
     createWholesalePurchase,
-    getWholesalePurchases
+    getWholesalePurchases,
+    getWholesalePurchaseById,
+    deleteWholesalePurchase,
+    updateWholesalePurchase
 };

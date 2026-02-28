@@ -56,8 +56,36 @@ const deleteTransaction = async (req, res) => {
     }
 };
 
+// @desc    Update a transaction
+// @route   PUT /api/transactions/:id
+// @access  Private/Admin
+const updateTransaction = async (req, res) => {
+    try {
+        const transaction = await Transaction.findById(req.params.id);
+
+        if (!transaction) {
+            return res.status(404).json({ message: 'Transaction not found' });
+        }
+
+        const { type, amount, category, paymentMethod, description, transactionDate } = req.body;
+
+        transaction.type = type || transaction.type;
+        transaction.amount = amount !== undefined ? amount : transaction.amount;
+        transaction.category = category || transaction.category;
+        transaction.paymentMethod = paymentMethod || transaction.paymentMethod;
+        transaction.description = description !== undefined ? description : transaction.description;
+        transaction.transactionDate = transactionDate || transaction.transactionDate;
+
+        const updatedTransaction = await transaction.save();
+        res.json(updatedTransaction);
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating transaction' });
+    }
+};
+
 module.exports = {
     createTransaction,
     getTransactions,
-    deleteTransaction
+    deleteTransaction,
+    updateTransaction
 };

@@ -163,6 +163,69 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
+// @desc    Delete order
+// @route   DELETE /api/orders/:id
+// @access  Private/Admin
+const deleteOrder = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        // Refund stock for POS orders (or any delivered orders we want to reverse)
+        if (order.isPOS) {
+            for (const item of order.orderItems) {
+                const productRecord = await Product.findById(item.product);
+                if (productRecord) {
+                    if (item.variantId && productRecord.variants && productRecord.variants.length > 0) {
+                        const variant = productRecord.variants.id(item.variantId);
+                        if (variant) variant.stock += item.qty;
+                    } else {
+                        productRecord.stock += item.qty;
+                    }
+                    await productRecord.save();
+                }
+            }
+        }
+
+        await order.deleteOne();
+        res.json({ message: 'Order removed, stock refunded' });
+    } catch (error) {
+        res.status(500).json({ message: error.message || 'Error deleting order' });
+    }
+};
+
+// @desc    Admin update order details (e.g. POS Customer Info)
+// @route   PUT /api/orders/:id
+// @access  Private/Admin
+const updateOrderAdmin = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        order.customerName = req.body.customerName !== undefined ? req.body.customerName : order.customerName;
+        order.customerPhone = req.body.customerPhone !== undefined ? req.body.customerPhone : order.customerPhone;
+        order.cashGiven = req.body.cashGiven !== undefined ? Number(req.body.cashGiven) : order.cashGiven;
+        order.changeDue = req.body.changeDue !== undefined ? Number(req.body.changeDue) : order.changeDue;
+
+        // Allow updating payment method if we made a mistake
+        if (req.body.paymentMethod) {
+            order.paymentMethod = req.body.paymentMethod;
+        }
+
+        const updatedOrder = await order.save();
+        res.json(updatedOrder);
+
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating order details' });
+    }
+};
+
 module.exports = {
     addOrderItems,
     getMyOrders,
@@ -170,5 +233,7 @@ module.exports = {
     updateOrderToPaid,
     updateOrderToDelivered,
     getOrders,
-    updateOrderStatus
+    updateOrderStatus,
+    deleteOrder,
+    updateOrderAdmin
 };

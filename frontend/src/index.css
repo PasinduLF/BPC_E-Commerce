@@ -8,7 +8,8 @@
   --color-brand-pink-300: #f9a8d4;
   --color-brand-pink-400: #f472b6;
   --color-brand-pink-500: #ec4899;
-  --color-brand-pink-600: #db2777; /* primary */
+  --color-brand-pink-600: #db2777;
+  /* primary */
   --color-brand-pink-700: #be185d;
   --color-brand-pink-800: #9d174d;
   --color-brand-pink-900: #831843;
@@ -24,9 +25,11 @@
   .glass {
     @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-sm;
   }
+
   .input-focus {
     @apply focus:ring-2 focus:ring-brand-pink-500 focus:border-brand-pink-500 focus:outline-none transition-all;
   }
+
   .btn-primary {
     @apply bg-brand-pink-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-brand-pink-700 active:scale-95 transition-all shadow-sm shadow-brand-pink-200;
   }

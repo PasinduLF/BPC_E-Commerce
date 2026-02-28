@@ -1,13 +1,28 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
-import { Plus, Package, Truck, Wallet, FileText, Trash2, ShoppingCart } from 'lucide-react';
+import { Plus, Package, Truck, Wallet, FileText, Trash2, ShoppingCart, Eye, Edit, XCircle } from 'lucide-react';
+import { useConfigStore } from '../../context/useConfigStore';
 
 const WholesaleInventory = () => {
     const { userInfo } = useAuthStore();
+    const { config } = useConfigStore();
+    const currency = config?.currencySymbol || '$';
+
     const [purchases, setPurchases] = useState([]);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Modal States
+    const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+    const [selectedPurchase, setSelectedPurchase] = useState(null);
+
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editFormData, setEditFormData] = useState({
+        supplierName: '',
+        paymentMethod: 'Bank Transfer',
+        notes: ''
+    });
 
     // Form State (Invoice level)
     const [showForm, setShowForm] = useState(false);
@@ -120,6 +135,52 @@ const WholesaleInventory = () => {
         }
     };
 
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this invoice? The stock received will be deducted.')) {
+            try {
+                const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+                await axios.delete(`http://localhost:5000/api/wholesale/${id}`, configHeader);
+                fetchPurchases();
+            } catch (error) {
+                alert(error.response?.data?.message || 'Failed to delete purchase');
+            }
+        }
+    };
+
+    const openDetailsModal = async (id) => {
+        try {
+            const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+            const { data } = await axios.get(`http://localhost:5000/api/wholesale/${id}`, configHeader);
+            setSelectedPurchase(data);
+            setDetailsModalOpen(true);
+        } catch (error) {
+            alert('Failed to load purchase details');
+        }
+    };
+
+    const openEditModal = (purchase) => {
+        setSelectedPurchase(purchase);
+        setEditFormData({
+            supplierName: purchase.supplierName,
+            paymentMethod: purchase.paymentMethod,
+            notes: purchase.notes || ''
+        });
+        setEditModalOpen(true);
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+            await axios.put(`http://localhost:5000/api/wholesale/${selectedPurchase._id}`, editFormData, configHeader);
+            setEditModalOpen(false);
+            fetchPurchases();
+            alert('Purchase updated successfully');
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to update purchase');
+        }
+    };
+
     const invoiceTotal = invoiceItems.reduce((acc, curr) => acc + curr.itemTotalCost, 0);
 
     return (
@@ -161,7 +222,7 @@ const WholesaleInventory = () => {
                     <div>
                         <p className="text-sm font-medium text-slate-500">Total Capital Spent</p>
                         <p className="text-2xl font-bold text-slate-800">
-                            ${purchases.reduce((acc, curr) => acc + curr.totalCost, 0).toFixed(2)}
+                            {currency}{purchases.reduce((acc, curr) => acc + curr.totalCost, 0).toFixed(2)}
                         </p>
                     </div>
                 </div>
@@ -257,7 +318,7 @@ const WholesaleInventory = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 mb-1">Unit Cost ($)</label>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Unit Cost ({currency})</label>
                                         <input
                                             type="number" step="0.01" min="0" value={unitCost} onChange={(e) => setUnitCost(e.target.value)}
                                             placeholder="Cost per item"
@@ -298,9 +359,9 @@ const WholesaleInventory = () => {
                                             )}
                                             <div className="flex justify-between items-end mt-2">
                                                 <p className="text-xs text-slate-500">
-                                                    {item.quantityReceived} x ${item.unitCost.toFixed(2)}
+                                                    {item.quantityReceived} x {currency}{item.unitCost.toFixed(2)}
                                                 </p>
-                                                <p className="font-bold text-slate-900">${item.itemTotalCost.toFixed(2)}</p>
+                                                <p className="font-bold text-slate-900">{currency}{item.itemTotalCost.toFixed(2)}</p>
                                             </div>
                                             <button
                                                 onClick={() => handleRemoveItem(item.id)}
@@ -316,7 +377,7 @@ const WholesaleInventory = () => {
                             <div className="p-5 bg-white border-t border-slate-200">
                                 <div className="flex justify-between items-center mb-4">
                                     <span className="font-bold text-slate-600">Grand Total:</span>
-                                    <span className="text-xl font-black text-emerald-600">${invoiceTotal.toFixed(2)}</span>
+                                    <span className="text-xl font-black text-emerald-600">{currency}{invoiceTotal.toFixed(2)}</span>
                                 </div>
                                 <button
                                     onClick={submitHandler}
@@ -347,7 +408,8 @@ const WholesaleInventory = () => {
                                 <th className="px-6 py-4 text-left font-semibold text-slate-400 uppercase tracking-wider text-xs">Supplier & Items</th>
                                 <th className="px-6 py-4 text-left font-semibold text-slate-400 uppercase tracking-wider text-xs">Payment Method</th>
                                 <th className="px-6 py-4 text-right font-semibold text-slate-400 uppercase tracking-wider text-xs">Total Units</th>
-                                <th className="px-6 py-4 text-right font-semibold text-slate-400 uppercase tracking-wider text-xs">Total Cost ($)</th>
+                                <th className="px-6 py-4 text-right font-semibold text-slate-400 uppercase tracking-wider text-xs">Total Cost</th>
+                                <th className="px-6 py-4 text-center font-semibold text-slate-400 uppercase tracking-wider text-xs">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-100">
@@ -389,7 +451,34 @@ const WholesaleInventory = () => {
                                             {purchase.items?.reduce((acc, curr) => acc + curr.quantityReceived, 0) || 0}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right font-black text-slate-900 bg-slate-50/50">
-                                            ${purchase.totalCost.toFixed(2)}
+                                            {currency}{purchase.totalCost.toFixed(2)}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => openDetailsModal(purchase._id)}
+                                                    className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors border border-transparent hover:border-blue-200"
+                                                    title="View Details"
+                                                >
+                                                    <Eye size={16} />
+                                                </button>
+
+                                                <button
+                                                    onClick={() => openEditModal(purchase)}
+                                                    className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-lg transition-colors border border-transparent hover:border-emerald-200"
+                                                    title="Edit Purchase"
+                                                >
+                                                    <Edit size={16} />
+                                                </button>
+
+                                                <button
+                                                    onClick={() => handleDelete(purchase._id)}
+                                                    className="text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition-colors border border-transparent hover:border-rose-200"
+                                                    title="Delete Purchase"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -398,6 +487,147 @@ const WholesaleInventory = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Details Modal */}
+            {detailsModalOpen && selectedPurchase && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh]">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                <FileText size={18} className="text-blue-500" /> Invoice Details
+                            </h3>
+                            <button onClick={() => setDetailsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <XCircle size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto">
+                            <div className="grid grid-cols-2 gap-4 mb-6 text-sm bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                <div>
+                                    <span className="block text-slate-500 mb-1">Supplier</span>
+                                    <span className="font-bold text-slate-800">{selectedPurchase.supplierName}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-slate-500 mb-1">Date</span>
+                                    <span className="font-medium text-slate-800">{new Date(selectedPurchase.purchaseDate).toLocaleString()}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-slate-500 mb-1">Payment Method</span>
+                                    <span className={`px-2 py-1 rounded-md text-xs font-bold inline-block ${selectedPurchase.paymentMethod === 'Cash' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                                        {selectedPurchase.paymentMethod}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="block text-slate-500 mb-1">Total Cost</span>
+                                    <span className="font-black text-emerald-600 text-lg">{currency}{selectedPurchase.totalCost.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            {selectedPurchase.notes && (
+                                <div className="mb-6 p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-sm">
+                                    <span className="font-bold text-blue-800 block mb-1">Notes:</span>
+                                    <span className="text-slate-700">{selectedPurchase.notes}</span>
+                                </div>
+                            )}
+
+                            <h4 className="font-bold text-slate-700 mb-3 border-b border-slate-100 pb-2">Line Items</h4>
+                            <div className="space-y-3">
+                                {selectedPurchase.items.map((item, index) => (
+                                    <div key={item._id} className="flex gap-4 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
+                                        <div className="bg-slate-100 rounded-lg w-12 h-12 flex items-center justify-center overflow-hidden shrink-0">
+                                            {item.product?.image || (item.product?.images && item.product.images[0]) ? (
+                                                <img src={item.product?.image || item.product.images[0].url} alt={item.product.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Package size={20} className="text-slate-400" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-bold text-slate-800">{index + 1}. {item.product?.name || 'Deleted Product'}</p>
+                                                    {item.variantName && <p className="text-xs text-pink-600 font-semibold">{item.variantName}</p>}
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-black text-slate-900">{currency}{item.itemTotalCost.toFixed(2)}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between items-center mt-2 text-xs text-slate-500 bg-white inline-block px-2 py-1 rounded border border-slate-200">
+                                                <span>Qty: <strong className="text-slate-900">{item.quantityReceived}</strong></span>
+                                                <span className="mx-2 text-slate-300">|</span>
+                                                <span>Unit Cost: <strong className="text-slate-900">{currency}{item.unitCost.toFixed(2)}</strong></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Invoice Modal */}
+            {editModalOpen && selectedPurchase && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh]">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                <Edit size={18} className="text-emerald-500" /> Edit Invoice Metadata
+                            </h3>
+                            <button onClick={() => setEditModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <XCircle size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleEditSubmit} className="p-6 space-y-4 overflow-y-auto">
+                            <div className="p-3 bg-amber-50 text-amber-800 rounded-lg text-xs font-medium flex gap-2">
+                                <span className="font-bold">Note:</span> You can only edit the invoice metadata here (Supplier, Method, Notes). For quantity or cost adjustments, delete this invoice and recreate it to ensure accurate stock ledger history.
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Supplier Name</label>
+                                <input
+                                    type="text"
+                                    value={editFormData.supplierName}
+                                    onChange={(e) => setEditFormData({ ...editFormData, supplierName: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none"
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Payment Method</label>
+                                <select
+                                    value={editFormData.paymentMethod}
+                                    onChange={(e) => setEditFormData({ ...editFormData, paymentMethod: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none"
+                                >
+                                    <option value="Cash">Cash</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+                                <textarea
+                                    value={editFormData.notes}
+                                    onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                                    rows="3"
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-pink-500 outline-none"
+                                ></textarea>
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
+                                <button type="button" onClick={() => setEditModalOpen(false)} className="px-5 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" className="px-5 py-2.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-xl font-medium transition-colors shadow-sm">
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
         </div>
     );

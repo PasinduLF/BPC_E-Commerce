@@ -10,7 +10,11 @@ const createPOSOrder = async (req, res) => {
             orderItems,
             paymentMethod,
             itemsPrice,
-            totalPrice
+            totalPrice,
+            customerName,
+            customerPhone,
+            cashGiven,
+            changeDue
         } = req.body;
 
         if (orderItems && orderItems.length === 0) {
@@ -54,6 +58,10 @@ const createPOSOrder = async (req, res) => {
             itemsPrice,
             shippingPrice: 0.0,
             totalPrice,
+            customerName: customerName || undefined,
+            customerPhone: customerPhone || undefined,
+            cashGiven: cashGiven || 0,
+            changeDue: changeDue || 0,
             isPaid: true, // POS implies immediate settlement
             paidAt: Date.now(),
             isDelivered: true, // Physical walk-out

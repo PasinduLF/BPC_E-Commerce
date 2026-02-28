@@ -3,7 +3,8 @@ const router = express.Router();
 const {
     createTransaction,
     getTransactions,
-    deleteTransaction
+    deleteTransaction,
+    updateTransaction
 } = require('../controllers/transactionController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
@@ -12,6 +13,7 @@ router.route('/')
     .get(protect, admin, getTransactions);
 
 router.route('/:id')
+    .put(protect, admin, updateTransaction)
     .delete(protect, admin, deleteTransaction);
 
 module.exports = router;

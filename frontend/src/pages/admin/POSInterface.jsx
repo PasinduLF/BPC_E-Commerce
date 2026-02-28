@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
-import { Search, Plus, Minus, Trash2, ShoppingBag, CreditCard, Banknote } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingBag, CreditCard, Banknote, UserRound, Phone, Printer, XCircle } from 'lucide-react';
+import { useConfigStore } from '../../context/useConfigStore';
 
 const POSInterface = () => {
     const { userInfo } = useAuthStore();
@@ -13,6 +14,15 @@ const POSInterface = () => {
     const [cartItems, setCartItems] = useState([]);
     const [paymentMethod, setPaymentMethod] = useState('Cash');
     const [selectedProductForVariant, setSelectedProductForVariant] = useState(null);
+
+    // New POS Fields
+    const [customerName, setCustomerName] = useState('');
+    const [customerPhone, setCustomerPhone] = useState('');
+    const [cashGiven, setCashGiven] = useState('');
+    const [receiptData, setReceiptData] = useState(null);
+
+    const { config } = useConfigStore();
+    const currency = config?.currencySymbol || '$';
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -85,13 +95,24 @@ const POSInterface = () => {
 
     const itemsPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
 
+    // Validation and Submission
     const placeOrderHandler = async () => {
-        if (cartItems.length === 0) return;
+        if (paymentMethod === 'Cash') {
+            const cash = parseFloat(cashGiven) || 0;
+            if (cash < itemsPrice) {
+                alert(`Insufficient cash. Due: ${currency}${itemsPrice.toFixed(2)}, Given: ${currency}${cash.toFixed(2)}`);
+                return;
+            }
+        }
 
-        if (window.confirm(`Process ${paymentMethod} payment of $${itemsPrice.toFixed(2)}?`)) {
+        if (window.confirm(`Process ${paymentMethod} payment of ${currency}${itemsPrice.toFixed(2)}?`)) {
             try {
-                const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                await axios.post('http://localhost:5000/api/pos', {
+                const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+
+                const cash = paymentMethod === 'Cash' ? (parseFloat(cashGiven) || 0) : 0;
+                const change = paymentMethod === 'Cash' ? (cash - itemsPrice) : 0;
+
+                const { data } = await axios.post('http://localhost:5000/api/pos', {
                     orderItems: cartItems.map(x => ({
                         name: x.name,
                         qty: x.qty,
@@ -103,11 +124,26 @@ const POSInterface = () => {
                     })),
                     paymentMethod,
                     itemsPrice,
-                    totalPrice: itemsPrice
-                }, config);
+                    totalPrice: itemsPrice,
+                    customerName: customerName.trim(),
+                    customerPhone: customerPhone.trim(),
+                    cashGiven: cash,
+                    changeDue: change
+                }, configHeader);
 
-                alert("Point of Sale transaction complete. Stock updated natively.");
+                // Set receipt data from response
+                setReceiptData({
+                    ...data,
+                    businessName: config?.businessName || 'Beauty P&C',
+                    contactPhone: config?.contactPhone || '',
+                    contactEmail: config?.contactEmail || '',
+                    currency
+                });
+
                 setCartItems([]);
+                setCustomerName('');
+                setCustomerPhone('');
+                setCashGiven('');
                 // Refetch products to update stock numbers visually
                 setSearch('');
 
@@ -160,7 +196,7 @@ const POSInterface = () => {
                                         </div>
                                         <h3 className="font-bold text-slate-800 text-sm line-clamp-1">{product.name}</h3>
                                         <div className="flex items-center justify-between mt-1">
-                                            <span className="text-pink-600 font-bold text-sm">${product.price.toFixed(2)}</span>
+                                            <span className="text-pink-600 font-bold text-sm">{currency}{product.price.toFixed(2)}</span>
                                             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${totalStock > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                                                 {totalStock > 0 ? `Qty: ${totalStock}` : 'Out'}
                                             </span>
@@ -201,7 +237,7 @@ const POSInterface = () => {
                                                 {item.variantName}
                                             </div>
                                         )}
-                                        <div className="text-pink-600 font-medium text-sm mb-2 mt-0.5">${item.price.toFixed(2)}</div>
+                                        <div className="text-pink-600 font-medium text-sm mb-2 mt-0.5">{currency}{item.price.toFixed(2)}</div>
 
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg">
@@ -225,37 +261,90 @@ const POSInterface = () => {
                 </div>
 
                 {/* Checkout Actions */}
-                <div className="p-5 border-t border-slate-100 bg-slate-50">
+                <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50 flex flex-col gap-4 overflow-y-auto max-h-[50vh]">
 
-                    <div className="flex justify-between items-center mb-4 text-slate-600">
-                        <span className="font-medium">Subtotal ({cartItems.reduce((a, c) => a + c.qty, 0)} items)</span>
-                        <span className="font-bold text-slate-900 text-lg">${itemsPrice.toFixed(2)}</span>
+                    {/* Customer Info (Optional) */}
+                    <div className="space-y-3 pb-3 border-b border-slate-200 border-dashed">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Customer Details (Optional)</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="relative">
+                                <UserRound size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                                <input
+                                    type="text" placeholder="Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)}
+                                    className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+                                />
+                            </div>
+                            <div className="relative">
+                                <Phone size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                                <input
+                                    type="text" placeholder="Phone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)}
+                                    className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="space-y-3 mb-4">
-                        <label className="block text-sm font-bold text-slate-700 mb-2">Payment Method</label>
+                    {/* Payment Settings */}
+                    <div className="space-y-3">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Payment Method</label>
                         <div className="grid grid-cols-2 gap-3">
                             <button
-                                onClick={() => setPaymentMethod('Cash')}
-                                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border transition-all text-sm font-medium ${paymentMethod === 'Cash' ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                onClick={() => { setPaymentMethod('Cash'); setCashGiven(''); }}
+                                className={`flex items-center justify-center gap-2 py-2 px-4 rounded-xl border transition-all text-sm font-medium ${paymentMethod === 'Cash' ? 'bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                             >
-                                <Banknote size={18} /> Cash
+                                <Banknote size={16} /> Cash
                             </button>
                             <button
                                 onClick={() => setPaymentMethod('Bank Transfer')}
-                                className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl border transition-all text-sm font-medium ${paymentMethod === 'Bank Transfer' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                className={`flex items-center justify-center gap-2 py-2 px-4 rounded-xl border transition-all text-sm font-medium ${paymentMethod === 'Bank Transfer' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                             >
-                                <CreditCard size={18} /> Bank
+                                <CreditCard size={16} /> Bank
                             </button>
+                        </div>
+                    </div>
+
+                    {/* Final Totals & Cash Calculation */}
+                    <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 shadow-sm">
+                        <div className="flex justify-between items-center text-slate-600 text-sm">
+                            <span className="font-medium">Subtotal ({cartItems.reduce((a, c) => a + c.qty, 0)} items)</span>
+                            <span className="font-bold text-slate-900">{currency}{itemsPrice.toFixed(2)}</span>
+                        </div>
+
+                        {paymentMethod === 'Cash' && (
+                            <>
+                                <div className="flex justify-between items-center text-slate-600 text-sm">
+                                    <span className="font-medium">Cash Given</span>
+                                    <div className="relative w-24">
+                                        <span className="absolute left-2 top-1 text-slate-400">{currency}</span>
+                                        <input
+                                            type="number" min="0" step="0.01" value={cashGiven}
+                                            onChange={(e) => setCashGiven(e.target.value)}
+                                            className="w-full pl-6 pr-2 py-1 text-right border border-emerald-200 bg-emerald-50 rounded-md font-bold text-emerald-700 outline-none focus:ring-1 focus:ring-emerald-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                {cashGiven && (parseFloat(cashGiven) >= itemsPrice) && (
+                                    <div className="flex justify-between items-center text-slate-600 text-sm pt-2 border-t border-slate-100 border-dashed">
+                                        <span className="font-bold text-emerald-600">Change Due</span>
+                                        <span className="font-bold text-emerald-600">{currency}{(parseFloat(cashGiven) - itemsPrice).toFixed(2)}</span>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        <div className="flex justify-between items-center text-slate-900 pt-2 border-t border-slate-200">
+                            <span className="font-bold text-lg">Total</span>
+                            <span className="font-black text-xl text-pink-600">{currency}{itemsPrice.toFixed(2)}</span>
                         </div>
                     </div>
 
                     <button
                         onClick={placeOrderHandler}
                         disabled={cartItems.length === 0}
-                        className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                        className="w-full py-4 mt-2 bg-slate-900 hover:bg-black text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-lg tracking-wide"
                     >
-                        Charge ${itemsPrice.toFixed(2)}
+                        Charge {currency}{itemsPrice.toFixed(2)}
                     </button>
                 </div>
 
@@ -291,6 +380,111 @@ const POSInterface = () => {
                 </div>
             )}
 
+            {/* Printable Receipt Modal */}
+            {receiptData && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full animate-fade-in-up overflow-hidden flex flex-col max-h-[90vh]">
+                        {/* Receipt Header Actions */}
+                        <div className="bg-slate-100 p-3 flex justify-between items-center border-b border-slate-200 print:hidden">
+                            <span className="font-bold text-slate-700 text-sm">Transaction Complete</span>
+                            <div className="flex gap-2">
+                                <button onClick={() => window.print()} className="p-2 text-slate-600 hover:bg-white rounded-lg transition-colors" title="Print Receipt">
+                                    <Printer size={18} />
+                                </button>
+                                <button onClick={() => setReceiptData(null)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors" title="Close">
+                                    <XCircle size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Printable Area */}
+                        <div className="p-6 md:p-8 overflow-y-auto font-mono text-sm text-slate-800" id="receipt-print-area">
+                            <div className="text-center mb-6">
+                                <h2 className="text-xl font-bold text-slate-900 uppercase tracking-widest">{receiptData.businessName}</h2>
+                                <p className="text-xs text-slate-500 mt-1">POS Sales Receipt</p>
+                                {(receiptData.contactPhone || receiptData.contactEmail) && (
+                                    <p className="text-xs text-slate-500 mt-1">{receiptData.contactPhone} {receiptData.contactPhone && receiptData.contactEmail && '|'} {receiptData.contactEmail}</p>
+                                )}
+                            </div>
+
+                            <div className="border-b border-dashed border-slate-300 pb-3 mb-3 text-xs text-slate-600 space-y-1">
+                                <div className="flex justify-between"><span>Date:</span> <span>{new Date(receiptData.createdAt).toLocaleString()}</span></div>
+                                <div className="flex justify-between"><span>Receipt ID:</span> <span>#{receiptData._id.substring(receiptData._id.length - 8).toUpperCase()}</span></div>
+                                <div className="flex justify-between"><span>Cashier:</span> <span>{userInfo.name.split(' ')[0]}</span></div>
+                                {(receiptData.customerName || receiptData.customerPhone) && (
+                                    <div className="flex justify-between pt-1">
+                                        <span>Customer:</span>
+                                        <span className="text-right">{receiptData.customerName || 'Walk-in'}<br />{receiptData.customerPhone}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <table className="w-full text-xs text-left mb-4">
+                                <thead>
+                                    <tr className="border-b border-slate-200">
+                                        <th className="pb-1 font-semibold">Item</th>
+                                        <th className="pb-1 font-semibold text-center">Qty</th>
+                                        <th className="pb-1 font-semibold text-right">Amt</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-dashed divide-slate-100">
+                                    {receiptData.orderItems.map((item, index) => (
+                                        <tr key={index}>
+                                            <td className="py-2 pr-2">
+                                                <div className="font-medium line-clamp-2">{item.name}</div>
+                                                {item.variantName && <div className="text-[10px] text-slate-500">{item.variantName}</div>}
+                                            </td>
+                                            <td className="py-2 text-center align-top">{item.qty}</td>
+                                            <td className="py-2 text-right align-top">{receiptData.currency}{(item.price * item.qty).toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            <div className="space-y-1 text-sm border-t border-slate-300 pt-3">
+                                <div className="flex justify-between text-slate-600">
+                                    <span>Subtotal</span>
+                                    <span>{receiptData.currency}{receiptData.itemsPrice.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-lg pt-1">
+                                    <span>TOTAL</span>
+                                    <span>{receiptData.currency}{receiptData.totalPrice.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-slate-500 text-xs pt-1">
+                                    <span>Tender ({receiptData.paymentMethod})</span>
+                                    <span>{receiptData.currency}{receiptData.paymentMethod === 'Cash' ? receiptData.cashGiven.toFixed(2) : receiptData.totalPrice.toFixed(2)}</span>
+                                </div>
+                                {receiptData.paymentMethod === 'Cash' && receiptData.changeDue > 0 && (
+                                    <div className="flex justify-between font-bold text-emerald-600 pt-1 border-t border-slate-100 mt-1">
+                                        <span>CHANGE DUE</span>
+                                        <span>{receiptData.currency}{receiptData.changeDue.toFixed(2)}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="text-center mt-8 text-xs text-slate-500 space-y-1">
+                                <p>Thank you for shopping with us!</p>
+                                <p>Items may be returned within 14 days<br />with original receipt.</p>
+                            </div>
+                        </div>
+
+                        {/* Print isolation styles - injects CSS strictly for printing this specific modal */}
+                        <style dangerouslySetInnerHTML={{
+                            __html: `
+                            @media print {
+                                body > *:not(.fixed) { display: none !important; }
+                                .fixed { position: absolute !important; inset: 0 !important; background: white !important; align-items: flex-start !important; padding: 0 !important; }
+                                .fixed > div { box-shadow: none !important; max-width: 100% !important; border: none !important; margin: 0 !important; border-radius: 0 !important; }
+                                .print\\:hidden { display: none !important; }
+                            }
+                        `}} />
+
+                        <div className="bg-slate-50 p-4 border-t border-slate-200 print:hidden justify-center flex">
+                            <button onClick={() => setReceiptData(null)} className="btn-primary w-full max-w-[200px] text-center justify-center">Done</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -73,6 +73,24 @@ const orderSchema = new mongoose.Schema({
         type: Boolean,
         default: false // Set to true if order was created physically by admin
     },
+    customerName: {
+        type: String, // Optional string for POS instead of a linked User account
+        required: false
+    },
+    customerPhone: {
+        type: String, // Optional phone for POS
+        required: false
+    },
+    cashGiven: {
+        type: Number, // Amount of cash handed by customer
+        required: false,
+        default: 0
+    },
+    changeDue: {
+        type: Number, // Amount of cash returned to customer
+        required: false,
+        default: 0
+    },
     status: {
         type: String,
         enum: ['Pending', 'Processing', 'Payment Verified', 'Shipped', 'Delivered', 'Cancelled'],

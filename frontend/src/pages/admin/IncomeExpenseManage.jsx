@@ -1,15 +1,23 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
-import { Plus, Trash2, ArrowUpRight, ArrowDownRight, RefreshCcw } from 'lucide-react';
+import { Plus, Trash2, ArrowUpRight, ArrowDownRight, RefreshCcw, Edit, XCircle } from 'lucide-react';
+import { useConfigStore } from '../../context/useConfigStore';
 
 const INCOME_CATEGORIES = ['Investments', 'Loan', 'Gift', 'Misc Sales', 'Other'];
 const EXPENSE_CATEGORIES = ['Utilities', 'Marketing', 'Transport', 'Packaging and Labeling', 'Loan', 'Personal', 'Other'];
 
 const IncomeExpenseManage = () => {
     const { userInfo } = useAuthStore();
+    const { config } = useConfigStore();
+    const currency = config?.currencySymbol || '$';
+
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Modal State
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [selectedTx, setSelectedTx] = useState(null);
 
     // Form State
     const [showForm, setShowForm] = useState(false);
@@ -84,6 +92,43 @@ const IncomeExpenseManage = () => {
         }
     };
 
+    const openEditModal = (tx) => {
+        setSelectedTx(tx);
+        setType(tx.type);
+        setAmount(tx.amount);
+        setCategory(tx.category);
+        setPaymentMethod(tx.paymentMethod);
+        setDescription(tx.description || '');
+        setEditModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setEditModalOpen(false);
+        setSelectedTx(null);
+        setType('Income');
+        setAmount('');
+        setCategory('');
+        setPaymentMethod('Cash');
+        setDescription('');
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+            await axios.put(
+                `http://localhost:5000/api/transactions/${selectedTx._id}`,
+                { type, amount: Number(amount), category, paymentMethod, description },
+                config
+            );
+            closeEditModal();
+            fetchTransactions();
+            alert('Transaction updated successfully');
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to update transaction');
+        }
+    };
+
     const totalIncome = transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
     const totalExpense = transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0);
 
@@ -114,14 +159,14 @@ const IncomeExpenseManage = () => {
                     <div className="p-3 bg-white text-emerald-600 rounded-xl shadow-sm"><ArrowUpRight size={24} /></div>
                     <div>
                         <p className="text-sm font-bold text-emerald-800 uppercase tracking-widest">Total Misc Income</p>
-                        <p className="text-3xl font-black text-emerald-600">${totalIncome.toFixed(2)}</p>
+                        <p className="text-3xl font-black text-emerald-600">{currency}{totalIncome.toFixed(2)}</p>
                     </div>
                 </div>
                 <div className="bg-rose-50 rounded-2xl p-6 border border-rose-100 flex items-center gap-4">
                     <div className="p-3 bg-white text-rose-600 rounded-xl shadow-sm"><ArrowDownRight size={24} /></div>
                     <div>
                         <p className="text-sm font-bold text-rose-800 uppercase tracking-widest">Total Misc Expense</p>
-                        <p className="text-3xl font-black text-rose-600">${totalExpense.toFixed(2)}</p>
+                        <p className="text-3xl font-black text-rose-600">{currency}{totalExpense.toFixed(2)}</p>
                     </div>
                 </div>
             </div>
@@ -155,7 +200,7 @@ const IncomeExpenseManage = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1">Amount ($)</label>
+                                <label className="block text-sm font-bold text-slate-700 mb-1">Amount ({currency})</label>
                                 <input
                                     type="number" required step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)}
                                     placeholder="0.00"
@@ -253,16 +298,25 @@ const IncomeExpenseManage = () => {
                                             </span>
                                         </td>
                                         <td className={`px-6 py-4 whitespace-nowrap text-right font-black ${t.type === 'Income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                            {t.type === 'Income' ? '+' : '-'}${t.amount.toFixed(2)}
+                                            {t.type === 'Income' ? '+' : '-'}{currency}{t.amount.toFixed(2)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <button
-                                                onClick={() => deleteHandler(t._id)}
-                                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                                                title="Delete Record"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => openEditModal(t)}
+                                                    className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors border border-transparent hover:border-emerald-200"
+                                                    title="Edit Record"
+                                                >
+                                                    <Edit size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => deleteHandler(t._id)}
+                                                    className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200"
+                                                    title="Delete Record"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -271,6 +325,94 @@ const IncomeExpenseManage = () => {
                     </table>
                 </div>
             </div>
+
+            {/* Edit Transaction Modal */}
+            {editModalOpen && selectedTx && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-fade-in-up flex flex-col max-h-[90vh]">
+                        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                <Edit size={18} className={type === 'Income' ? "text-emerald-500" : "text-rose-500"} /> Edit Transaction
+                            </h3>
+                            <button onClick={closeEditModal} className="text-slate-400 hover:text-slate-600 transition-colors">
+                                <XCircle size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleEditSubmit} className="p-6 space-y-5 overflow-y-auto">
+                            {/* Transaction Type Toggle */}
+                            <div className="flex gap-4 p-1.5 bg-slate-100 rounded-xl w-fit">
+                                <button
+                                    type="button"
+                                    onClick={() => { setType('Income'); setCategory(''); }}
+                                    className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${type === 'Income' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Income
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setType('Expense'); setCategory(''); }}
+                                    className={`px-6 py-2 rounded-lg font-bold text-sm transition-all ${type === 'Expense' ? 'bg-white text-rose-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Expense
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Amount ({currency})</label>
+                                    <input
+                                        type="number" required step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none text-slate-900 font-medium"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Category</label>
+                                    <select
+                                        required value={category} onChange={(e) => setCategory(e.target.value)}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none bg-white text-slate-700"
+                                    >
+                                        <option value="">-- Select Category --</option>
+                                        {type === 'Income'
+                                            ? INCOME_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)
+                                            : EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)
+                                        }
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Payment Method</label>
+                                    <select
+                                        required value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none bg-white text-slate-700"
+                                    >
+                                        <option value="Cash">Cash (Physical Register)</option>
+                                        <option value="Bank Transfer">Bank Transfer (Digital)</option>
+                                    </select>
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Description (Optional)</label>
+                                    <input
+                                        type="text" value={description} onChange={(e) => setDescription(e.target.value)}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none text-slate-700"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
+                                <button type="button" onClick={closeEditModal} className="px-5 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" className={`px-5 py-2.5 text-white font-bold rounded-xl transition-all shadow-sm ${type === 'Income' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}>
+                                    Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
         </div>
     );
