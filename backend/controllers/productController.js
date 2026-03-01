@@ -16,15 +16,45 @@ const getProducts = async (req, res) => {
         }
         : {};
 
-    const categoryFilter = req.query.category ? { category: req.query.category } : {};
+    const categoryFilter = req.query.category ? { category: { $in: req.query.category.split(',') } } : {};
+    const subcategoryFilter = req.query.subcategory ? { subcategory: { $in: req.query.subcategory.split(',') } } : {};
+    const brandFilter = req.query.brand ? { brand: { $in: req.query.brand.split(',') } } : {};
+
+    // Price Filter
+    const minPrice = req.query.minPrice ? Number(req.query.minPrice) : 0;
+    const maxPrice = req.query.maxPrice ? Number(req.query.maxPrice) : Number.MAX_SAFE_INTEGER;
+    const priceFilter = req.query.minPrice || req.query.maxPrice ? {
+        price: { $gte: minPrice, $lte: maxPrice }
+    } : {};
+
+    // Stock Filter
+    const stockFilter = req.query.inStock === 'true' ? { stock: { $gt: 0 } } : {};
 
     const activeFilter = req.query.admin === 'true' ? {} : { isActive: { $ne: false } };
 
-    const count = await Product.countDocuments({ ...keyword, ...categoryFilter, ...activeFilter });
-    const products = await Product.find({ ...keyword, ...categoryFilter, ...activeFilter })
+    let sortOption = { createdAt: -1 }; // Default: Newest Arrivals
+    if (req.query.sort === 'priceAsc') {
+        sortOption = { price: 1 };
+    } else if (req.query.sort === 'priceDesc') {
+        sortOption = { price: -1 };
+    }
+
+    const filterObj = {
+        ...keyword,
+        ...categoryFilter,
+        ...subcategoryFilter,
+        ...brandFilter,
+        ...priceFilter,
+        ...stockFilter,
+        ...activeFilter
+    };
+
+    const count = await Product.countDocuments(filterObj);
+    const products = await Product.find(filterObj)
         .populate('category', 'name')
-        .populate('subcategory', 'name') // Add subcategory population
-        .populate('brand', 'name') // Add brand population
+        .populate('subcategory', 'name')
+        .populate('brand', 'name')
+        .sort(sortOption)
         .limit(pageSize)
         .skip(pageSize * (page - 1));
 
