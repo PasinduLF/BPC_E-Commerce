@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
+import Wishlist from './pages/Wishlist';
 import ProductScreen from './pages/ProductScreen';
 import Cart from './pages/Cart';
 import Login from './pages/Login';
@@ -43,6 +44,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/shop" element={<Shop />} />
+            <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/product/:id" element={<ProductScreen />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />

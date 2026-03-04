@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../context/useCartStore';
 import { useAuthStore } from '../context/useAuthStore';
 import axios from 'axios';
-import { CheckCircle, Truck, Wallet, ArrowRight } from 'lucide-react';
+import { CheckCircle, Truck, Wallet, ArrowRight, Building, Upload, FileImage, Loader2 } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
 
 const PlaceOrder = () => {
@@ -11,8 +11,11 @@ const PlaceOrder = () => {
     const currency = config?.currencySymbol || '$';
 
     const navigate = useNavigate();
-    const { cartItems, shippingAddress, paymentMethod, clearCart } = useCartStore();
+    const { cartItems, shippingAddress, paymentMethod, clearCart, buyNowItem, clearBuyNowItem } = useCartStore();
     const { userInfo } = useAuthStore();
+
+    const [uploading, setUploading] = useState(false);
+    const [paymentSlip, setPaymentSlip] = useState(null);
 
     useEffect(() => {
         if (!shippingAddress.address) {
@@ -22,23 +25,31 @@ const PlaceOrder = () => {
         }
     }, [paymentMethod, shippingAddress, navigate]);
 
+    const checkoutItems = buyNowItem ? [buyNowItem] : cartItems;
+
     // Calculate prices
     const addDecimals = (num) => {
         return (Math.round(num * 100) / 100).toFixed(2);
     };
 
     const itemsPrice = addDecimals(
-        cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
+        checkoutItems.reduce((acc, item) => acc + item.price * item.qty, 0)
     );
 
     // Dynamic config overrides defaults
     const taxRate = config?.taxRate || 0;
     const baseShippingFee = config?.shippingFee || 0;
     const freeShippingThreshold = config?.freeShippingThreshold || 0;
+    const codDeliveryCharge = config?.codDeliveryCharge || 0;
 
-    const shippingPrice = addDecimals(
-        (freeShippingThreshold > 0 && itemsPrice > freeShippingThreshold) ? 0 : baseShippingFee
-    );
+    let calculatedShipping = 0;
+    if (paymentMethod === 'Cash on Delivery' && codDeliveryCharge > 0) {
+        calculatedShipping = codDeliveryCharge;
+    } else {
+        calculatedShipping = (freeShippingThreshold > 0 && itemsPrice > freeShippingThreshold) ? 0 : baseShippingFee;
+    }
+
+    const shippingPrice = addDecimals(calculatedShipping);
     const taxPrice = addDecimals(Number(((taxRate / 100) * itemsPrice).toFixed(2)));
 
     const totalPrice = (
@@ -59,9 +70,10 @@ const PlaceOrder = () => {
             const { data } = await axios.post(
                 'http://localhost:5000/api/orders',
                 {
-                    orderItems: cartItems,
+                    orderItems: checkoutItems,
                     shippingAddress,
                     paymentMethod,
+                    paymentSlip: paymentMethod === 'Bank Transfer' ? paymentSlip : undefined,
                     itemsPrice,
                     shippingPrice,
                     taxPrice,
@@ -70,12 +82,41 @@ const PlaceOrder = () => {
                 config
             );
 
-            clearCart();
+            if (buyNowItem) {
+                clearBuyNowItem();
+            } else {
+                clearCart();
+            }
             navigate(`/order/${data._id}`);
 
         } catch (error) {
             console.error('Order creation failed', error);
             alert('Order failed to process. Please try again.');
+        }
+    };
+
+    const uploadFileHandler = async (e) => {
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        setUploading(true);
+
+        try {
+            const config = {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            };
+            const { data } = await axios.post('http://localhost:5000/api/upload', formData, config);
+            setPaymentSlip({
+                url: data.url,
+                public_id: data.public_id,
+            });
+            setUploading(false);
+        } catch (error) {
+            console.error(error);
+            setUploading(false);
+            alert('Failed to upload payment slip. Please try again.');
         }
     };
 
@@ -129,19 +170,90 @@ const PlaceOrder = () => {
                                     </p>
                                 </div>
                             </div>
+
+                            {paymentMethod === 'Bank Transfer' && (
+                                <div className="mt-6 border-t border-slate-100 pt-6">
+                                    <div className="bg-blue-50/50 rounded-xl p-5 border border-blue-100 mb-6">
+                                        <div className="flex items-center gap-2 text-blue-800 font-bold mb-3">
+                                            <Building size={18} />
+                                            <span>Bank Transfer Details</span>
+                                        </div>
+                                        {Array.isArray(config?.bankDetails) && config.bankDetails.length > 0 ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                                                {config.bankDetails.map((bank, index) => (
+                                                    <div key={index} className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm text-sm">
+                                                        <div className="font-bold text-slate-800 mb-2 pb-2 border-b border-slate-100 flex items-center justify-between">
+                                                            <span>{bank.bankName}</span>
+                                                            <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md">{bank.branch}</span>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <p className="text-slate-600"><span className="text-slate-400 text-xs">A/C Name:</span> <span className="font-medium text-slate-800">{bank.accountName}</span></p>
+                                                            <p className="text-slate-600"><span className="text-slate-400 text-xs">A/C No:</span> <span className="font-mono font-bold text-slate-800 tracking-wider">{bank.accountNumber}</span></p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed">
+                                                {typeof config?.bankDetails === 'string' && config.bankDetails ? config.bankDetails : "Please contact support for bank details."}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 border-dashed text-center">
+                                        {!paymentSlip ? (
+                                            <>
+                                                <Upload className="mx-auto text-slate-400 mb-3" size={32} />
+                                                <h3 className="font-semibold text-slate-800 mb-1">Upload Payment Slip</h3>
+                                                <p className="text-sm text-slate-500 mb-4">Please attach a photo or screenshot of your transaction receipt to complete your order.</p>
+                                                <label className="btn-primary py-2 px-6 cursor-pointer inline-flex items-center gap-2">
+                                                    {uploading ? (
+                                                        <Loader2 size={16} className="animate-spin" />
+                                                    ) : (
+                                                        <span>Select File</span>
+                                                    )}
+                                                    <input
+                                                        type="file"
+                                                        className="hidden"
+                                                        onChange={uploadFileHandler}
+                                                        accept="image/*"
+                                                        disabled={uploading}
+                                                    />
+                                                </label>
+                                            </>
+                                        ) : (
+                                            <div className="flex flex-col items-center">
+                                                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-3">
+                                                    <FileImage size={28} />
+                                                </div>
+                                                <h3 className="font-semibold text-emerald-600 mb-1 flex items-center gap-2">
+                                                    <CheckCircle size={16} /> Slip Uploaded Successfully
+                                                </h3>
+                                                <button
+                                                    type="button"
+                                                    className="text-sm text-pink-600 hover:text-pink-700 mt-2 hover:underline"
+                                                    onClick={() => setPaymentSlip(null)}
+                                                >
+                                                    Upload different file
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Order Items */}
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 overflow-hidden">
                             <h2 className="text-xl font-bold text-slate-900 mb-6">Order Items</h2>
-                            {cartItems.length === 0 ? (
+                            {checkoutItems.length === 0 ? (
                                 <div className="text-center py-8">
                                     <p className="text-slate-500 mb-4">Your cart is empty.</p>
                                     <Link to="/shop" className="text-pink-600 hover:underline">Go back to Shop</Link>
                                 </div>
                             ) : (
                                 <ul className="divide-y divide-slate-100">
-                                    {cartItems.map((item, index) => (
+                                    {checkoutItems.map((item, index) => (
                                         <li key={index} className="py-4 flex items-center gap-4">
                                             <div className="w-16 h-16 bg-slate-50 rounded-lg overflow-hidden flex-shrink-0 border border-slate-100">
                                                 {item.images && item.images[0] ? (
@@ -198,12 +310,17 @@ const PlaceOrder = () => {
                             <button
                                 type="button"
                                 className="w-full btn-primary py-4 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
-                                disabled={cartItems.length === 0}
+                                disabled={checkoutItems.length === 0 || (paymentMethod === 'Bank Transfer' && !paymentSlip)}
                                 onClick={placeOrderHandler}
                             >
                                 Place Order
                                 <CheckCircle size={20} className="group-hover:scale-110 transition-transform" />
                             </button>
+                            {paymentMethod === 'Bank Transfer' && !paymentSlip && (
+                                <p className="text-sm text-rose-500 font-medium text-center mt-3">
+                                    Please upload your payment slip above.
+                                </p>
+                            )}
                         </div>
                     </div>
 

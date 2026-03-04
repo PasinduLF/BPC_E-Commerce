@@ -1,10 +1,32 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Star, ShoppingBag } from 'lucide-react';
+import { ArrowRight, Star, ShoppingBag, Heart } from 'lucide-react';
+import axios from 'axios';
 import { useConfigStore } from '../context/useConfigStore';
+import { useWishlistStore } from '../context/useWishlistStore';
+import { useCartStore } from '../context/useCartStore';
 
 const Home = () => {
     const { config } = useConfigStore();
     const currency = config?.currencySymbol || '$';
+    const [trendingProducts, setTrendingProducts] = useState([]);
+
+    const { isInWishlist, toggleWishlist } = useWishlistStore();
+    const { addToCart } = useCartStore();
+
+    useEffect(() => {
+        const fetchTrending = async () => {
+            try {
+                // Fetch top 4 newest products as "Trending"
+                const { data } = await axios.get('http://localhost:5000/api/products?sort=newest');
+                setTrendingProducts(data.products.slice(0, 4));
+            } catch (error) {
+                console.error("Failed to load trending products:", error);
+            }
+        };
+        fetchTrending();
+    }, []);
+
     return (
         <div className="flex flex-col min-h-screen">
 
@@ -66,38 +88,76 @@ const Home = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {/* Product Cards Placeholder */}
-                        {[1, 2, 3, 4].map((item) => (
-                            <div key={item} className="group relative bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-pink-100 transition-all duration-300 transform hover:-translate-y-1">
-                                <div className="aspect-square bg-slate-50 relative p-6 flex flex-col items-center justify-center overflow-hidden">
-                                    {/* Placeholder image representation */}
-                                    <div className="w-32 h-32 rounded-full bg-pink-100 opacity-50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-500"></div>
-                                    <span className="relative z-10 text-pink-300 text-sm font-medium border border-pink-200 rounded px-2 py-1 bg-white">Product {item} Mock</span>
-
-                                    <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-pink-600">
-                                        New
+                        {trendingProducts.length > 0 ? trendingProducts.map((product) => (
+                            <div key={product._id} className="group relative bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-pink-100 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
+                                <Link to={`/product/${product._id}`} className="block relative">
+                                    <div className="aspect-square bg-slate-50 relative p-6 flex flex-col items-center justify-center overflow-hidden">
+                                        {product.images && product.images[0] ? (
+                                            <img
+                                                src={product.images[0].url}
+                                                alt={product.name}
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                            />
+                                        ) : (
+                                            <div className="w-32 h-32 rounded-full bg-pink-100 opacity-50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-500"></div>
+                                        )}
+                                        <div className="absolute top-4 right-4 bg-white/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-pink-600">
+                                            Trending
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="p-5">
+                                </Link>
+
+                                <button
+                                    onClick={(e) => { e.preventDefault(); toggleWishlist(product); }}
+                                    className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm z-10 transition-colors"
+                                    title={isInWishlist(product._id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                                >
+                                    <Heart size={16} className={isInWishlist(product._id) ? "fill-pink-500 text-pink-500" : "text-slate-400 hover:text-pink-500"} />
+                                </button>
+
+                                <div className="p-5 flex flex-col flex-1">
                                     <div className="flex items-center gap-1 text-yellow-400 mb-2">
                                         <Star size={16} fill="currentColor" />
                                         <Star size={16} fill="currentColor" />
                                         <Star size={16} fill="currentColor" />
                                         <Star size={16} fill="currentColor" />
                                         <Star size={16} fill="currentColor" className="text-slate-200" />
-                                        <span className="text-slate-400 text-xs ml-1">(24)</span>
                                     </div>
-                                    <h3 className="text-lg font-semibold text-slate-800 mb-1">Radiant Glow Serum</h3>
-                                    <p className="text-sm text-slate-500 mb-4 capitalize">Skincare</p>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xl font-bold text-slate-900">$45.00</span>
-                                        <button className="bg-pink-50 hover:bg-pink-100 text-pink-600 p-2 rounded-full transition-colors hidden sm:block">
+                                    {product.brand && (
+                                        <span className="block text-[10px] font-bold tracking-widest text-pink-500 uppercase mb-1">
+                                            {product.brand.name || product.brand}
+                                        </span>
+                                    )}
+                                    <Link to={`/product/${product._id}`}>
+                                        <h3 className="text-lg font-semibold text-slate-800 mb-1 hover:text-pink-600 transition-colors line-clamp-1">{product.name}</h3>
+                                    </Link>
+                                    <p className="text-sm text-slate-500 mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
+
+                                    <div className="flex items-center justify-between mt-auto pt-4">
+                                        <div className="flex flex-col">
+                                            {window.Number(product.discountPrice) > 0 && window.Number(product.discountPrice) < window.Number(product.price) ? (
+                                                <>
+                                                    <span className="text-xl font-bold text-pink-600">{currency}{product.discountPrice.toFixed(2)}</span>
+                                                    <span className="text-sm font-semibold text-slate-400 line-through">{currency}{product.price.toFixed(2)}</span>
+                                                </>
+                                            ) : (
+                                                <span className="text-xl font-bold text-slate-900">{currency}{product.price?.toFixed(2) || '0.00'}</span>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => addToCart({ ...product, qty: 1 })}
+                                            className="bg-pink-50 hover:bg-pink-100 text-pink-600 p-2 rounded-full transition-colors self-end"
+                                        >
                                             <ShoppingBag size={20} />
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        )) : (
+                            <div className="col-span-full text-center py-12 text-slate-500">
+                                Loading trending products...
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>

@@ -51,7 +51,10 @@ const OrderScreen = () => {
             setSlipImage(data.image);
 
             // Now update the order with the slip
-            await axios.put(`http://localhost:5000/api/orders/${id}/pay`, { slipUrl: data.image }, {
+            await axios.put(`http://localhost:5000/api/orders/${id}/pay`, {
+                paymentSlipUrl: data.url,
+                paymentSlipPublicId: data.public_id
+            }, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${userInfo.token}`,
@@ -69,6 +72,21 @@ const OrderScreen = () => {
             console.error(error);
             setUploading(false);
             alert('Error uploading slip');
+        }
+    };
+
+    const verifyPaymentHandler = async () => {
+        try {
+            const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+            // Using existing status update endpoint which handles isPaid = true when status is Payment Verified
+            await axios.put(`http://localhost:5000/api/orders/${id}/status`, { status: 'Payment Verified' }, configHeader);
+
+            // refetch order
+            const updatedData = await axios.get(`http://localhost:5000/api/orders/${id}`, configHeader);
+            setOrder(updatedData.data);
+            alert('Payment verified successfully!');
+        } catch (error) {
+            alert('Failed to verify payment');
         }
     };
 
@@ -161,21 +179,45 @@ const OrderScreen = () => {
                                         {order.paymentMethod}
                                     </p>
 
-                                    {/* Bank Transfer Slip Upload */}
-                                    {!order.isPaid && order.paymentMethod === 'Bank Transfer' && (
+                                    {/* Bank Transfer Slip Upload & Verification */}
+                                    {order.paymentMethod === 'Bank Transfer' && (
                                         <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mt-6">
-                                            <h3 className="text-lg font-semibold text-slate-800 mb-2">Upload Transfer Slip</h3>
-                                            <p className="text-sm text-slate-500 mb-4">Please upload a clear image of your bank transfer slip to confirm payment.</p>
+                                            <h3 className="text-lg font-semibold text-slate-800 mb-4">Bank Transfer Slip</h3>
 
-                                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-white hover:bg-slate-50 hover:border-pink-300 transition-all group">
-                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                    <UploadCloud size={28} className="text-slate-400 group-hover:text-pink-500 mb-2 transition-colors" />
-                                                    <p className="mb-2 text-sm text-slate-500"><span className="font-semibold">Click to upload</span></p>
-                                                    <p className="text-xs text-slate-400">PNG, JPG or JPEG (MAX. 5MB)</p>
+                                            {(order.paymentSlip && order.paymentSlip.url) ? (
+                                                <div className="mb-4">
+                                                    <a href={order.paymentSlip.url} target="_blank" rel="noreferrer" className="block max-w-sm rounded-lg overflow-hidden border border-slate-200 hover:border-pink-500 transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                                        <img src={order.paymentSlip.url} alt="Payment Slip" className="w-full h-auto object-cover max-h-64" />
+                                                    </a>
+                                                    {!order.isPaid && userInfo.isAdmin && (
+                                                        <button
+                                                            onClick={verifyPaymentHandler}
+                                                            className="mt-4 w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 font-bold py-2.5 px-6 rounded-lg transition-colors"
+                                                        >
+                                                            <CheckCircle size={18} /> Verify Payment & Approve
+                                                        </button>
+                                                    )}
+                                                    {!order.isPaid && !userInfo.isAdmin && (
+                                                        <p className="text-sm text-amber-600 mt-4 flex items-center gap-2 bg-amber-50 p-3 rounded border border-amber-100"><Clock size={16} /> Your slip is awaiting admin verification.</p>
+                                                    )}
                                                 </div>
-                                                <input type="file" className="hidden" onChange={uploadFileHandler} accept="image/*" />
-                                            </label>
-                                            {uploading && <p className="text-pink-600 text-sm mt-3 font-medium animate-pulse">Uploading securely...</p>}
+                                            ) : (
+                                                !order.isPaid && (
+                                                    <div>
+                                                        <p className="text-sm text-slate-500 mb-4">Please upload a clear image of your bank transfer slip to confirm payment.</p>
+
+                                                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-white hover:bg-slate-50 hover:border-pink-300 transition-all group">
+                                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                <UploadCloud size={28} className="text-slate-400 group-hover:text-pink-500 mb-2 transition-colors" />
+                                                                <p className="mb-2 text-sm text-slate-500"><span className="font-semibold">Click to upload</span></p>
+                                                                <p className="text-xs text-slate-400">PNG, JPG or JPEG (MAX. 5MB)</p>
+                                                            </div>
+                                                            <input type="file" className="hidden" onChange={uploadFileHandler} accept="image/*" />
+                                                        </label>
+                                                        {uploading && <p className="text-pink-600 text-sm mt-3 font-medium animate-pulse">Uploading securely...</p>}
+                                                    </div>
+                                                )
+                                            )}
                                         </div>
                                     )}
                                 </div>

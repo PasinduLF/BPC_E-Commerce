@@ -13,6 +13,20 @@ export const useCartStore = create((set) => ({
         ? JSON.parse(localStorage.getItem('paymentMethod'))
         : 'Cash on Delivery',
 
+    buyNowItem: localStorage.getItem('buyNowItem')
+        ? JSON.parse(localStorage.getItem('buyNowItem'))
+        : null,
+
+    setBuyNowItem: (item) => set(() => {
+        localStorage.setItem('buyNowItem', JSON.stringify(item));
+        return { buyNowItem: item };
+    }),
+
+    clearBuyNowItem: () => set(() => {
+        localStorage.removeItem('buyNowItem');
+        return { buyNowItem: null };
+    }),
+
     addToCart: (item) => set((state) => {
         const cartId = item.variant ? `${item._id}-${item.variant._id}` : item._id;
         const itemWithCartId = { ...item, cartId };

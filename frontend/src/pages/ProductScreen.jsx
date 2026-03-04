@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../context/useCartStore';
+import { useWishlistStore } from '../context/useWishlistStore';
 import axios from 'axios';
-import { Star, Truck, ShieldCheck, ArrowLeft, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { Star, Truck, ShieldCheck, ArrowLeft, Minus, Plus, ShoppingBag, Heart, CreditCard } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
 
 const ProductScreen = () => {
@@ -17,7 +18,8 @@ const ProductScreen = () => {
     const [activeImage, setActiveImage] = useState(0);
     const [selectedVariant, setSelectedVariant] = useState(null);
 
-    const { addToCart } = useCartStore();
+    const { addToCart, setBuyNowItem } = useCartStore();
+    const { isInWishlist, toggleWishlist } = useWishlistStore();
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -53,6 +55,16 @@ const ProductScreen = () => {
             qty
         });
         navigate('/cart');
+    };
+
+    const buyNowHandler = () => {
+        setBuyNowItem({
+            ...product,
+            price: displayPrice,
+            variant: selectedVariant,
+            qty
+        });
+        navigate('/shipping'); // Redirect directly to checkout flow
     };
 
     if (loading) {
@@ -137,9 +149,17 @@ const ProductScreen = () => {
                                 <p className="text-pink-500 font-bold uppercase tracking-widest text-sm mb-2">{product.brand.name}</p>
                             )}
 
-                            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4">
-                                {product.name}
-                            </h1>
+                            <div className="flex justify-between items-start mb-4">
+                                <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight pr-4">
+                                    {product.name}
+                                </h1>
+                                <button
+                                    onClick={() => toggleWishlist(product)}
+                                    className={`p-3 rounded-full flex-shrink-0 transition-colors shadow-sm border ${isInWishlist(product._id) ? 'bg-pink-50 border-pink-200 text-pink-500 hover:bg-pink-100' : 'bg-white border-slate-200 text-slate-400 hover:text-pink-500 hover:border-pink-300'}`}
+                                >
+                                    <Heart size={24} className={isInWishlist(product._id) ? 'fill-current' : ''} />
+                                </button>
+                            </div>
 
                             <div className="flex items-center gap-4 mb-6">
                                 <div className="flex items-center gap-1 text-yellow-400">
@@ -227,13 +247,22 @@ const ProductScreen = () => {
                                         </button>
                                     </div>
 
-                                    <button
-                                        onClick={addToCartHandler}
-                                        className="flex-1 btn-primary py-4 flex items-center justify-center gap-3 text-lg group"
-                                    >
-                                        <ShoppingBag size={22} className="group-hover:-translate-y-1 transition-transform" />
-                                        Add to Cart
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={addToCartHandler}
+                                            className="flex-1 bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white py-4 rounded-xl flex items-center justify-center gap-3 text-lg font-bold transition-colors group"
+                                        >
+                                            <ShoppingBag size={22} className="group-hover:-translate-y-1 transition-transform" />
+                                            Add to Cart
+                                        </button>
+                                        <button
+                                            onClick={buyNowHandler}
+                                            className="flex-1 btn-primary py-4 rounded-xl flex items-center justify-center gap-3 text-lg font-bold shadow-md shadow-pink-200 group"
+                                        >
+                                            <CreditCard size={22} className="group-hover:-translate-y-1 transition-transform" />
+                                            Buy Now
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-xl text-center text-rose-600 font-medium">

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingBag, User, Menu, X, LogOut, ChevronDown } from 'lucide-react';
+import { Search, ShoppingBag, User, Menu, X, LogOut, ChevronDown, Heart } from 'lucide-react';
 import { useAuthStore } from '../context/useAuthStore';
 import { useCartStore } from '../context/useCartStore';
+import { useWishlistStore } from '../context/useWishlistStore';
 import { useConfigStore } from '../context/useConfigStore';
 
 const Navbar = () => {
@@ -11,6 +12,7 @@ const Navbar = () => {
 
     const { userInfo, logout } = useAuthStore();
     const { cartItems } = useCartStore();
+    const { wishlistItems } = useWishlistStore();
     const { config } = useConfigStore();
     const navigate = useNavigate();
 
@@ -101,6 +103,15 @@ const Navbar = () => {
                             </Link>
                         )}
 
+                        <Link to="/wishlist" className="relative text-slate-600 hover:text-pink-600 transition-colors group">
+                            <Heart size={20} />
+                            {wishlistItems.length > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                                    {wishlistItems.length}
+                                </span>
+                            )}
+                        </Link>
+
                         <Link to="/cart" className="relative text-slate-600 hover:text-pink-600 transition-colors group">
                             <ShoppingBag size={20} />
                             {cartItems.length > 0 && (
@@ -114,6 +125,14 @@ const Navbar = () => {
 
                     {/* Mobile menu button */}
                     <div className="flex items-center md:hidden space-x-4">
+                        <Link to="/wishlist" className="relative text-slate-600 transition-colors">
+                            <Heart size={22} />
+                            {wishlistItems.length > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center shadow-sm">
+                                    {wishlistItems.length}
+                                </span>
+                            )}
+                        </Link>
                         <Link to="/cart" className="relative text-slate-600 transition-colors">
                             <ShoppingBag size={22} />
                             {cartItems.length > 0 && (

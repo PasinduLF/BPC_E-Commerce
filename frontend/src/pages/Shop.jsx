@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Star, ShoppingBag, Filter } from 'lucide-react';
+import { Star, ShoppingBag, Filter, Heart } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
+import { useWishlistStore } from '../context/useWishlistStore';
+import { useCartStore } from '../context/useCartStore';
 
 const Shop = () => {
     const { config } = useConfigStore();
@@ -12,6 +14,9 @@ const Shop = () => {
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const { isInWishlist, toggleWishlist } = useWishlistStore();
+    const { addToCart } = useCartStore();
 
     // Filter states
     const [selectedCategories, setSelectedCategories] = useState([]);
@@ -289,8 +294,8 @@ const Shop = () => {
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                                 {products.map((product) => (
-                                    <div key={product._id} className="group relative bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-pink-100 transition-all duration-300 transform hover:-translate-y-1">
-                                        <Link to={`/product/${product._id}`} className="block">
+                                    <div key={product._id} className="group relative bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-pink-100 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
+                                        <Link to={`/product/${product._id}`} className="block relative">
                                             <div className="aspect-square bg-slate-50 relative p-6 flex flex-col items-center justify-center overflow-hidden">
                                                 {product.images && product.images[0] ? (
                                                     <img
@@ -306,7 +311,15 @@ const Shop = () => {
                                                 </div>
                                             </div>
                                         </Link>
-                                        <div className="p-5">
+                                        <button
+                                            onClick={(e) => { e.preventDefault(); toggleWishlist(product); }}
+                                            className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-sm z-10 transition-colors"
+                                            title={isInWishlist(product._id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                                        >
+                                            <Heart size={16} className={isInWishlist(product._id) ? "fill-pink-500 text-pink-500" : "text-slate-400 hover:text-pink-500"} />
+                                        </button>
+
+                                        <div className="p-5 flex flex-col flex-1">
                                             <div className="flex items-center gap-1 text-yellow-400 mb-2">
                                                 <Star size={16} fill="currentColor" />
                                                 <Star size={16} fill="currentColor" />
@@ -324,7 +337,7 @@ const Shop = () => {
                                                 <h3 className="text-lg font-semibold text-slate-800 mb-1 hover:text-pink-600 transition-colors line-clamp-1">{product.name}</h3>
                                             </Link>
                                             <p className="text-sm text-slate-500 mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
-                                            <div className="flex items-center justify-between mt-2">
+                                            <div className="flex items-center justify-between mt-auto pt-4">
                                                 <div className="flex flex-col">
                                                     {window.Number(product.discountPrice) > 0 && window.Number(product.discountPrice) < window.Number(product.price) ? (
                                                         <>
@@ -335,7 +348,10 @@ const Shop = () => {
                                                         <span className="text-xl font-bold text-slate-900">{currency}{product.price?.toFixed(2) || '0.00'}</span>
                                                     )}
                                                 </div>
-                                                <button className="bg-pink-50 hover:bg-pink-100 text-pink-600 p-2 rounded-full transition-colors self-end">
+                                                <button
+                                                    onClick={() => addToCart({ ...product, qty: 1 })}
+                                                    className="bg-pink-50 hover:bg-pink-100 text-pink-600 p-2 rounded-full transition-colors self-end"
+                                                >
                                                     <ShoppingBag size={20} />
                                                 </button>
                                             </div>

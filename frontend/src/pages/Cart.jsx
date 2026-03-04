@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../context/useCartStore';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
@@ -8,7 +9,12 @@ const Cart = () => {
     const currency = config?.currencySymbol || '$';
 
     const navigate = useNavigate();
-    const { cartItems, addToCart, removeFromCart } = useCartStore();
+    const { cartItems, addToCart, removeFromCart, clearBuyNowItem } = useCartStore();
+
+    useEffect(() => {
+        // Clearing any pending 'buy now' flow if the user explicitly goes back to their cart
+        clearBuyNowItem();
+    }, [clearBuyNowItem]);
 
     const updateQuantity = (item, newQty) => {
         const checkStock = item.variant ? item.variant.stock : item.stock;

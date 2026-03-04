@@ -36,6 +36,18 @@ const updateConfig = async (req, res) => {
         if (req.body.taxRate !== undefined) config.taxRate = Number(req.body.taxRate);
         if (req.body.shippingFee !== undefined) config.shippingFee = Number(req.body.shippingFee);
         if (req.body.freeShippingThreshold !== undefined) config.freeShippingThreshold = Number(req.body.freeShippingThreshold);
+        if (req.body.codDeliveryCharge !== undefined) config.codDeliveryCharge = Number(req.body.codDeliveryCharge);
+
+        if (req.body.bankDetails !== undefined && Array.isArray(req.body.bankDetails)) {
+            // Filter out completely empty bank detail rows to prevent Mongoose validation errors
+            const validBankDetails = req.body.bankDetails.filter(bank =>
+                (bank.bankName && bank.bankName.trim() !== '') ||
+                (bank.accountName && bank.accountName.trim() !== '') ||
+                (bank.accountNumber && bank.accountNumber.trim() !== '') ||
+                (bank.branch && bank.branch.trim() !== '')
+            );
+            config.bankDetails = validBankDetails;
+        }
 
         if (req.body.contactEmail !== undefined) config.contactEmail = req.body.contactEmail;
         if (req.body.contactPhone !== undefined) config.contactPhone = req.body.contactPhone;
@@ -43,7 +55,11 @@ const updateConfig = async (req, res) => {
         const updatedConfig = await config.save();
         res.json(updatedConfig);
     } catch (error) {
-        res.status(500).json({ message: 'Error updating system configuration' });
+        console.error('Config update error:', error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: Object.values(error.errors).map(err => err.message).join(', ') });
+        }
+        res.status(500).json({ message: error.message || 'Error updating system configuration' });
     }
 };
 

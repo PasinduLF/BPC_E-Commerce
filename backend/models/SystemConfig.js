@@ -26,6 +26,18 @@ const systemConfigSchema = new mongoose.Schema({
         required: true,
         default: 0
     },
+    codDeliveryCharge: {
+        type: Number,
+        default: 0
+    },
+    bankDetails: [
+        {
+            bankName: { type: String, required: true },
+            accountName: { type: String, required: true },
+            accountNumber: { type: String, required: true },
+            branch: { type: String, required: true }
+        }
+    ],
     contactEmail: {
         type: String,
         default: 'support@beautypnc.com'
