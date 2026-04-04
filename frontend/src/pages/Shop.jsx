@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Star, ShoppingBag, Filter, Heart } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
@@ -27,6 +27,27 @@ const Shop = () => {
     const [inStockOnly, setInStockOnly] = useState(false);
     const [sort, setSort] = useState('newest');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
+    const [searchKeyword, setSearchKeyword] = useState('');
+    const location = useLocation();
+
+    // Sync state with URL when navigating from Navbar
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const category = params.get('category');
+        const search = params.get('search');
+        
+        if (category) {
+            setSelectedCategories([category]);
+        } else {
+            setSelectedCategories([]);
+        }
+        
+        if (search) {
+            setSearchKeyword(search);
+        } else {
+            setSearchKeyword('');
+        }
+    }, [location.search]);
 
     useEffect(() => {
         const fetchFilters = async () => {
@@ -49,6 +70,7 @@ const Shop = () => {
             try {
                 setLoading(true);
                 let url = `http://localhost:5000/api/products?sort=${sort}`;
+                if (searchKeyword) url += `&keyword=${encodeURIComponent(searchKeyword)}`;
                 if (selectedCategories.length > 0) url += `&category=${selectedCategories.join(',')}`;
                 if (selectedSubcategories.length > 0) url += `&subcategory=${selectedSubcategories.join(',')}`;
                 if (selectedBrands.length > 0) url += `&brand=${selectedBrands.join(',')}`;
@@ -66,7 +88,7 @@ const Shop = () => {
         };
 
         fetchProducts();
-    }, [selectedCategories, selectedSubcategories, selectedBrands, minPrice, maxPrice, inStockOnly, sort]);
+    }, [selectedCategories, selectedSubcategories, selectedBrands, minPrice, maxPrice, inStockOnly, sort, searchKeyword]);
 
     // Handle Category change
     const handleCategoryChange = (catId) => {
@@ -116,8 +138,12 @@ const Shop = () => {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-primary tracking-tight">Our Collection</h1>
-                        <p className="text-secondary mt-2">Discover our full range of premium cosmetics.</p>
+                        <h1 className="text-3xl font-bold text-primary tracking-tight">
+                            {searchKeyword ? `Search Results for "${searchKeyword}"` : 'Our Collection'}
+                        </h1>
+                        <p className="text-secondary mt-2">
+                            {searchKeyword ? 'Find what you are looking for.' : 'Discover our full range of premium cosmetics.'}
+                        </p>
                     </div>
 
                     <div className="flex items-center gap-4">

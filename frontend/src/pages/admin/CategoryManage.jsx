@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
-import { Plus, Trash2, LayoutList, Layers } from 'lucide-react';
+import { Plus, Trash2, LayoutList, Layers, Edit } from 'lucide-react';
 
 const CategoryManage = () => {
     const { userInfo } = useAuthStore();
@@ -9,8 +9,11 @@ const CategoryManage = () => {
     const [loading, setLoading] = useState(true);
 
     const [showAddForm, setShowAddForm] = useState(false);
+    const [editingCategoryId, setEditingCategoryId] = useState(null);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [newCategoryDesc, setNewCategoryDesc] = useState('');
+    const [newCategoryImage, setNewCategoryImage] = useState('');
+    const [selectedImageFile, setSelectedImageFile] = useState(null);
 
     const [activeCategoryId, setActiveCategoryId] = useState(null);
     const [newSubcategoryName, setNewSubcategoryName] = useState('');
@@ -30,22 +33,55 @@ const CategoryManage = () => {
         fetchCategories();
     }, []);
 
-    const createCategoryHandler = async (e) => {
+    const saveCategoryHandler = async (e) => {
         e.preventDefault();
         try {
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            await axios.post('http://localhost:5000/api/categories', {
-                name: newCategoryName,
-                description: newCategoryDesc
-            }, config);
+            let imageUrl = newCategoryImage;
+
+            if (selectedImageFile) {
+                const formData = new FormData();
+                formData.append('image', selectedImageFile);
+                const { data } = await axios.post('http://localhost:5000/api/upload', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                imageUrl = data.url;
+            }
+
+            if (editingCategoryId) {
+                await axios.put(`http://localhost:5000/api/categories/${editingCategoryId}`, {
+                    name: newCategoryName,
+                    description: newCategoryDesc,
+                    image: imageUrl
+                }, config);
+            } else {
+                await axios.post('http://localhost:5000/api/categories', {
+                    name: newCategoryName,
+                    description: newCategoryDesc,
+                    image: imageUrl
+                }, config);
+            }
 
             setNewCategoryName('');
             setNewCategoryDesc('');
+            setNewCategoryImage('');
+            setSelectedImageFile(null);
+            setEditingCategoryId(null);
             setShowAddForm(false);
             fetchCategories();
         } catch (error) {
-            alert('Failed to create category');
+            alert('Failed to save category');
         }
+    };
+
+    const openEditForm = (cat) => {
+        setEditingCategoryId(cat._id);
+        setNewCategoryName(cat.name);
+        setNewCategoryDesc(cat.description || '');
+        setNewCategoryImage(cat.image || '');
+        setSelectedImageFile(null);
+        setShowAddForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const deleteCategoryHandler = async (id, name) => {
@@ -85,7 +121,18 @@ const CategoryManage = () => {
                     <p className="text-secondary text-sm mt-1">Organize your shop catalog.</p>
                 </div>
                 <button
-                    onClick={() => setShowAddForm(!showAddForm)}
+                    onClick={() => {
+                        if (showAddForm) {
+                            setShowAddForm(false);
+                            setEditingCategoryId(null);
+                            setNewCategoryName('');
+                            setNewCategoryDesc('');
+                            setNewCategoryImage('');
+                            setSelectedImageFile(null);
+                        } else {
+                            setShowAddForm(true);
+                        }
+                    }}
                     className="btn-primary flex items-center gap-2"
                 >
                     {showAddForm ? 'Cancel' : <><Plus size={18} /> New Category</>}
@@ -95,9 +142,9 @@ const CategoryManage = () => {
             {showAddForm && (
                 <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 animate-fade-in-up mb-6">
                     <h2 className="text-lg font-bold text-primary mb-4 flex items-center gap-2 border-b border-default pb-4">
-                        <LayoutList size={20} className="text-brand" /> Create Root Category
+                        <LayoutList size={20} className="text-brand" /> {editingCategoryId ? 'Edit Category' : 'Create Root Category'}
                     </h2>
-                    <form onSubmit={createCategoryHandler} className="max-w-xl space-y-4">
+                    <form onSubmit={saveCategoryHandler} className="max-w-xl space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-primary mb-1">Category Name</label>
                             <input
@@ -114,8 +161,22 @@ const CategoryManage = () => {
                                 className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-page text-primary"
                             ></textarea>
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-primary mb-1">Category Image</label>
+                            <div className="flex items-center gap-4">
+                                {(newCategoryImage || selectedImageFile) && (
+                                    <div className="w-16 h-16 rounded border border-default overflow-hidden flex-shrink-0 bg-surface">
+                                        <img src={selectedImageFile ? URL.createObjectURL(selectedImageFile) : newCategoryImage} alt="preview" className="w-full h-full object-cover" />
+                                    </div>
+                                )}
+                                <input
+                                    type="file" accept="image/*" onChange={(e) => setSelectedImageFile(e.target.files[0])}
+                                    className="w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-subtle file:text-brand hover:file:brightness-105"
+                                />
+                            </div>
+                        </div>
                         <button type="submit" className="px-6 py-2 bg-brand hover:brightness-95 text-white rounded-lg transition-colors font-medium text-sm">
-                            Save Category
+                            {editingCategoryId ? 'Update Category' : 'Save Category'}
                         </button>
                     </form>
                 </div>
@@ -140,12 +201,22 @@ const CategoryManage = () => {
                                         <Layers size={18} className="text-brand" />
                                         {category.name}
                                     </h3>
-                                    <button
-                                        onClick={() => deleteCategoryHandler(category._id, category.name)}
-                                        className="text-tertiary hover:text-error transition-colors p-1"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => openEditForm(category)}
+                                            className="bg-brand-subtle text-brand hover:bg-brand hover:text-white transition-all p-1.5 rounded-lg shadow-sm"
+                                            title="Edit Category"
+                                        >
+                                            <Edit size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => deleteCategoryHandler(category._id, category.name)}
+                                            className="bg-error-bg text-error hover:bg-error hover:text-white transition-all p-1.5 rounded-lg shadow-sm"
+                                            title="Delete Category"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <p className="text-sm text-secondary line-clamp-2">{category.description}</p>
                             </div>

@@ -90,19 +90,40 @@
     }
   }
 
-  .mobile-menu-animate {
-    animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  .mega-menu-animate {
+    animation: megaFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   
-  @keyframes slideDown {
+  @keyframes megaFade {
     0% {
       opacity: 0;
-      transform: translateY(-10px);
+      transform: translateY(10px);
     }
     100% {
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  .mobile-drawer-animate {
+    animation: slideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  
+  @keyframes slideRight {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .mobile-drawer-overlay-animate {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  .desktop-nav-scrolled {
+    @apply shadow-md bg-surface/90 backdrop-blur-lg border-b border-default;
   }
 
   /* Global Page Mount Animations */

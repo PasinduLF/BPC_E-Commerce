@@ -241,8 +241,8 @@ const Home = () => {
                         <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-6">
                             {categories.map((cat) => (
                                 <Link key={cat._id} to={`/shop?category=${cat._id}`} className="group relative rounded-3xl overflow-hidden aspect-[4/5] bg-muted flex flex-col justify-end">
-                                    {cat.image?.url && (
-                                        <img src={cat.image.url} alt={cat.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                    {cat.image && (
+                                        <img src={typeof cat.image === 'string' ? cat.image : cat.image.url} alt={cat.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                     )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
                                     <div className="relative z-10 p-5 w-full text-center">
