@@ -3,23 +3,22 @@ import { createContext, useContext, useState, useEffect } from "react";
 // ─── Palette ────────────────────────────────────────────────────────────────
 
 export const palette = {
-  // Brand primaries
-  orchidLight:  "#EDD5E7",
-  orchid:       "#D498CA",
-  orchidDark:   "#A9709F",
-  magenta:      "#C53683",
-  magentaDark:  "#8E245C",
-  magentaDeep:  "#5C1439",
+  // Brand – Warm Rose
+  roseLight:    "#F5E8ED",
+  rose:         "#D4739A",
+  roseMid:      "#B4547A",
+  roseDark:     "#9A4468",
+  roseDeep:     "#7A3452",
 
-  // Tints & backgrounds
-  warmWhite:    "#FDF9FC",
-  blush:        "#FAF0F7",
-  softGray:     "#EDE6EB",
+  // Warm Neutrals (Light mode)
+  warmWhite:    "#FAFAFA",
+  warmCream:    "#F5F0EE",
+  warmStone:    "#EBE5E2",
 
-  // Neutrals
-  mauveGray:    "#9A8A96",
-  darkMauve:    "#4A3A46",
-  charcoal:     "#2C1F2A",
+  // Text Neutrals
+  warmGray:     "#9A9590",
+  warmDark:     "#5A5550",
+  nearBlack:    "#1A1A1A",
 
   // Accent
   gold:         "#C9943A",
@@ -39,26 +38,26 @@ const tokens = {
     // Backgrounds
     bgPage:         palette.warmWhite,
     bgSurface:      "#FFFFFF",
-    bgSubtle:       palette.blush,
-    bgMuted:        palette.softGray,
+    bgSubtle:       palette.warmCream,
+    bgMuted:        palette.warmStone,
 
     // Brand fills
-    bgBrand:        palette.magenta,
-    bgBrandHover:   palette.magentaDark,
-    bgBrandSubtle:  palette.orchidLight,
+    bgBrand:        palette.roseMid,
+    bgBrandHover:   palette.roseDark,
+    bgBrandSubtle:  palette.roseLight,
 
     // Text
-    textPrimary:    palette.charcoal,
-    textSecondary:  palette.darkMauve,
-    textTertiary:   palette.mauveGray,
+    textPrimary:    palette.nearBlack,
+    textSecondary:  palette.warmDark,
+    textTertiary:   palette.warmGray,
     textOnBrand:    "#FFFFFF",
-    textBrand:      palette.magenta,
-    textBrandDark:  palette.magentaDark,
+    textBrand:      palette.roseMid,
+    textBrandDark:  palette.roseDark,
 
     // Borders
-    borderDefault:  palette.softGray,
-    borderBrand:    palette.orchid,
-    borderStrong:   palette.orchidDark,
+    borderDefault:  "#E8E3E0",
+    borderBrand:    palette.rose,
+    borderStrong:   palette.roseMid,
 
     // Accents
     gold:           palette.gold,
@@ -72,28 +71,28 @@ const tokens = {
   },
   dark: {
     // Backgrounds
-    bgPage:         "#1A0F18",
-    bgSurface:      "#231520",
-    bgSubtle:       "#2E1D2B",
-    bgMuted:        "#3A2737",
+    bgPage:         "#121212",
+    bgSurface:      "#1E1E1E",
+    bgSubtle:       "#252525",
+    bgMuted:        "#2E2E2E",
 
     // Brand fills
-    bgBrand:        palette.magenta,
-    bgBrandHover:   "#D94090",
-    bgBrandSubtle:  "#3D1A33",
+    bgBrand:        palette.rose,
+    bgBrandHover:   "#E088AD",
+    bgBrandSubtle:  "#2A1A22",
 
     // Text
-    textPrimary:    "#F5EDF3",
-    textSecondary:  palette.orchidLight,
-    textTertiary:   palette.orchidDark,
+    textPrimary:    "#F0EDEB",
+    textSecondary:  "#B0AAA5",
+    textTertiary:   "#787270",
     textOnBrand:    "#FFFFFF",
-    textBrand:      "#E060A8",
-    textBrandDark:  palette.orchid,
+    textBrand:      "#D4739A",
+    textBrandDark:  palette.rose,
 
     // Borders
-    borderDefault:  "#3D2A3A",
-    borderBrand:    palette.magentaDark,
-    borderStrong:   palette.magenta,
+    borderDefault:  "#333333",
+    borderBrand:    palette.roseDark,
+    borderStrong:   palette.rose,
 
     // Accents
     gold:           "#E0AD56",

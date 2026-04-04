@@ -2,17 +2,17 @@
 
 /* Custom modern aesthetic properties for Beauty P&C */
 @theme {
-  --color-brand-pink-50: #fdf2f8;
-  --color-brand-pink-100: #fce7f3;
-  --color-brand-pink-200: #fbcfe8;
-  --color-brand-pink-300: #f9a8d4;
-  --color-brand-pink-400: #f472b6;
-  --color-brand-pink-500: #ec4899;
-  --color-brand-pink-600: #db2777;
+  --color-brand-pink-50: #FDF5F8;
+  --color-brand-pink-100: #F5E8ED;
+  --color-brand-pink-200: #F0D0DC;
+  --color-brand-pink-300: #E5A4BF;
+  --color-brand-pink-400: #D4739A;
+  --color-brand-pink-500: #B4547A;
+  --color-brand-pink-600: #9A4468;
   /* primary */
-  --color-brand-pink-700: #be185d;
-  --color-brand-pink-800: #9d174d;
-  --color-brand-pink-900: #831843;
+  --color-brand-pink-700: #7A3452;
+  --color-brand-pink-800: #5E2840;
+  --color-brand-pink-900: #451D30;
 
   /* ThemeContext Semantic Aliases */
   --color-page: var(--color-bg-page);

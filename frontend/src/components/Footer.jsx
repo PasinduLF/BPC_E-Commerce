@@ -4,7 +4,7 @@ import logoImage from '../assets/logo-no-background.png';
 
 const Footer = () => {
     return (
-        <footer className="bg-[#111827] text-gray-100 pt-16 pb-8 overflow-hidden">
+        <footer className="bg-[#1A1A1A] text-gray-100 pt-16 pb-8 overflow-hidden">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
 

@@ -37,6 +37,8 @@ import { useCartStore } from './context/useCartStore';
 import { useWishlistStore } from './context/useWishlistStore';
 import { useAuthStore } from './context/useAuthStore';
 
+import ScrollToTop from './components/ScrollToTop';
+
 function App() {
   const { fetchConfig } = useConfigStore();
   const { cartItems } = useCartStore();
@@ -78,6 +80,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-grow">

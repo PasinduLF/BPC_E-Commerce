@@ -79,23 +79,23 @@ const AdminLayout = () => {
                         </h2>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={toggleMode} className="text-secondary hover:text-brand p-1.5 rounded-full hover:bg-surface focus:outline-none transition-colors" title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+                        <button onClick={toggleMode} className="text-secondary hover:text-brand p-1.5 rounded-full hover:bg-subtle focus:outline-none transition-colors" title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
                             {isDark ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
-                        <button className="md:hidden text-secondary hover:text-primary p-1 rounded-full hover:bg-surface" onClick={() => setIsMobileMenuOpen(false)}>
+                        <button className="md:hidden text-secondary hover:text-primary p-1 rounded-full hover:bg-subtle" onClick={() => setIsMobileMenuOpen(false)}>
                             <X size={24} />
                         </button>
                     </div>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
+                <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto">
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
                         return (
                             <Link
                                 key={item.name}
                                 to={item.path}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${isActive ? 'bg-brand-subtle/50 text-brand border border-brand/20 shadow-sm' : 'text-secondary hover:bg-surface hover:text-primary border border-transparent'}`}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${isActive ? 'bg-brand-subtle text-brand border border-brand/20 shadow-sm' : 'text-secondary hover:bg-subtle hover:text-primary border border-transparent'}`}
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
                                 {item.icon}
