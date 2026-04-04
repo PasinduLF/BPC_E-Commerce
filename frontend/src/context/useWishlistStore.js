@@ -1,9 +1,24 @@
 import { create } from 'zustand';
 
+const getUser = () => {
+    return JSON.parse(localStorage.getItem('userInfo'));
+};
+
+const loadInitialWishlist = () => {
+    const user = getUser();
+    if (user && user.wishlist) {
+        return user.wishlist;
+    }
+
+    // Guest fallback
+    const guestWishlist = localStorage.getItem('wishlistItems_guest');
+    if (guestWishlist) return JSON.parse(guestWishlist);
+
+    return [];
+};
+
 export const useWishlistStore = create((set, get) => ({
-    wishlistItems: localStorage.getItem('wishlistItems')
-        ? JSON.parse(localStorage.getItem('wishlistItems'))
-        : [],
+    wishlistItems: loadInitialWishlist(),
 
     addToWishlist: (product) => {
         const { wishlistItems } = get();
@@ -12,7 +27,11 @@ export const useWishlistStore = create((set, get) => ({
         if (!existItem) {
             const updatedWishlist = [...wishlistItems, product];
             set({ wishlistItems: updatedWishlist });
-            localStorage.setItem('wishlistItems', JSON.stringify(updatedWishlist));
+
+            const user = getUser();
+            if (!user) {
+                localStorage.setItem('wishlistItems_guest', JSON.stringify(updatedWishlist));
+            }
         }
     },
 
@@ -20,7 +39,11 @@ export const useWishlistStore = create((set, get) => ({
         const { wishlistItems } = get();
         const updatedWishlist = wishlistItems.filter((x) => x._id !== id);
         set({ wishlistItems: updatedWishlist });
-        localStorage.setItem('wishlistItems', JSON.stringify(updatedWishlist));
+
+        const user = getUser();
+        if (!user) {
+            localStorage.setItem('wishlistItems_guest', JSON.stringify(updatedWishlist));
+        }
     },
 
     isInWishlist: (id) => {
@@ -35,5 +58,30 @@ export const useWishlistStore = create((set, get) => ({
         } else {
             addToWishlist(product);
         }
+    },
+
+    mergeGuestWishlist: (dbWishlist) => {
+        const guestWishlist = get().wishlistItems;
+        const userSavedWishlist = dbWishlist || [];
+
+        let mergedWishlist = [...userSavedWishlist];
+        guestWishlist.forEach(guestItem => {
+            const exist = mergedWishlist.find(x => x._id === guestItem._id);
+            if (!exist) {
+                mergedWishlist.push(guestItem);
+            }
+        });
+
+        localStorage.removeItem('wishlistItems_guest');
+        set({ wishlistItems: mergedWishlist });
+    },
+
+    loadWishlistFromDB: (dbWishlist) => {
+        set({ wishlistItems: dbWishlist || [] });
+    },
+
+    clearToGuest: () => {
+        const guestWishlist = JSON.parse(localStorage.getItem('wishlistItems_guest')) || [];
+        set({ wishlistItems: guestWishlist });
     }
 }));

@@ -56,26 +56,26 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="min-h-screen bg-page flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
 
             {/* Decorative blobs */}
-            <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-pink-200 to-rose-100 opacity-50 blur-3xl -z-10"></div>
-            <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-pink-300 to-pink-100 opacity-40 blur-3xl -z-10"></div>
+            <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[600px] h-[600px] rounded-full bg-brand opacity-20 blur-3xl -z-10"></div>
+            <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[400px] h-[400px] rounded-full bg-brand opacity-10 blur-3xl -z-10"></div>
 
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="mt-6 text-center text-3xl font-extrabold text-primary tracking-tight">
                     {isLogin ? 'Welcome Back' : 'Create Account'}
                 </h2>
-                <p className="mt-2 text-center text-sm text-slate-600">
+                <p className="mt-2 text-center text-sm text-secondary">
                     {isLogin ? 'Sign in to access your Beauty P&C profile' : 'Join Beauty P&C to discover premium cosmetics'}
                 </p>
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white/80 backdrop-blur-xl py-8 px-4 shadow-xl shadow-pink-100/50 sm:rounded-2xl sm:px-10 border border-white/40">
+                <div className="bg-surface/80 backdrop-blur-xl py-8 px-4 shadow-xl shadow-brand-subtle sm:rounded-2xl sm:px-10 border border-default/40">
 
                     {error && (
-                        <div className="mb-6 p-4 rounded-lg bg-rose-50 text-rose-600 text-sm border border-rose-100 text-center">
+                        <div className="mb-6 p-4 rounded-lg bg-error-bg text-error text-sm border border-error-bg text-center">
                             {error}
                         </div>
                     )}
@@ -84,15 +84,15 @@ const Login = () => {
 
                         {!isLogin && (
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Full Name</label>
+                                <label className="block text-sm font-medium text-primary">Full Name</label>
                                 <div className="mt-1 relative rounded-md shadow-sm">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-tertiary">
                                         <User size={18} />
                                     </div>
                                     <input
                                         type="text"
                                         required
-                                        className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg input-focus bg-slate-50 text-sm"
+                                        className="block w-full pl-10 pr-3 py-2 border border-default rounded-lg input-focus bg-page text-primary text-sm"
                                         placeholder="Enter your name"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
@@ -102,15 +102,15 @@ const Login = () => {
                         )}
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700">Email Address</label>
+                            <label className="block text-sm font-medium text-primary">Email Address</label>
                             <div className="mt-1 relative rounded-md shadow-sm">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-tertiary">
                                     <Mail size={18} />
                                 </div>
                                 <input
                                     type="email"
                                     required
-                                    className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg input-focus bg-slate-50 text-sm"
+                                    className="block w-full pl-10 pr-3 py-2 border border-default rounded-lg input-focus bg-page text-primary text-sm"
                                     placeholder="name@example.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
@@ -120,21 +120,21 @@ const Login = () => {
 
                         <div>
                             <div className="flex items-center justify-between">
-                                <label className="block text-sm font-medium text-slate-700">Password</label>
+                                <label className="block text-sm font-medium text-primary">Password</label>
                                 {isLogin && (
-                                    <a href="#" className="font-medium text-sm text-pink-600 hover:text-pink-500">
+                                    <a href="#" className="font-medium text-sm text-brand hover:brightness-110">
                                         Forgot password?
                                     </a>
                                 )}
                             </div>
                             <div className="mt-1 relative rounded-md shadow-sm">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-tertiary">
                                     <Lock size={18} />
                                 </div>
                                 <input
                                     type="password"
                                     required
-                                    className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg input-focus bg-slate-50 text-sm"
+                                    className="block w-full pl-10 pr-3 py-2 border border-default rounded-lg input-focus bg-page text-primary text-sm"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -144,25 +144,25 @@ const Login = () => {
 
                         <button
                             type="submit"
-                            className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 transition-all hover:shadow-lg hover:shadow-pink-200"
+                            className="w-full flex justify-center items-center gap-2 py-2.5 px-4 btn-primary rounded-lg shadow-sm text-sm"
                         >
                             {isLogin ? 'Sign In' : 'Sign Up'} <ArrowRight size={18} />
                         </button>
 
                     </form>
 
-                    <div className="mt-8 text-center text-sm text-slate-600">
+                    <div className="mt-8 text-center text-sm text-secondary">
                         {isLogin ? (
                             <span>
                                 New to Beauty P&C?{' '}
-                                <button onClick={() => setIsLogin(false)} className="font-medium text-pink-600 hover:text-pink-500 transition-colors">
+                                <button onClick={() => setIsLogin(false)} className="font-medium text-brand hover:brightness-110 transition-colors">
                                     Create an account
                                 </button>
                             </span>
                         ) : (
                             <span>
                                 Already have an account?{' '}
-                                <button onClick={() => setIsLogin(true)} className="font-medium text-pink-600 hover:text-pink-500 transition-colors">
+                                <button onClick={() => setIsLogin(true)} className="font-medium text-brand hover:brightness-110 transition-colors">
                                     Sign in instead
                                 </button>
                             </span>

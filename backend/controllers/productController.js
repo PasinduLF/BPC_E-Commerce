@@ -30,6 +30,9 @@ const getProducts = async (req, res) => {
     // Stock Filter
     const stockFilter = req.query.inStock === 'true' ? { stock: { $gt: 0 } } : {};
 
+    // Featured Filter
+    const featuredFilter = req.query.isFeatured === 'true' ? { isFeatured: true } : {};
+
     const activeFilter = req.query.admin === 'true' ? {} : { isActive: { $ne: false } };
 
     let sortOption = { createdAt: -1 }; // Default: Newest Arrivals
@@ -46,6 +49,7 @@ const getProducts = async (req, res) => {
         ...brandFilter,
         ...priceFilter,
         ...stockFilter,
+        ...featuredFilter,
         ...activeFilter
     };
 

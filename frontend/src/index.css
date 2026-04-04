@@ -13,24 +13,155 @@
   --color-brand-pink-700: #be185d;
   --color-brand-pink-800: #9d174d;
   --color-brand-pink-900: #831843;
+
+  /* ThemeContext Semantic Aliases */
+  --color-page: var(--color-bg-page);
+  --color-surface: var(--color-bg-surface);
+  --color-subtle: var(--color-bg-subtle);
+  --color-muted: var(--color-bg-muted);
+  --color-brand: var(--color-bg-brand);
+  --color-brand-hover: var(--color-bg-brand-hover);
+  --color-brand-subtle: var(--color-bg-brand-subtle);
+
+  --color-primary: var(--color-text-primary);
+  --color-secondary: var(--color-text-secondary);
+  --color-tertiary: var(--color-text-tertiary);
+  --color-on-brand: var(--color-text-on-brand);
+  --color-brand-text: var(--color-text-brand);
+  --color-brand-dark: var(--color-text-brand-dark);
+
+  --color-default: var(--color-border-default);
+  --color-border-brand: var(--color-border-brand);
+  --color-border-strong: var(--color-border-strong);
+
+  --color-gold: var(--color-gold);
+  --color-gold-bg: var(--color-gold-bg);
+
+  --color-success: var(--color-success);
+  --color-success-bg: var(--color-success-bg);
+  --color-error: var(--color-error);
+  --color-error-bg: var(--color-error-bg);
 }
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 antialiased selection:bg-brand-pink-200 selection:text-brand-pink-900;
+    @apply bg-page text-primary antialiased selection:bg-brand-subtle selection:text-brand-dark transition-colors duration-300;
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-sm;
+    @apply bg-surface/80 backdrop-blur-md border border-default shadow-sm;
   }
 
   .input-focus {
-    @apply focus:ring-2 focus:ring-brand-pink-500 focus:border-brand-pink-500 focus:outline-none transition-all;
+    @apply focus:ring-2 focus:ring-brand focus:border-brand focus:outline-none transition-all;
   }
 
   .btn-primary {
-    @apply bg-brand-pink-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-brand-pink-700 active:scale-95 transition-all shadow-sm shadow-brand-pink-200;
+    @apply bg-brand text-on-brand font-medium py-2 px-4 rounded-lg hover:bg-brand-hover active:scale-95 transition-all shadow-sm;
+  }
+
+  /* Navigation Animations */
+  .nav-link {
+    @apply relative font-medium text-secondary hover:text-brand transition-colors py-1 block w-max;
+  }
+  
+  .nav-link::after {
+    @apply content-[''] absolute bottom-0 left-0 w-full h-[2px] bg-brand origin-right scale-x-0 transition-transform duration-300 ease-out;
+  }
+  
+  .nav-link:hover::after {
+    @apply origin-left scale-x-100;
+  }
+
+  .dropdown-animate {
+    animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  
+  @keyframes dropdownFade {
+    0% {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.96);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .mobile-menu-animate {
+    animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  
+  @keyframes slideDown {
+    0% {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Global Page Mount Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
+
+  .animate-slide-up-delayed-1 {
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+    opacity: 0;
+  }
+
+  .animate-slide-up-delayed-2 {
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+    opacity: 0;
+  }
+  
+  .animate-slide-up-delayed-3 {
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scroll Reveal Utilities */
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+  
+  .scroll-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .scroll-reveal.delay-100 {
+    transition-delay: 100ms;
+  }
+  
+  .scroll-reveal.delay-200 {
+    transition-delay: 200ms;
+  }
+  
+  .scroll-reveal.delay-300 {
+    transition-delay: 300ms;
   }
 }

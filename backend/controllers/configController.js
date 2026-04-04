@@ -1,4 +1,5 @@
 const SystemConfig = require('../models/SystemConfig');
+const cloudinary = require('cloudinary').v2;
 
 // @desc    Get system configuration (public)
 // @route   GET /api/config
@@ -51,6 +52,46 @@ const updateConfig = async (req, res) => {
 
         if (req.body.contactEmail !== undefined) config.contactEmail = req.body.contactEmail;
         if (req.body.contactPhone !== undefined) config.contactPhone = req.body.contactPhone;
+
+        if (req.body.storefrontAppearance !== undefined) {
+            let parsedAppearance = req.body.storefrontAppearance;
+            if (typeof parsedAppearance === 'string') {
+                try {
+                    parsedAppearance = JSON.parse(parsedAppearance);
+                } catch (e) {
+                    // Ignore JSON parse errors and assume it was parsed by extended body parser
+                }
+            }
+
+            if (!config.storefrontAppearance) {
+                config.storefrontAppearance = {};
+            }
+
+            if (parsedAppearance.heroTitle !== undefined) config.storefrontAppearance.heroTitle = parsedAppearance.heroTitle;
+            if (parsedAppearance.heroSubtitle !== undefined) config.storefrontAppearance.heroSubtitle = parsedAppearance.heroSubtitle;
+            if (parsedAppearance.heroHighlight !== undefined) config.storefrontAppearance.heroHighlight = parsedAppearance.heroHighlight;
+        }
+
+        // Handle Hero Image Upload
+        if (req.file) {
+            // Delete old image from cloudinary if it exists
+            if (config.storefrontAppearance && config.storefrontAppearance.heroImage && config.storefrontAppearance.heroImage.public_id) {
+                await cloudinary.uploader.destroy(config.storefrontAppearance.heroImage.public_id);
+            }
+
+            // Upload the new image
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'beautypnc/config',
+            });
+
+            if (!config.storefrontAppearance) {
+                config.storefrontAppearance = {};
+            }
+            config.storefrontAppearance.heroImage = {
+                url: result.secure_url,
+                public_id: result.public_id,
+            };
+        }
 
         const updatedConfig = await config.save();
         res.json(updatedConfig);

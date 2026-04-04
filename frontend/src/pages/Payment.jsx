@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../context/useCartStore';
-import { Building, Wallet } from 'lucide-react';
+import { useAuthStore } from '../context/useAuthStore';
+import { Building, Wallet, CreditCard as CreditCardIcon, Plus } from 'lucide-react';
 
 const Payment = () => {
     const navigate = useNavigate();
+    const { userInfo } = useAuthStore();
     const { shippingAddress, paymentMethod, savePaymentMethod } = useCartStore();
 
     const [selectedMethod, setSelectedMethod] = useState(paymentMethod || 'Cash on Delivery');
+    const [selectedCardId, setSelectedCardId] = useState('');
 
     useEffect(() => {
         if (!shippingAddress.address) {
@@ -21,22 +24,25 @@ const Payment = () => {
         navigate('/placeorder');
     };
 
+    const hasSavedCards = userInfo?.paymentCards?.length > 0;
+
     return (
-        <div className="bg-slate-50 min-h-screen py-12">
+        <div className="bg-page min-h-screen py-12 animate-fade-in">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                <div className="flex justify-center mb-12">
+                {/* Checkout Steps - Simplified visual */}
+                <div className="flex justify-center mb-12 animate-slide-up">
                     <div className="flex items-center gap-4 text-sm font-medium">
-                        <span className="text-pink-600 bg-pink-50 px-3 py-1 rounded-full border border-pink-100 line-through decoration-pink-300">1. Shipping</span>
-                        <div className="w-8 h-px bg-pink-200"></div>
-                        <span className="text-pink-600 bg-pink-50 px-3 py-1 rounded-full border border-pink-100">2. Payment</span>
-                        <div className="w-8 h-px bg-slate-200"></div>
-                        <span className="text-slate-400">3. Order placed</span>
+                        <span className="text-brand bg-brand-subtle px-3 py-1 rounded-full border border-brand-subtle line-through decoration-brand-subtle">1. Shipping</span>
+                        <div className="w-8 h-px bg-brand-subtle"></div>
+                        <span className="text-brand bg-brand-subtle px-3 py-1 rounded-full border border-brand-subtle">2. Payment</span>
+                        <div className="w-8 h-px bg-default"></div>
+                        <span className="text-tertiary">3. Order placed</span>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 sm:p-12">
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-8">Payment Method</h1>
+                <div className="bg-surface rounded-3xl shadow-sm border border-default p-8 sm:p-12 animate-slide-up-delayed-1">
+                    <h1 className="text-3xl font-extrabold text-primary tracking-tight mb-8">Payment Method</h1>
 
                     <form onSubmit={submitHandler} className="space-y-6">
 
@@ -45,19 +51,19 @@ const Payment = () => {
                             <div className="space-y-4">
 
                                 {/* Cash on Delivery Option */}
-                                <label className={`relative flex items-center p-6 cursor-pointer rounded-2xl border-2 transition-all ${selectedMethod === 'Cash on Delivery' ? 'border-pink-500 bg-pink-50/50' : 'border-slate-100 bg-white hover:border-pink-200'}`}>
+                                <label className={`relative flex items-center p-6 cursor-pointer rounded-2xl border-2 transition-all ${selectedMethod === 'Cash on Delivery' ? 'border-brand bg-brand-subtle/50' : 'border-default bg-surface hover:border-brand-subtle'}`}>
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-pink-500">
+                                        <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center shadow-sm text-brand">
                                             <Wallet size={24} />
                                         </div>
                                         <div>
-                                            <p className="text-lg font-semibold text-slate-900">Cash on Delivery</p>
-                                            <p className="text-slate-500 text-sm mt-1">Pay when you receive your order.</p>
+                                            <p className="text-lg font-semibold text-primary">Cash on Delivery</p>
+                                            <p className="text-secondary text-sm mt-1">Pay when you receive your order.</p>
                                         </div>
                                     </div>
                                     <div className="ml-auto">
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'Cash on Delivery' ? 'border-pink-500' : 'border-slate-300'}`}>
-                                            {selectedMethod === 'Cash on Delivery' && <div className="w-3 h-3 bg-pink-500 rounded-full"></div>}
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'Cash on Delivery' ? 'border-brand' : 'border-muted'}`}>
+                                            {selectedMethod === 'Cash on Delivery' && <div className="w-3 h-3 bg-brand rounded-full"></div>}
                                         </div>
                                     </div>
                                     <input
@@ -70,19 +76,19 @@ const Payment = () => {
                                 </label>
 
                                 {/* Bank Transfer Option */}
-                                <label className={`relative flex items-center p-6 cursor-pointer rounded-2xl border-2 transition-all ${selectedMethod === 'Bank Transfer' ? 'border-pink-500 bg-pink-50/50' : 'border-slate-100 bg-white hover:border-pink-200'}`}>
+                                <label className={`relative flex items-center p-6 cursor-pointer rounded-2xl border-2 transition-all ${selectedMethod === 'Bank Transfer' ? 'border-brand bg-brand-subtle/50' : 'border-default bg-surface hover:border-brand-subtle'}`}>
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-blue-500">
+                                        <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center shadow-sm text-brand">
                                             <Building size={24} />
                                         </div>
                                         <div>
-                                            <p className="text-lg font-semibold text-slate-900">Bank Transfer</p>
-                                            <p className="text-slate-500 text-sm mt-1">Upload a payment slip to complete your order.</p>
+                                            <p className="text-lg font-semibold text-primary">Bank Transfer</p>
+                                            <p className="text-secondary text-sm mt-1">Upload a payment slip to complete your order.</p>
                                         </div>
                                     </div>
                                     <div className="ml-auto">
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'Bank Transfer' ? 'border-pink-500' : 'border-slate-300'}`}>
-                                            {selectedMethod === 'Bank Transfer' && <div className="w-3 h-3 bg-pink-500 rounded-full"></div>}
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'Bank Transfer' ? 'border-brand' : 'border-muted'}`}>
+                                            {selectedMethod === 'Bank Transfer' && <div className="w-3 h-3 bg-brand rounded-full"></div>}
                                         </div>
                                     </div>
                                     <input

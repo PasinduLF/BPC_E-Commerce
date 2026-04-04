@@ -1,9 +1,25 @@
 import { create } from 'zustand';
 
+const getUser = () => {
+    return JSON.parse(localStorage.getItem('userInfo'));
+};
+
+const loadInitialCart = () => {
+    const user = getUser();
+    if (user && user.cart) {
+        // Source of truth is the DB via userInfo
+        return user.cart;
+    }
+
+    // Guest fallback
+    const guestCart = localStorage.getItem('cartItems_guest');
+    if (guestCart) return JSON.parse(guestCart);
+
+    return [];
+};
+
 export const useCartStore = create((set) => ({
-    cartItems: localStorage.getItem('cartItems')
-        ? JSON.parse(localStorage.getItem('cartItems'))
-        : [],
+    cartItems: loadInitialCart(),
 
     shippingAddress: localStorage.getItem('shippingAddress')
         ? JSON.parse(localStorage.getItem('shippingAddress'))
@@ -42,13 +58,21 @@ export const useCartStore = create((set) => ({
             updatedCart = [...state.cartItems, itemWithCartId];
         }
 
-        localStorage.setItem('cartItems', JSON.stringify(updatedCart));
+        const user = getUser();
+        if (!user) {
+            localStorage.setItem('cartItems_guest', JSON.stringify(updatedCart));
+        }
+
         return { cartItems: updatedCart };
     }),
 
     removeFromCart: (cartIdToRemove) => set((state) => {
         const updatedCart = state.cartItems.filter((x) => x.cartId !== cartIdToRemove);
-        localStorage.setItem('cartItems', JSON.stringify(updatedCart));
+
+        const user = getUser();
+        if (!user) {
+            localStorage.setItem('cartItems_guest', JSON.stringify(updatedCart));
+        }
         return { cartItems: updatedCart };
     }),
 
@@ -63,7 +87,40 @@ export const useCartStore = create((set) => ({
     }),
 
     clearCart: () => set(() => {
-        localStorage.removeItem('cartItems');
+        const user = getUser();
+        if (!user) {
+            localStorage.removeItem('cartItems_guest');
+        }
         return { cartItems: [] };
     }),
+
+    mergeGuestCart: (dbCart) => set((state) => {
+        const userSavedCart = dbCart || [];
+        const guestCart = state.cartItems; // currently holding guest items before flush
+
+        let mergedCart = [...userSavedCart];
+        // If they had items as a guest, add them to their DB cart
+        guestCart.forEach(guestItem => {
+            const exist = mergedCart.find(x => x.cartId === guestItem.cartId);
+            if (exist) {
+                exist.qty = guestItem.qty;
+            } else {
+                mergedCart.push(guestItem);
+            }
+        });
+
+        localStorage.removeItem('cartItems_guest');
+        return { cartItems: mergedCart };
+    }),
+
+    loadCartFromDB: (dbCart) => set(() => {
+        // Also clear any lingering specific checkouts
+        localStorage.removeItem('buyNowItem');
+        return { cartItems: dbCart || [], buyNowItem: null };
+    }),
+
+    clearToGuest: () => set(() => {
+        const guestCart = JSON.parse(localStorage.getItem('cartItems_guest')) || [];
+        return { cartItems: guestCart, buyNowItem: null };
+    })
 }));

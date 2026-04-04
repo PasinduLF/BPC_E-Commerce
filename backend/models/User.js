@@ -25,15 +25,41 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
+    },
+    cart: {
+        type: Array,
+        default: []
+    },
+    wishlist: {
+        type: Array,
+        default: []
+    },
+    addresses: [{
+        address: { type: String, required: true },
+        city: { type: String, required: true },
+        postalCode: { type: String, required: true },
+        country: { type: String, required: true }
+    }],
+    phone: {
+        type: String,
+        default: ''
+    },
+    dob: {
+        type: Date,
+        default: null
+    },
+    profileImage: {
+        url: { type: String, default: '' },
+        public_id: { type: String, default: '' }
     }
 }, {
     timestamps: true
 });
 
 // Encrypt password using bcrypt
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function () {
     if (!this.isModified('password')) {
-        next();
+        return;
     }
 
     const salt = await bcrypt.genSalt(10);

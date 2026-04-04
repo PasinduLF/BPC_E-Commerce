@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
+const cloudinary = require('cloudinary').v2;
 
 // @desc    Auth user & get token
 // @route   POST /api/users/auth
@@ -16,6 +17,12 @@ const authUser = async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role,
+            phone: user.phone,
+            dob: user.dob,
+            profileImage: user.profileImage,
+            cart: user.cart,
+            wishlist: user.wishlist,
+            addresses: user.addresses
         });
     } else {
         res.status(401).json({ message: 'Invalid email or password' });
@@ -48,6 +55,11 @@ const registerUser = async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role,
+            phone: user.phone,
+            dob: user.dob,
+            profileImage: user.profileImage,
+            cart: user.cart,
+            wishlist: user.wishlist,
         });
     } else {
         res.status(400).json({ message: 'Invalid user data' });
@@ -77,9 +89,82 @@ const getUserProfile = async (req, res) => {
             name: user.name,
             email: user.email,
             role: user.role,
+            phone: user.phone,
+            dob: user.dob,
+            profileImage: user.profileImage,
+            cart: user.cart,
+            wishlist: user.wishlist,
         });
     } else {
         res.status(404).json({ message: 'User not found' });
+    }
+};
+
+// @desc    Update user profile (including cart & wishlist)
+// @route   PUT /api/users/profile
+// @access  Private
+const updateUserProfile = async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+        user.name = req.body.name || user.name;
+        user.email = req.body.email || user.email;
+        if (req.body.password) {
+            user.password = req.body.password;
+        }
+
+        // Sync cart and wishlist from frontend payload
+        if (req.body.cart !== undefined) {
+            user.cart = req.body.cart;
+        }
+        if (req.body.wishlist !== undefined) {
+            user.wishlist = req.body.wishlist;
+        }
+        if (req.body.addresses !== undefined) {
+            user.addresses = req.body.addresses;
+        }
+        if (req.body.phone !== undefined) {
+            user.phone = req.body.phone;
+        }
+        if (req.body.dob !== undefined) {
+            user.dob = req.body.dob;
+        }
+
+        // Handle Image Upload
+        if (req.file) {
+            // Delete old image from cloudinary if it exists
+            if (user.profileImage && user.profileImage.public_id) {
+                await cloudinary.uploader.destroy(user.profileImage.public_id);
+            }
+
+            // Upload the new image
+            const result = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'beautypnc/users',
+            });
+
+            user.profileImage = {
+                url: result.secure_url,
+                public_id: result.public_id,
+            };
+        }
+
+        const updatedUser = await user.save();
+
+        res.json({
+            _id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            role: updatedUser.role,
+            phone: updatedUser.phone,
+            dob: updatedUser.dob,
+            profileImage: updatedUser.profileImage,
+            cart: updatedUser.cart,
+            wishlist: updatedUser.wishlist,
+            addresses: updatedUser.addresses
+        });
+    } else {
+        res.status(404);
+        throw new Error('User not found');
     }
 };
 
@@ -153,6 +238,7 @@ module.exports = {
     registerUser,
     logoutUser,
     getUserProfile,
+    updateUserProfile,
     getUsers,
     getUserById,
     updateUser,

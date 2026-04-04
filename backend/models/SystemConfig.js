@@ -45,6 +45,24 @@ const systemConfigSchema = new mongoose.Schema({
     contactPhone: {
         type: String,
         default: ''
+    },
+    storefrontAppearance: {
+        heroTitle: {
+            type: String,
+            default: 'Discover Your \n True Radiance'
+        },
+        heroSubtitle: {
+            type: String,
+            default: 'Premium cosmetics curated for your skin. Experience the perfect blend of natural ingredients and modern beauty science.'
+        },
+        heroHighlight: {
+            type: String,
+            default: 'NEW COLLECTION'
+        },
+        heroImage: {
+            url: { type: String, default: '' },
+            public_id: { type: String, default: '' }
+        }
     }
 }, {
     timestamps: true

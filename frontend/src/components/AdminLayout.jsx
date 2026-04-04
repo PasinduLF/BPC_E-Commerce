@@ -1,5 +1,8 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuthStore } from '../context/useAuthStore';
+import { useTheme } from '../context/ThemeContext';
+import logoImage from '../assets/logo-no-background.png';
 import {
     LayoutDashboard,
     Package,
@@ -18,19 +21,24 @@ import {
     FolderTree,
     Container,
     Receipt,
-    Settings
+    Settings,
+    Store,
+    Sun,
+    Moon
 } from 'lucide-react';
 
 const AdminLayout = () => {
     const { userInfo } = useAuthStore();
     const location = useLocation();
+    const { isDark, toggleMode } = useTheme();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     if (!userInfo || userInfo.role !== 'admin') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <div className="min-h-screen flex items-center justify-center bg-page">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold text-rose-600 mb-2">Access Denied</h2>
-                    <p className="text-slate-500 mb-6">You must be an administrator to view this area.</p>
+                    <h2 className="text-2xl font-bold text-error mb-2">Access Denied</h2>
+                    <p className="text-secondary mb-6">You must be an administrator to view this area.</p>
                     <Link to="/" className="btn-primary">Return Home</Link>
                 </div>
             </div>
@@ -52,24 +60,43 @@ const AdminLayout = () => {
     ];
 
     return (
-        <div className="flex min-h-screen bg-slate-50">
+        <div className="flex h-screen bg-page">
+            {/* Mobile Sidebar Overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                ></div>
+            )}
 
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col flex-shrink-0 sticky top-0 h-screen overflow-y-auto">
-                <div className="p-6">
-                    <h2 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                        Admin Portal <span className="text-[10px] bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full font-bold uppercase">Pro</span>
-                    </h2>
+            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-default flex-col flex-shrink-0 transition-transform duration-300 ease-in-out md:flex md:static md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-6 flex items-start justify-between">
+                    <div className="flex flex-col mb-1">
+                        <img src={logoImage} alt="Beauty P&C Logo" className="h-8 w-auto object-contain mb-2 dark:brightness-0 dark:invert" />
+                        <h2 className="text-sm font-bold text-secondary tracking-tight">
+                            Admin <span className="text-[10px] bg-brand-subtle text-brand px-1.5 py-0.5 rounded-full font-bold uppercase ml-1">Pro</span>
+                        </h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={toggleMode} className="text-secondary hover:text-brand p-1.5 rounded-full hover:bg-surface focus:outline-none transition-colors" title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+                            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
+                        <button className="md:hidden text-secondary hover:text-primary p-1 rounded-full hover:bg-surface" onClick={() => setIsMobileMenuOpen(false)}>
+                            <X size={24} />
+                        </button>
+                    </div>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-2 mt-4">
+                <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
                         return (
                             <Link
                                 key={item.name}
                                 to={item.path}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${isActive ? 'bg-pink-50 text-pink-600 border border-pink-100 shadow-sm' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent'}`}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${isActive ? 'bg-brand-subtle/50 text-brand border border-brand/20 shadow-sm' : 'text-secondary hover:bg-surface hover:text-primary border border-transparent'}`}
+                                onClick={() => setIsMobileMenuOpen(false)}
                             >
                                 {item.icon}
                                 {item.name}
@@ -78,9 +105,9 @@ const AdminLayout = () => {
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-slate-100 mt-auto">
-                    <Link to="/" className="flex items-center gap-2 text-sm text-slate-500 hover:text-pink-600 font-medium px-4 py-2 transition-colors">
-                        <ArrowLeft size={16} /> Exit Admin Dashboard
+                <div className="p-4 border-t border-default mt-auto">
+                    <Link to="/" className="flex items-center gap-2 text-sm text-secondary hover:text-brand font-medium px-4 py-2 transition-colors">
+                        <Store size={18} /> Back to Store
                     </Link>
                 </div>
             </aside>
@@ -88,11 +115,16 @@ const AdminLayout = () => {
             {/* Main Content Area */}
             <main className="flex-1 min-w-0 flex flex-col">
                 {/* Mobile Header */}
-                <div className="md:hidden bg-white border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-10">
-                    <h2 className="text-lg font-bold text-slate-800">Admin Portal</h2>
+                <div className="md:hidden bg-surface border-b border-default px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+                    <div className="flex items-center gap-3">
+                        <button className="text-secondary hover:text-primary p-1 rounded-full hover:bg-page" onClick={() => setIsMobileMenuOpen(true)}>
+                            <Menu size={24} />
+                        </button>
+                        <img src={logoImage} alt="Beauty P&C Logo" className="h-6 w-auto object-contain dark:brightness-0 dark:invert" />
+                    </div>
                     {/* Simple mobile menu (could be expanded) */}
                     <select
-                        className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm"
+                        className="bg-page border border-default text-primary rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand"
                         value={location.pathname}
                         onChange={(e) => window.location.href = e.target.value}
                     >
@@ -103,7 +135,7 @@ const AdminLayout = () => {
                 </div>
 
                 {/* Render nested routes */}
-                <div className="p-4 sm:p-6 lg:p-8 flex-1 overflow-y-auto">
+                <div className="p-4 sm:p-6 lg:p-8 flex-1 overflow-y-auto animate-fade-in animate-slide-up">
                     <Outlet />
                 </div>
             </main>
