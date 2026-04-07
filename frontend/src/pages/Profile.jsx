@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useAuthStore } from '../context/useAuthStore';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AlertCircle, CreditCard, MapPin, Plus, Trash2, Loader2, Check, User, Mail, Shield, Edit3, Camera, Phone, Calendar } from 'lucide-react';
+import { AlertCircle, CreditCard, MapPin, Plus, Trash2, Loader2, Check, User, Mail, Shield, Edit3, Camera, Phone, Calendar, LogOut } from 'lucide-react';
 
 const Profile = () => {
-    const { userInfo, setCredentials } = useAuthStore();
+    const { userInfo, setCredentials, logout } = useAuthStore();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
@@ -98,6 +100,11 @@ const Profile = () => {
 
         await handleSaveProfile(formData, 'Profile updated successfully!', true);
         setShowEditProfile(false);
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
     };
 
     if (!userInfo) {
@@ -263,6 +270,16 @@ const Profile = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div className="mt-10 border-t border-default pt-6 flex justify-center">
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-error-bg text-error font-semibold hover:bg-error-bg transition-colors"
+                    >
+                        <LogOut size={16} /> Logout
+                    </button>
                 </div>
 
                 {/* Edit Profile Modal */}
