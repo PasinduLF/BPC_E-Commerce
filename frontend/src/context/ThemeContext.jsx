@@ -157,10 +157,7 @@ const ThemeContext = createContext(null);
 export function ThemeProvider({ children, defaultMode = "light" }) {
   const [mode, setMode] = useState(() => {
     if (typeof window === "undefined") return defaultMode;
-    return (
-      localStorage.getItem("theme-mode") ||
-      (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-    );
+    return localStorage.getItem("theme-mode") || "light";
   });
 
   // Apply CSS variables whenever mode changes
