@@ -125,8 +125,8 @@ const OrderScreen = () => {
     ) : (
         <div className="bg-page min-h-screen py-12 animate-fade-in">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between mb-8">
-                    <h1 className="text-2xl sm:text-3xl font-black text-primary truncate max-w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-black text-primary break-all">
                         Order <span className="text-brand">#{order._id}</span>
                     </h1>
                     <span className="text-xs sm:text-sm font-semibold bg-brand-subtle text-brand px-3 py-1 rounded-full border border-brand-subtle">

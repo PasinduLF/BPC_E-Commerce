@@ -132,17 +132,17 @@ const PlaceOrder = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
                 {/* Checkout Steps - Simplified visual */}
-                <div className="flex justify-center mb-12 animate-slide-up">
-                    <div className="flex items-center gap-4 text-sm font-medium">
+                <div className="flex justify-center mb-10 sm:mb-12 animate-slide-up">
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm font-medium">
                         <span className="text-brand bg-brand-subtle px-3 py-1 rounded-full border border-brand-subtle line-through decoration-brand-subtle">1. Shipping</span>
-                        <div className="w-8 h-px bg-brand-subtle"></div>
+                        <div className="hidden sm:block w-8 h-px bg-brand-subtle"></div>
                         <span className="text-brand bg-brand-subtle px-3 py-1 rounded-full border border-brand-subtle line-through decoration-brand-subtle">2. Payment</span>
-                        <div className="w-8 h-px bg-brand-subtle"></div>
+                        <div className="hidden sm:block w-8 h-px bg-brand-subtle"></div>
                         <span className="text-brand bg-brand-subtle px-3 py-1 rounded-full border border-brand-subtle">3. Order placed</span>
                     </div>
                 </div>
 
-                <h1 className="text-3xl font-extrabold text-primary tracking-tight mb-8 animate-slide-up-delayed-1">Review Your Order</h1>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight mb-8 animate-slide-up-delayed-1">Review Your Order</h1>
 
                 <div className="lg:grid lg:grid-cols-12 lg:gap-8">
 
@@ -271,7 +271,7 @@ const PlaceOrder = () => {
                             ) : (
                                 <ul className="divide-y divide-default">
                                     {checkoutItems.map((item, index) => (
-                                        <li key={index} className="py-4 flex items-center gap-4">
+                                        <li key={index} className="py-4 flex items-start sm:items-center gap-4">
                                             <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0 border border-default">
                                                 {item.images && item.images[0] ? (
                                                     <img src={item.images[0].url} alt={item.name} className="w-full h-full object-cover" />

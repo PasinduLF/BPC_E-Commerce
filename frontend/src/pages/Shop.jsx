@@ -177,7 +177,7 @@ const Shop = () => {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setShowMobileFilters(!showMobileFilters)}
-                            className="md:hidden flex items-center gap-2 px-4 py-2 border border-default bg-surface rounded-lg text-secondary hover:text-brand hover:border-brand transition-all shadow-sm"
+                            className="lg:hidden flex items-center gap-2 px-4 py-2 border border-default bg-surface rounded-lg text-secondary hover:text-brand hover:border-brand transition-all shadow-sm"
                         >
                             <Filter size={18} />
                             <span className="font-medium">Filter</span>
@@ -195,9 +195,9 @@ const Shop = () => {
                     </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-8">
+                <div className="flex flex-col lg:flex-row gap-8">
                     {/* Filters Sidebar */}
-                    <div className={`md:w-64 flex-shrink-0 space-y-8 ${showMobileFilters ? 'block' : 'hidden md:block'}`}>
+                    <div className={`lg:w-72 flex-shrink-0 space-y-8 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
                         {/* Categories & Subcategories */}
                         <div className="bg-surface p-5 rounded-2xl border border-default shadow-sm">
                             <h3 className="font-bold text-primary tracking-wide mb-4 flex items-center justify-between pb-3 border-b border-default">
@@ -364,7 +364,7 @@ const Shop = () => {
                     </div>
 
                     {/* Product Grid Area */}
-                    <div className="lg:w-3/4 animate-slide-up-delayed-1">
+                    <div className="lg:flex-1 animate-slide-up-delayed-1">
                         <Breadcrumbs 
                             category={categories.find(c => selectedCategories.includes(c._id))}
                             subcategory={categories.find(c => selectedCategories.includes(c._id))?.subcategories?.find(s => selectedSubcategories.includes(s._id))}
@@ -375,7 +375,7 @@ const Shop = () => {
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-8">
                                 {products.map((product) => (
                                     <div key={product._id} className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
                                         <Link to={`/product/${product._id}`} className="block relative">

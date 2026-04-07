@@ -32,7 +32,7 @@ const Wishlist = () => {
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 animate-slide-up">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 animate-slide-up">
                         {wishlistItems.map((product) => (
                             <div key={product._id} className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
                                 <Link to={`/product/${product._id}`} className="block relative">

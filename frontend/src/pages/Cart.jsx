@@ -42,9 +42,9 @@ const Cart = () => {
 
     return (
         <div className="bg-page min-h-screen py-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
                 
-            <h1 className="text-3xl font-black text-primary tracking-tight mb-8">Shopping Bag</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight mb-8">Shopping Bag</h1>
 
                 {cartItems.length === 0 ? (
                     <div className="bg-surface rounded-2xl shadow-sm border border-default p-12 text-center">
@@ -64,7 +64,7 @@ const Cart = () => {
                             <div className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden">
                                 <ul className="divide-y divide-default">
                                     {cartItems.map((item) => (
-                                        <li key={item.cartId || item._id} className="p-6 flex flex-col sm:flex-row gap-6 hover:bg-page/50 transition-colors">
+                                        <li key={item.cartId || item._id} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6 hover:bg-page/50 transition-colors">
                                             <div className="w-24 h-24 flex-shrink-0 bg-page rounded-xl border border-default overflow-hidden relative group">
                                                 {item.image || (item.images && item.images[0]) ? (
                                                     <img src={item.image || item.images[0].url} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -73,7 +73,7 @@ const Cart = () => {
                                                 )}
                                             </div>
 
-                                            <div className="flex-1 flex flex-col sm:flex-row sm:justify-between items-center w-full gap-4">
+                                            <div className="flex-1 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center w-full gap-4">
 
                                                 <div className="text-center sm:text-left">
                                                     <div className="flex-1">
@@ -89,7 +89,7 @@ const Cart = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-6">
+                                                <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-between sm:justify-start">
                                                     <div className="flex items-center border border-default rounded-lg bg-page">
                                                         <button 
                                                             onClick={() => qtyChangeHandler(item.cartId || item._id, item.qty - 1)} 

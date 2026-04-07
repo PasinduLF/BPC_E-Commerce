@@ -269,7 +269,7 @@ const Home = () => {
                             <p className="text-secondary font-medium max-w-2xl mx-auto">Our most loved and highly rated products by customers like you.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                             {featuredProducts.map((product) => (
                                 <ProductCard key={`featured-${product._id}`} product={product} badgeName="Best Seller" badgeColor="text-error" />
                             ))}
@@ -293,7 +293,7 @@ const Home = () => {
                             </Link>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                             {trendingProducts.map((product) => (
                                 <ProductCard key={`new-${product._id}`} product={product} badgeName="New" badgeColor="text-brand" />
                             ))}

@@ -92,7 +92,7 @@ const MyOrders = () => {
                                         </div>
                                         <div className="col-span-2 md:col-span-1">
                                             <p className="text-secondary mb-1">Order ID</p>
-                                            <p className="font-mono text-primary">#{order._id}</p>
+                                            <p className="font-mono text-xs sm:text-sm text-primary break-all">#{order._id}</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-3">

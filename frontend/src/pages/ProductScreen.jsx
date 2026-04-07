@@ -218,7 +218,7 @@ const ProductScreen = () => {
                     {/* Product Details */}
                     <div className="flex flex-col">
                         <div className="mb-6">
-                            <div className="flex items-center justify-between mb-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                                 <span className="text-sm font-bold tracking-wider text-brand uppercase bg-brand-subtle px-3 py-1 rounded-full">
                                     {product.category?.name || 'Cosmetics'}
                                 </span>
@@ -237,7 +237,7 @@ const ProductScreen = () => {
                                 <p className="text-brand font-bold uppercase tracking-widest text-sm mb-2">{product.brand.name}</p>
                             )}
 
-                            <div className="flex justify-between items-start mb-4">
+                            <div className="flex justify-between items-start gap-3 mb-4">
                                 <h1 className="text-3xl sm:text-4xl font-extrabold text-primary tracking-tight leading-tight pr-4">
                                     {product.name}
                                 </h1>
@@ -249,7 +249,7 @@ const ProductScreen = () => {
                                 </button>
                             </div>
 
-                            <div className="flex items-center gap-4 mb-6">
+                            <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6">
                                 <div className="flex items-center gap-1 text-gold">
                                     {renderStars(product.rating, 20)}
                                 </div>
@@ -331,7 +331,7 @@ const ProductScreen = () => {
                                         </button>
                                     </div>
 
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-col sm:flex-row gap-2 w-full">
                                         <button
                                             onClick={addToCartHandler}
                                             className="flex-1 bg-surface border-2 border-primary text-primary hover:bg-primary hover:text-surface py-4 rounded-xl flex items-center justify-center gap-3 text-lg font-bold transition-colors group"
@@ -355,7 +355,7 @@ const ProductScreen = () => {
                             )}
 
                             {/* Features */}
-                            <div className="grid grid-cols-2 gap-4 mt-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
                                 <div className="flex items-center gap-3 text-secondary bg-muted p-4 rounded-xl border border-default">
                                     <Truck size={24} className="text-brand" />
                                     <div className="text-sm font-medium">

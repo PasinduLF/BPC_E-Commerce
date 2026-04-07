@@ -31,17 +31,17 @@ const Payment = () => {
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
                 {/* Checkout Steps - Simplified visual */}
-                <div className="flex justify-center mb-12 animate-slide-up">
-                    <div className="flex items-center gap-4 text-sm font-medium">
+                <div className="flex justify-center mb-10 sm:mb-12 animate-slide-up">
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm font-medium">
                         <span className="text-brand bg-brand-subtle px-3 py-1 rounded-full border border-brand-subtle line-through decoration-brand-subtle">1. Shipping</span>
-                        <div className="w-8 h-px bg-brand-subtle"></div>
+                        <div className="hidden sm:block w-8 h-px bg-brand-subtle"></div>
                         <span className="text-brand bg-brand-subtle px-3 py-1 rounded-full border border-brand-subtle">2. Payment</span>
-                        <div className="w-8 h-px bg-default"></div>
+                        <div className="hidden sm:block w-8 h-px bg-default"></div>
                         <span className="text-tertiary">3. Order placed</span>
                     </div>
                 </div>
 
-                <div className="bg-surface rounded-3xl shadow-sm border border-default p-8 sm:p-12 animate-slide-up-delayed-1">
+                <div className="bg-surface rounded-3xl shadow-sm border border-default p-5 sm:p-8 lg:p-12 animate-slide-up-delayed-1">
                     <h1 className="text-3xl font-extrabold text-primary tracking-tight mb-8">Payment Method</h1>
 
                     <form onSubmit={submitHandler} className="space-y-6">
