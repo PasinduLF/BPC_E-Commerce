@@ -27,6 +27,28 @@ const addOrderItems = async (req, res) => {
             res.status(400);
             return res.json({ message: 'No order items' });
         } else {
+            const normalizedShippingAddress = {
+                name: shippingAddress?.name || req.user?.name || 'Customer',
+                address: shippingAddress?.address,
+                city: shippingAddress?.city,
+                postalCode: shippingAddress?.postalCode,
+                country: shippingAddress?.country,
+                phone: shippingAddress?.phone,
+            };
+
+            if (
+                !normalizedShippingAddress.name ||
+                !normalizedShippingAddress.address ||
+                !normalizedShippingAddress.city ||
+                !normalizedShippingAddress.postalCode ||
+                !normalizedShippingAddress.country ||
+                !normalizedShippingAddress.phone
+            ) {
+                return res.status(400).json({
+                    message: 'Shipping name, phone, and full address are required',
+                });
+            }
+
             const order = new Order({
                 orderItems: orderItems.map((x) => ({
                     name: x.name,
@@ -39,7 +61,7 @@ const addOrderItems = async (req, res) => {
                     variantName: x.variant ? `${x.variant.name}: ${x.variant.value}` : undefined,
                 })),
                 user: req.user._id,
-                shippingAddress,
+                shippingAddress: normalizedShippingAddress,
                 paymentMethod,
                 paymentSlip,
                 itemsPrice,

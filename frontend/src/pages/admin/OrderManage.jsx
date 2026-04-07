@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
-import { ShoppingCart, CheckCircle, Clock, XCircle, TrendingUp, Edit, Trash2 } from 'lucide-react';
+import { ShoppingCart, CheckCircle, Clock, XCircle, TrendingUp, Edit, Trash2, Printer, FileDown, ReceiptText } from 'lucide-react';
 import { useConfigStore } from '../../context/useConfigStore';
 
 const OrderManage = () => {
@@ -18,6 +18,8 @@ const OrderManage = () => {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState(null);
     const [savingEdit, setSavingEdit] = useState(false);
+    const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+    const [viewingOrder, setViewingOrder] = useState(null);
     const [editFormData, setEditFormData] = useState({
         customerName: '',
         customerPhone: '',
@@ -93,6 +95,69 @@ const OrderManage = () => {
             paymentMethod: order.paymentMethod || 'Cash'
         });
         setEditModalOpen(true);
+    };
+
+    const openReceiptModal = (order) => {
+        setViewingOrder(order);
+        setReceiptModalOpen(true);
+    };
+
+    const closeReceiptModal = () => {
+        setReceiptModalOpen(false);
+        setViewingOrder(null);
+    };
+
+    const handlePrintReceipt = () => {
+        const receiptElement = document.getElementById('pos-receipt-print-area');
+        if (!receiptElement) return;
+
+        const printWindow = window.open('', '_blank', 'width=420,height=760');
+        if (!printWindow) {
+            alert('Unable to open print window. Please allow popups for this site.');
+            return;
+        }
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>POS Receipt</title>
+                    <style>
+                        body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #111827; padding: 8px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { font-size: 10px; padding: 4px 0; }
+                        th { text-align: left; border-bottom: 1px solid #d1d5db; }
+                        .text-right { text-align: right; }
+                        .text-center { text-align: center; }
+                    </style>
+                </head>
+                <body>${receiptElement.innerHTML}</body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    };
+
+    const handleDownloadReceiptPdf = async () => {
+        const receiptElement = document.getElementById('pos-receipt-print-area');
+        if (!receiptElement || !viewingOrder) return;
+
+        const { default: html2pdf } = await import('html2pdf.js');
+        const receiptWidthMm = 80;
+        const receiptHeightMm = Math.max((receiptElement.scrollHeight / receiptElement.offsetWidth) * receiptWidthMm, 120);
+
+        html2pdf()
+            .set({
+                margin: 0,
+                filename: `pos-receipt-${viewingOrder._id.slice(-8)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: [receiptWidthMm, Math.max(receiptHeightMm, 240)], orientation: 'portrait' },
+                pagebreak: { mode: ['css', 'legacy', 'avoid-all'] },
+            })
+            .from(receiptElement)
+            .save();
     };
 
     const handleEditSubmit = async (e) => {
@@ -250,14 +315,23 @@ const OrderManage = () => {
                                                         </Link>
 
                                                         {order.isPOS && (
-                                                            <button
-                                                                onClick={() => openEditModal(order)}
-                                                                disabled={isOrderBusy(order._id)}
-                                                                className="text-success hover:bg-success-bg p-1.5 rounded-lg transition-colors border border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
-                                                                title="Edit POS Details"
-                                                            >
-                                                                <Edit size={16} />
-                                                            </button>
+                                                            <>
+                                                                <button
+                                                                    onClick={() => openReceiptModal(order)}
+                                                                    className="text-brand hover:bg-brand-subtle p-1.5 rounded-lg transition-colors border border-transparent"
+                                                                    title="View POS Receipt"
+                                                                >
+                                                                    <ReceiptText size={16} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => openEditModal(order)}
+                                                                    disabled={isOrderBusy(order._id)}
+                                                                    className="text-success hover:bg-success-bg p-1.5 rounded-lg transition-colors border border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
+                                                                    title="Edit POS Details"
+                                                                >
+                                                                    <Edit size={16} />
+                                                                </button>
+                                                            </>
                                                         )}
 
                                                         <button
@@ -354,6 +428,115 @@ const OrderManage = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* POS Receipt Modal */}
+            {receiptModalOpen && viewingOrder && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-surface rounded-2xl shadow-xl max-w-sm w-full overflow-hidden animate-fade-in-up max-h-[90vh] flex flex-col">
+                        <div className="bg-page p-3 flex justify-between items-center border-b border-default print:hidden">
+                            <span className="font-bold text-primary text-sm">POS Receipt</span>
+                            <div className="flex gap-2">
+                                <button onClick={handleDownloadReceiptPdf} className="p-2 text-secondary hover:bg-surface rounded-lg transition-colors" title="Download PDF">
+                                    <FileDown size={18} />
+                                </button>
+                                <button onClick={handlePrintReceipt} className="p-2 text-secondary hover:bg-surface rounded-lg transition-colors" title="Print Receipt">
+                                    <Printer size={18} />
+                                </button>
+                                <button onClick={closeReceiptModal} className="p-2 text-error hover:bg-error-bg rounded-lg transition-colors" title="Close">
+                                    <XCircle size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-4 overflow-y-auto font-mono text-[11px] leading-tight text-primary" id="pos-receipt-print-area">
+                            <div className="text-center mb-4">
+                                <div className="flex items-center justify-center mb-2 gap-2">
+                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-default to-transparent"></div>
+                                    <span className="text-[10px] text-tertiary font-medium tracking-wide">✦</span>
+                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-default to-transparent"></div>
+                                </div>
+                                <h2 className="text-lg font-bold text-primary uppercase tracking-[0.2em] mb-1">{config?.businessName || 'Beauty P&C'}</h2>
+                                <p className="text-[9px] text-tertiary uppercase tracking-[0.12em] font-light mb-3">Official Receipt</p>
+                                <div className="h-px bg-gradient-to-r from-transparent via-default to-transparent mb-3"></div>
+                                <p className="text-[10px] text-secondary">Receipt #{viewingOrder._id.substring(viewingOrder._id.length - 8).toUpperCase()}</p>
+                            </div>
+
+                            <div className="mb-3 text-[10px] text-secondary space-y-0.5">
+                                <div className="flex justify-between gap-3"><span>Date</span> <span className="text-right">{new Date(viewingOrder.createdAt).toLocaleString()}</span></div>
+                                <div className="flex justify-between gap-3"><span>Cashier</span> <span>{userInfo?.name || 'Admin'}</span></div>
+                                <div className="flex justify-between gap-3"><span>Customer</span> <span className="text-right">{viewingOrder.customerName || 'Walk-in'}{viewingOrder.customerPhone ? `, ${viewingOrder.customerPhone}` : ''}</span></div>
+                            </div>
+
+                            <table className="w-full text-[10px] text-left mb-3 table-auto">
+                                <thead>
+                                    <tr className="border-b border-default">
+                                        <th className="pb-1 font-semibold">Item</th>
+                                        <th className="pb-1 font-semibold text-center w-10">Qty</th>
+                                        <th className="pb-1 font-semibold text-right w-16">Amt</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-dashed divide-default">
+                                    {viewingOrder.orderItems.map((item, index) => (
+                                        <tr key={index}>
+                                            <td className="py-1.5 pr-1 align-top">
+                                                <div className="font-medium">{item.name}{item.variantName && <span className="text-tertiary font-normal text-[9px]"> ({item.variantName})</span>}</div>
+                                            </td>
+                                            <td className="py-1.5 text-center align-top w-10">{item.qty}</td>
+                                            <td className="py-1.5 text-right align-top w-16">{currency}{(item.price * item.qty).toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            <div className="mt-3 pt-2 border-t border-dashed border-default">
+                                <div className="space-y-1 text-[10px] text-secondary mb-3">
+                                    <div className="flex justify-between">
+                                        <span className="text-tertiary">Subtotal</span>
+                                        <span className="text-tertiary">{currency}{Number(viewingOrder.itemsPrice || 0).toFixed(2)}</span>
+                                    </div>
+                                    {Number(viewingOrder.discountAmount || 0) > 0 && (
+                                        <>
+                                            <div className="flex justify-between">
+                                                <span className="text-warning">Discount ({viewingOrder.discountType === 'percentage' ? `${Number(viewingOrder.discountValue || 0)}%` : `${currency}${Number(viewingOrder.discountValue || 0).toFixed(2)}`})</span>
+                                                <span className="text-warning font-medium">-{currency}{Number(viewingOrder.discountAmount || 0).toFixed(2)}</span>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                <div className="bg-page bg-opacity-40 rounded px-2 py-1.5 mb-2">
+                                    <div className="flex justify-between font-bold text-[13px] text-primary">
+                                        <span>TOTAL</span>
+                                        <span>{currency}{Number(viewingOrder.totalPrice || 0).toFixed(2)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1 text-[10px] text-secondary">
+                                    <div className="flex justify-between">
+                                        <span className="text-tertiary">Tender ({viewingOrder.paymentMethod})</span>
+                                        <span className="text-tertiary font-medium">{currency}{Number(viewingOrder.paymentMethod === 'Cash' ? viewingOrder.cashGiven : viewingOrder.totalPrice || 0).toFixed(2)}</span>
+                                    </div>
+                                    {Number(viewingOrder.changeDue || 0) > 0 && (
+                                        <div className="flex justify-between font-semibold text-success">
+                                            <span>Change Due</span>
+                                            <span>{currency}{Number(viewingOrder.changeDue || 0).toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="text-center mt-4 text-[9px] text-secondary space-y-0.5">
+                                <p>Thank you for shopping with us!</p>
+                                <p className="text-[8px] text-tertiary pt-1">Please note that refunds and exchanges will not be accepted.</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-page p-4 border-t border-default print:hidden justify-center flex">
+                            <button onClick={closeReceiptModal} className="btn-primary w-full max-w-[200px] text-center justify-center">Done</button>
+                        </div>
                     </div>
                 </div>
             )}

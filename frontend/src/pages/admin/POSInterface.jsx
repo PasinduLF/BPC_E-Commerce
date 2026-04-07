@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
-import { Search, Plus, Minus, Trash2, ShoppingBag, CreditCard, Banknote, UserRound, Phone, Printer, XCircle } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingBag, CreditCard, Banknote, UserRound, Phone, Printer, XCircle, FileDown } from 'lucide-react';
 import { useConfigStore } from '../../context/useConfigStore';
 
 const POSInterface = () => {
@@ -19,6 +19,8 @@ const POSInterface = () => {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
     const [cashGiven, setCashGiven] = useState('');
+    const [discountType, setDiscountType] = useState('none');
+    const [discountValue, setDiscountValue] = useState('');
     const [receiptData, setReceiptData] = useState(null);
 
     const { config } = useConfigStore();
@@ -37,6 +39,18 @@ const POSInterface = () => {
         };
         fetchProducts();
     }, [search]);
+
+    const getEffectivePrice = (product, variant = null) => {
+        if (variant) {
+            const variantDiscount = Number(variant.discountPrice || 0);
+            const variantBase = Number(variant.price || 0);
+            return variantDiscount > 0 && variantDiscount < variantBase ? variantDiscount : variantBase;
+        }
+
+        const baseDiscount = Number(product.discountPrice || 0);
+        const basePrice = Number(product.price || 0);
+        return baseDiscount > 0 && baseDiscount < basePrice ? baseDiscount : basePrice;
+    };
 
     const addToCart = (product, variant = null) => {
         const checkStock = variant ? variant.stock : product.stock;
@@ -60,7 +74,7 @@ const POSInterface = () => {
                 product: product._id,
                 name: product.name,
                 image: product.images[0]?.url || '',
-                price: product.price + (variant ? variant.price || 0 : 0),
+                price: getEffectivePrice(product, variant),
                 qty: 1,
                 stock: checkStock,
                 variantId: variant ? variant._id : undefined,
@@ -95,22 +109,31 @@ const POSInterface = () => {
 
     const itemsPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
 
+    const parsedDiscountValue = Math.max(Number(discountValue) || 0, 0);
+    const rawDiscount = discountType === 'percentage'
+        ? itemsPrice * (parsedDiscountValue / 100)
+        : discountType === 'fixed'
+            ? parsedDiscountValue
+            : 0;
+    const discountAmount = Math.min(rawDiscount, itemsPrice);
+    const totalDue = Math.max(itemsPrice - discountAmount, 0);
+
     // Validation and Submission
     const placeOrderHandler = async () => {
         if (paymentMethod === 'Cash') {
             const cash = parseFloat(cashGiven) || 0;
-            if (cash < itemsPrice) {
-                alert(`Insufficient cash. Due: ${currency}${itemsPrice.toFixed(2)}, Given: ${currency}${cash.toFixed(2)}`);
+            if (cash < totalDue) {
+                alert(`Insufficient cash. Due: ${currency}${totalDue.toFixed(2)}, Given: ${currency}${cash.toFixed(2)}`);
                 return;
             }
         }
 
-        if (window.confirm(`Process ${paymentMethod} payment of ${currency}${itemsPrice.toFixed(2)}?`)) {
+        if (window.confirm(`Process ${paymentMethod} payment of ${currency}${totalDue.toFixed(2)}?`)) {
             try {
                 const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
                 const cash = paymentMethod === 'Cash' ? (parseFloat(cashGiven) || 0) : 0;
-                const change = paymentMethod === 'Cash' ? (cash - itemsPrice) : 0;
+                const change = paymentMethod === 'Cash' ? (cash - totalDue) : 0;
 
                 const { data } = await axios.post('/api/pos', {
                     orderItems: cartItems.map(x => ({
@@ -124,7 +147,9 @@ const POSInterface = () => {
                     })),
                     paymentMethod,
                     itemsPrice,
-                    totalPrice: itemsPrice,
+                    totalPrice: totalDue,
+                    discountType,
+                    discountValue: parsedDiscountValue,
                     customerName: customerName.trim(),
                     customerPhone: customerPhone.trim(),
                     cashGiven: cash,
@@ -144,6 +169,8 @@ const POSInterface = () => {
                 setCustomerName('');
                 setCustomerPhone('');
                 setCashGiven('');
+                setDiscountType('none');
+                setDiscountValue('');
                 // Refetch products to update stock numbers visually
                 setSearch('');
 
@@ -151,6 +178,67 @@ const POSInterface = () => {
                 alert(error.response?.data?.message || 'Failed to process POS order');
             }
         }
+    };
+
+    const handlePrintInvoice = () => {
+        const receiptElement = document.getElementById('receipt-print-area');
+        if (!receiptElement) {
+            window.print();
+            return;
+        }
+
+        const printWindow = window.open('', '_blank', 'width=420,height=760');
+        if (!printWindow) {
+            alert('Unable to open print window. Please allow popups for this site.');
+            return;
+        }
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>POS Invoice</title>
+                    <style>
+                        body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #111827; padding: 16px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { font-size: 12px; padding: 6px 0; }
+                        th { text-align: left; border-bottom: 1px solid #d1d5db; }
+                        .text-right { text-align: right; }
+                        .text-center { text-align: center; }
+                    </style>
+                </head>
+                <body>${receiptElement.innerHTML}</body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    };
+
+    const handleDownloadPdf = async () => {
+        const receiptElement = document.getElementById('receipt-print-area');
+        if (!receiptElement) return;
+
+        const { default: html2pdf } = await import('html2pdf.js');
+
+        const filename = `pos-invoice-${receiptData?._id?.slice(-8) || 'receipt'}.pdf`;
+        const receiptWidthMm = 80;
+        const receiptHeightMm = Math.max(
+            (receiptElement.scrollHeight / receiptElement.offsetWidth) * receiptWidthMm,
+            120
+        );
+
+        html2pdf()
+            .set({
+                margin: 0,
+                filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: [receiptWidthMm, Math.max(receiptHeightMm, 240)], orientation: 'portrait' },
+                pagebreak: { mode: ['css', 'legacy', 'avoid-all'] },
+            })
+            .from(receiptElement)
+            .save();
     };
 
     return (
@@ -181,6 +269,9 @@ const POSInterface = () => {
                                 const totalStock = (product.variants && product.variants.length > 0)
                                     ? product.variants.reduce((sum, v) => sum + v.stock, 0)
                                     : product.stock;
+                                const displayPrice = (product.variants && product.variants.length > 0)
+                                    ? Math.min(...product.variants.map((v) => getEffectivePrice(product, v)))
+                                    : getEffectivePrice(product);
                                 return (
                                     <div
                                         key={product._id}
@@ -196,7 +287,9 @@ const POSInterface = () => {
                                         </div>
                                         <h3 className="font-bold text-primary text-sm line-clamp-1">{product.name}</h3>
                                         <div className="flex items-center justify-between mt-1">
-                                            <span className="text-brand font-bold text-sm">{currency}{product.price.toFixed(2)}</span>
+                                            <span className="text-brand font-bold text-sm">
+                                                {(product.variants && product.variants.length > 0) ? 'From ' : ''}{currency}{displayPrice.toFixed(2)}
+                                            </span>
                                             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${totalStock > 0 ? 'bg-success-bg text-success' : 'bg-error-bg text-error'}`}>
                                                 {totalStock > 0 ? `Qty: ${totalStock}` : 'Out'}
                                             </span>
@@ -303,6 +396,47 @@ const POSInterface = () => {
                         </div>
                     </div>
 
+                    {/* Discount Controls */}
+                    <div className="space-y-3 pt-1">
+                        <label className="block text-xs font-bold text-secondary uppercase tracking-wider">Discount</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            <button
+                                onClick={() => { setDiscountType('none'); setDiscountValue(''); }}
+                                className={`py-2 px-3 rounded-lg border text-xs font-bold transition-colors ${discountType === 'none' ? 'bg-brand-subtle border-brand text-brand' : 'bg-surface border-default text-secondary hover:bg-page'}`}
+                            >
+                                None
+                            </button>
+                            <button
+                                onClick={() => setDiscountType('percentage')}
+                                className={`py-2 px-3 rounded-lg border text-xs font-bold transition-colors ${discountType === 'percentage' ? 'bg-brand-subtle border-brand text-brand' : 'bg-surface border-default text-secondary hover:bg-page'}`}
+                            >
+                                Percent
+                            </button>
+                            <button
+                                onClick={() => setDiscountType('fixed')}
+                                className={`py-2 px-3 rounded-lg border text-xs font-bold transition-colors ${discountType === 'fixed' ? 'bg-brand-subtle border-brand text-brand' : 'bg-surface border-default text-secondary hover:bg-page'}`}
+                            >
+                                Fixed
+                            </button>
+                        </div>
+                        {discountType !== 'none' && (
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={discountValue}
+                                    onChange={(e) => setDiscountValue(e.target.value)}
+                                    placeholder={discountType === 'percentage' ? 'Enter discount %' : 'Enter discount amount'}
+                                    className="w-full px-3 py-2 border border-default rounded-lg text-sm bg-surface text-primary input-focus"
+                                />
+                                <span className="absolute right-3 top-2 text-xs text-tertiary">
+                                    {discountType === 'percentage' ? '%' : currency}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Final Totals & Cash Calculation */}
                     <div className="bg-surface rounded-xl border border-default p-4 space-y-3 shadow-sm text-primary">
                         <div className="flex justify-between items-center text-secondary text-sm">
@@ -324,18 +458,25 @@ const POSInterface = () => {
                                     </div>
                                 </div>
 
-                                {cashGiven && (parseFloat(cashGiven) >= itemsPrice) && (
+                                {cashGiven && (parseFloat(cashGiven) >= totalDue) && (
                                     <div className="flex justify-between items-center text-secondary text-sm pt-2 border-t border-default border-dashed">
                                         <span className="font-bold text-success">Change Due</span>
-                                        <span className="font-bold text-success">{currency}{(parseFloat(cashGiven) - itemsPrice).toFixed(2)}</span>
+                                        <span className="font-bold text-success">{currency}{(parseFloat(cashGiven) - totalDue).toFixed(2)}</span>
                                     </div>
                                 )}
                             </>
                         )}
 
+                        {discountAmount > 0 && (
+                            <div className="flex justify-between items-center text-secondary text-sm">
+                                <span className="font-medium">Discount</span>
+                                <span className="font-bold text-error">-{currency}{discountAmount.toFixed(2)}</span>
+                            </div>
+                        )}
+
                         <div className="flex justify-between items-center text-primary pt-2 border-t border-default">
                             <span className="font-bold text-lg">Total</span>
-                            <span className="font-black text-xl text-brand">{currency}{itemsPrice.toFixed(2)}</span>
+                            <span className="font-black text-xl text-brand">{currency}{totalDue.toFixed(2)}</span>
                         </div>
                     </div>
 
@@ -344,7 +485,7 @@ const POSInterface = () => {
                         disabled={cartItems.length === 0}
                         className="btn-primary w-full py-4 mt-2 text-white rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md font-bold text-lg tracking-wide"
                     >
-                        Charge {currency}{itemsPrice.toFixed(2)}
+                        Charge {currency}{totalDue.toFixed(2)}
                     </button>
                 </div>
 
@@ -370,7 +511,7 @@ const POSInterface = () => {
                                         <div className="text-sm text-secondary mt-1">Available: {variant.stock}</div>
                                     </div>
                                     <div className="font-bold text-brand">
-                                        +${(variant.price || 0).toFixed(2)}
+                                        {currency}{getEffectivePrice(selectedProductForVariant, variant).toFixed(2)}
                                     </div>
                                 </button>
                             ))}
@@ -388,7 +529,10 @@ const POSInterface = () => {
                         <div className="bg-page p-3 flex justify-between items-center border-b border-default print:hidden">
                             <span className="font-bold text-primary text-sm">Transaction Complete</span>
                             <div className="flex gap-2">
-                                <button onClick={() => window.print()} className="p-2 text-secondary hover:bg-surface rounded-lg transition-colors" title="Print Receipt">
+                                <button onClick={handleDownloadPdf} className="p-2 text-secondary hover:bg-surface rounded-lg transition-colors" title="Download PDF">
+                                    <FileDown size={18} />
+                                </button>
+                                <button onClick={handlePrintInvoice} className="p-2 text-secondary hover:bg-surface rounded-lg transition-colors" title="Print Invoice">
                                     <Printer size={18} />
                                 </button>
                                 <button onClick={() => setReceiptData(null)} className="p-2 text-error hover:bg-error-bg rounded-lg transition-colors" title="Close">
@@ -398,73 +542,91 @@ const POSInterface = () => {
                         </div>
 
                         {/* Printable Area */}
-                        <div className="p-6 md:p-8 overflow-y-auto font-mono text-sm text-primary" id="receipt-print-area">
-                            <div className="text-center mb-6">
-                                <h2 className="text-xl font-bold text-primary uppercase tracking-widest">{receiptData.businessName}</h2>
-                                <p className="text-xs text-secondary mt-1">POS Sales Receipt</p>
+                        <div className="p-4 overflow-y-auto font-mono text-[11px] leading-tight text-primary" id="receipt-print-area">
+                            <div className="text-center mb-4">
+                                <div className="flex items-center justify-center mb-2 gap-2">
+                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-default to-transparent"></div>
+                                    <span className="text-[10px] text-tertiary font-medium tracking-wide">✦</span>
+                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-default to-transparent"></div>
+                                </div>
+                                <h2 className="text-lg font-bold text-primary uppercase tracking-[0.2em] mb-1">{receiptData.businessName}</h2>
+                                <p className="text-[9px] text-tertiary uppercase tracking-[0.12em] font-light mb-2">Official Receipt</p>
                                 {(receiptData.contactPhone || receiptData.contactEmail) && (
-                                    <p className="text-xs text-secondary mt-1">{receiptData.contactPhone} {receiptData.contactPhone && receiptData.contactEmail && '|'} {receiptData.contactEmail}</p>
+                                    <p className="text-[9px] text-tertiary mb-3">{receiptData.contactPhone} {receiptData.contactPhone && receiptData.contactEmail && '•'} {receiptData.contactEmail}</p>
                                 )}
+                                <div className="h-px bg-gradient-to-r from-transparent via-default to-transparent mb-3"></div>
+                                <p className="text-[10px] text-secondary">Receipt #{receiptData._id.substring(receiptData._id.length - 8).toUpperCase()}</p>
                             </div>
 
-                            <div className="border-b border-dashed border-default pb-3 mb-3 text-xs text-secondary space-y-1">
-                                <div className="flex justify-between"><span>Date:</span> <span>{new Date(receiptData.createdAt).toLocaleString()}</span></div>
-                                <div className="flex justify-between"><span>Receipt ID:</span> <span>#{receiptData._id.substring(receiptData._id.length - 8).toUpperCase()}</span></div>
-                                <div className="flex justify-between"><span>Cashier:</span> <span>{userInfo.name.split(' ')[0]}</span></div>
+                            <div className="border-b border-dashed border-default pb-2 mb-3 text-[10px] text-secondary space-y-0.5">
+                                <div className="flex justify-between"><span className="text-tertiary">Date</span> <span className="text-right">{new Date(receiptData.createdAt).toLocaleString()}</span></div>
+                                <div className="flex justify-between"><span className="text-tertiary">Cashier</span> <span>{userInfo.name.split(' ')[0]}</span></div>
                                 {(receiptData.customerName || receiptData.customerPhone) && (
-                                    <div className="flex justify-between pt-1">
-                                        <span>Customer:</span>
-                                        <span className="text-right">{receiptData.customerName || 'Walk-in'}<br />{receiptData.customerPhone}</span>
-                                    </div>
+                                    <div className="flex justify-between"><span className="text-tertiary">Customer</span> <span className="text-right">{receiptData.customerName || 'Walk-in'}{receiptData.customerPhone ? `, ${receiptData.customerPhone}` : ''}</span></div>
                                 )}
                             </div>
 
-                            <table className="w-full text-xs text-left mb-4">
+                            <table className="w-full text-[10px] text-left mb-3 table-auto">
                                 <thead>
                                     <tr className="border-b border-default">
                                         <th className="pb-1 font-semibold">Item</th>
-                                        <th className="pb-1 font-semibold text-center">Qty</th>
-                                        <th className="pb-1 font-semibold text-right">Amt</th>
+                                        <th className="pb-1 font-semibold text-center w-10">Qty</th>
+                                        <th className="pb-1 font-semibold text-right w-16">Amt</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-dashed divide-default">
                                     {receiptData.orderItems.map((item, index) => (
                                         <tr key={index}>
-                                            <td className="py-2 pr-2">
-                                                <div className="font-medium line-clamp-2">{item.name}</div>
-                                                {item.variantName && <div className="text-[10px] text-tertiary">{item.variantName}</div>}
+                                            <td className="py-1.5 pr-1">
+                                                <div className="font-medium">{item.name}{item.variantName && <span className="text-tertiary font-normal text-[9px]"> ({item.variantName})</span>}</div>
                                             </td>
-                                            <td className="py-2 text-center align-top">{item.qty}</td>
-                                            <td className="py-2 text-right align-top">{receiptData.currency}{(item.price * item.qty).toFixed(2)}</td>
+                                            <td className="py-1.5 text-center align-top w-10">{item.qty}</td>
+                                            <td className="py-1.5 text-right align-top w-16">{receiptData.currency}{(item.price * item.qty).toFixed(2)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
 
-                            <div className="space-y-1 text-sm border-t border-default pt-3">
-                                <div className="flex justify-between text-secondary">
-                                    <span>Subtotal</span>
-                                    <span>{receiptData.currency}{receiptData.itemsPrice.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between font-bold text-lg pt-1">
-                                    <span>TOTAL</span>
-                                    <span>{receiptData.currency}{receiptData.totalPrice.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-tertiary text-xs pt-1">
-                                    <span>Tender ({receiptData.paymentMethod})</span>
-                                    <span>{receiptData.currency}{receiptData.paymentMethod === 'Cash' ? receiptData.cashGiven.toFixed(2) : receiptData.totalPrice.toFixed(2)}</span>
-                                </div>
-                                {receiptData.paymentMethod === 'Cash' && receiptData.changeDue > 0 && (
-                                    <div className="flex justify-between font-bold text-success pt-1 border-t border-default mt-1">
-                                        <span>CHANGE DUE</span>
-                                        <span>{receiptData.currency}{receiptData.changeDue.toFixed(2)}</span>
+                            <div className="mt-3 pt-2 border-t border-default">
+                                <div className="space-y-1 text-[11px] text-secondary mb-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-tertiary">Subtotal</span>
+                                        <span className="text-tertiary">{receiptData.currency}{receiptData.itemsPrice.toFixed(2)}</span>
                                     </div>
-                                )}
+                                    {Number(receiptData.discountAmount || 0) > 0 && (
+                                        <div className="flex justify-between">
+                                            <span className="text-warning">Discount ({receiptData.discountType === 'percentage'
+                                                ? `${Number(receiptData.discountValue || 0)}%`
+                                                : `${receiptData.currency}${Number(receiptData.discountValue || 0).toFixed(2)}`})</span>
+                                            <span className="text-warning font-medium">-{receiptData.currency}{Number(receiptData.discountAmount || 0).toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="bg-page bg-opacity-40 rounded px-2 py-1.5 mb-2">
+                                    <div className="flex justify-between font-bold text-[13px] text-primary">
+                                        <span>TOTAL</span>
+                                        <span>{receiptData.currency}{receiptData.totalPrice.toFixed(2)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1 text-[10px] text-secondary">
+                                    <div className="flex justify-between">
+                                        <span className="text-tertiary">Tender ({receiptData.paymentMethod})</span>
+                                        <span className="text-tertiary font-medium">{receiptData.currency}{receiptData.paymentMethod === 'Cash' ? receiptData.cashGiven.toFixed(2) : receiptData.totalPrice.toFixed(2)}</span>
+                                    </div>
+                                    {receiptData.paymentMethod === 'Cash' && receiptData.changeDue > 0 && (
+                                        <div className="flex justify-between font-semibold text-success">
+                                            <span>Change Due</span>
+                                            <span>{receiptData.currency}{receiptData.changeDue.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="text-center mt-8 text-xs text-secondary space-y-1">
+                            <div className="text-center mt-4 text-[9px] text-secondary space-y-0.5">
                                 <p>Thank you for shopping with us!</p>
-                                <p>Items may be returned within 14 days<br />with original receipt.</p>
+                                <p className="text-[8px] text-tertiary pt-1">Please note that refunds and exchanges will not be accepted.</p>
                             </div>
                         </div>
 
