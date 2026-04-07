@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuthStore } from '../context/useAuthStore';
 import { useTheme } from '../context/ThemeContext';
@@ -10,16 +10,8 @@ import {
     ShoppingCart,
     Users,
     Truck,
-    ArrowLeft,
-    ShoppingBag,
-    Tags,
-    PackageSearch,
-    Calculator,
-    LogOut,
     Menu,
     X,
-    FolderTree,
-    Container,
     Receipt,
     Settings,
     Store,
@@ -30,8 +22,9 @@ import {
 const AdminLayout = () => {
     const { userInfo } = useAuthStore();
     const location = useLocation();
-    const { isDark, toggleMode } = useTheme();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const navigate = useNavigate();
+    const { isDark, toggleMode } = useTheme();
 
     if (!userInfo || userInfo.role !== 'admin') {
         return (
@@ -60,7 +53,7 @@ const AdminLayout = () => {
     ];
 
     return (
-        <div className="flex h-screen bg-page">
+        <div className="flex min-h-screen bg-page xl:overflow-hidden">
             {/* Mobile Sidebar Overlay */}
             {isMobileMenuOpen && (
                 <div
@@ -70,7 +63,7 @@ const AdminLayout = () => {
             )}
 
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-default flex-col flex-shrink-0 transition-transform duration-300 ease-in-out xl:flex xl:static xl:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-default flex flex-col flex-shrink-0 overflow-y-auto transition-transform duration-300 ease-in-out xl:sticky xl:top-0 xl:h-screen xl:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-6 flex items-start justify-between">
                     <div className="flex flex-col mb-1">
                         <img src={logoImage} alt="Beauty P&C Logo" className="h-8 w-auto object-contain mb-2 dark:brightness-0 dark:invert" />
@@ -126,7 +119,10 @@ const AdminLayout = () => {
                     <select
                         className="bg-page border border-default text-primary rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand"
                         value={location.pathname}
-                        onChange={(e) => window.location.href = e.target.value}
+                        onChange={(e) => {
+                            setIsMobileMenuOpen(false);
+                            navigate(e.target.value);
+                        }}
                     >
                         {navItems.map(item => (
                             <option key={item.path} value={item.path}>{item.name}</option>

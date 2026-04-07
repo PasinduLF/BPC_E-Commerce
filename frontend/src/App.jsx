@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import axios from 'axios';
 import Navbar from './components/Navbar';
@@ -81,6 +81,15 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <AppShell />
+    </BrowserRouter>
+  );
+}
+
+function AppShell() {
+  const location = useLocation();
+
+  return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-grow pb-16 md:pb-0">
@@ -116,10 +125,9 @@ function App() {
             </Route>
           </Routes>
         </main>
-        <Footer />
+        {!location.pathname.startsWith('/admin') && <Footer />}
       </div>
-    </BrowserRouter>
-  )
+  );
 }
 
 export default App
