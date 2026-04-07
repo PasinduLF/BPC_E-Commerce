@@ -39,16 +39,26 @@ const OrderManage = () => {
         fetchOrders();
     }, [userInfo.token]);
 
-    const updateDeliveryStatus = async (id, currentStatus) => {
-        if (currentStatus) return; // already delivered
-
+    const updateOrderStatus = async (id, payload) => {
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            await axios.put(`http://localhost:5000/api/orders/${id}/deliver`, {}, configHeader);
+            await axios.put(`http://localhost:5000/api/orders/${id}/status`, payload, configHeader);
             fetchOrders(); // refresh
         } catch (error) {
-            alert('Failed to update delivery status');
+            alert(error.response?.data?.message || 'Failed to update order status');
         }
+    };
+
+    const updateDeliveryStatus = async (id, isDelivered) => {
+        await updateOrderStatus(id, {
+            deliveryStatus: isDelivered ? 'processing' : 'delivered'
+        });
+    };
+
+    const updatePaymentStatus = async (id, isPaid) => {
+        await updateOrderStatus(id, {
+            paymentStatus: isPaid ? 'unpaid' : 'paid'
+        });
     };
 
     const deleteHandler = async (id) => {
@@ -158,41 +168,70 @@ const OrderManage = () => {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                    {order.isPaid ? (
-                                                        <span className="inline-flex items-center justify-center p-1.5 bg-success-bg text-success rounded-lg" title={`Paid on ${new Date(order.paidAt).toLocaleDateString()}`}>
-                                                            <CheckCircle size={18} />
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <span className="text-[11px] font-semibold text-secondary">
+                                                            {order.paymentMethod}
                                                         </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center justify-center p-1.5 bg-error-bg text-error rounded-lg" title="Awaiting Payment">
-                                                            <XCircle size={18} />
-                                                        </span>
-                                                    )}
+                                                        {order.isPaid ? (
+                                                            <span className="inline-flex items-center justify-center p-1.5 bg-success-bg text-success rounded-lg" title={order.paidAt ? `Paid on ${new Date(order.paidAt).toLocaleDateString()}` : 'Paid'}>
+                                                                <CheckCircle size={18} />
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center justify-center p-1.5 bg-error-bg text-error rounded-lg" title="Awaiting Payment">
+                                                                <XCircle size={18} />
+                                                            </span>
+                                                        )}
+
+                                                        {order.paymentMethod === 'Bank Transfer' && order.paymentSlip?.url && (
+                                                            <a
+                                                                href={order.paymentSlip.url}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="text-brand hover:underline text-xs font-semibold"
+                                                            >
+                                                                View Slip
+                                                            </a>
+                                                        )}
+
+                                                        {(order.paymentMethod === 'Cash on Delivery' || (order.paymentMethod === 'Bank Transfer' && order.paymentSlip?.url)) && (
+                                                            <button
+                                                                onClick={() => updatePaymentStatus(order._id, order.isPaid)}
+                                                                className={`text-xs px-2 py-1 rounded-lg border transition-colors ${order.isPaid
+                                                                    ? 'text-error border-error-bg hover:bg-error-bg'
+                                                                    : 'text-success border-success-bg hover:bg-success-bg'}`}
+                                                            >
+                                                                {order.isPaid ? 'Mark Unpaid' : (order.paymentMethod === 'Bank Transfer' ? 'Verify Payment' : 'Mark Paid')}
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                    {order.isDelivered ? (
-                                                        <span className="inline-flex items-center justify-center p-1.5 bg-success-bg text-success rounded-lg">
-                                                            <CheckCircle size={18} />
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center justify-center p-1.5 bg-warning-bg text-warning rounded-lg">
-                                                            <Clock size={18} />
-                                                        </span>
-                                                    )}
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        {order.isDelivered ? (
+                                                            <span className="inline-flex items-center justify-center p-1.5 bg-success-bg text-success rounded-lg" title="Delivered">
+                                                                <CheckCircle size={18} />
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center justify-center p-1.5 bg-warning-bg text-warning rounded-lg" title="Processing delivery">
+                                                                <Clock size={18} />
+                                                            </span>
+                                                        )}
+
+                                                        <button
+                                                            onClick={() => updateDeliveryStatus(order._id, order.isDelivered)}
+                                                            className={`text-xs px-2 py-1 rounded-lg border transition-colors ${order.isDelivered
+                                                                ? 'text-warning border-warning-bg hover:bg-warning-bg'
+                                                                : 'text-success border-success-bg hover:bg-success-bg'}`}
+                                                        >
+                                                            {order.isDelivered ? 'Mark Processing' : 'Mark Delivered'}
+                                                        </button>
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <Link to={`/order/${order._id}`} className="text-brand hover:bg-brand-subtle px-2 py-1.5 rounded-lg transition-colors border border-transparent">
                                                             Details
                                                         </Link>
-
-                                                        {!order.isDelivered && (
-                                                            <button
-                                                                onClick={() => updateDeliveryStatus(order._id, order.isDelivered)}
-                                                                className="text-secondary hover:bg-page px-2 py-1.5 rounded-lg transition-colors border border-default"
-                                                            >
-                                                                Dispatch
-                                                            </button>
-                                                        )}
 
                                                         {order.isPOS && (
                                                             <button

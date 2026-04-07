@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../context/useCartStore';
+import { useAuthStore } from '../context/useAuthStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import axios from 'axios';
 import { Star, Truck, ShieldCheck, ArrowLeft, Minus, Plus, ShoppingBag, Heart, CreditCard, ChevronLeft } from 'lucide-react';
@@ -20,6 +21,7 @@ const ProductScreen = () => {
     const [selectedVariant, setSelectedVariant] = useState(null);
 
     const { addToCart, setBuyNowItem } = useCartStore();
+    const { userInfo } = useAuthStore();
     const { isInWishlist, toggleWishlist } = useWishlistStore();
 
     useEffect(() => {
@@ -65,7 +67,11 @@ const ProductScreen = () => {
             variant: selectedVariant,
             qty
         });
-        navigate('/shipping'); // Redirect directly to checkout flow
+        if (userInfo) {
+            navigate('/shipping');
+        } else {
+            navigate('/login?redirect=/shipping');
+        }
     };
 
     if (loading) {

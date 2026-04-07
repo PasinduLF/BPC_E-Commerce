@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../context/useCartStore';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
+import { useAuthStore } from '../context/useAuthStore';
 
 const Cart = () => {
     const { config } = useConfigStore();
@@ -10,30 +11,27 @@ const Cart = () => {
 
     const navigate = useNavigate();
     const { cartItems, addToCart, removeFromCart, clearBuyNowItem } = useCartStore();
+    const { userInfo } = useAuthStore();
 
     useEffect(() => {
         // Clearing any pending 'buy now' flow if the user explicitly goes back to their cart
         clearBuyNowItem();
     }, [clearBuyNowItem]);
 
-    const updateQuantity = (item, newQty) => {
-        const checkStock = item.variant ? item.variant.stock : item.stock;
-        if (newQty > 0 && newQty <= checkStock) {
-            addToCart({ ...item, qty: newQty });
-        }
-    };
-
     const removeItemHandler = (id) => {
         removeFromCart(id);
     };
 
     const checkoutHandler = () => {
-        navigate('/login?redirect=/shipping');
+        if (userInfo) {
+            navigate('/shipping');
+        } else {
+            navigate('/login?redirect=/shipping');
+        }
     };
 
-    // New function for quantity change, assuming it replaces updateQuantity logic
-    const qtyChangeHandler = (productId, variantId, newQty) => {
-        const item = cartItems.find(i => i._id === productId && (variantId ? i.variantId === variantId : true));
+    const qtyChangeHandler = (cartId, newQty) => {
+        const item = cartItems.find(i => (i.cartId || i._id) === cartId);
         if (!item) return;
 
         const checkStock = item.variant ? item.variant.stock : item.stock;
@@ -82,9 +80,9 @@ const Cart = () => {
                                                         <Link to={`/product/${item._id}`} className="text-lg font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
                                                             {item.name}
                                                         </Link>
-                                                        {item.variantName && item.variantName !== "Default" && (
+                                                        {item.variant && item.variant.name !== 'Default' && (
                                                             <p className="text-brand text-[10px] font-bold uppercase tracking-wider mt-1">
-                                                                {item.variantName}
+                                                                    {item.variant.name}: {item.variant.value}
                                                             </p>
                                                         )}
                                                         <p className="text-secondary text-sm mt-1">{currency}{item.price.toFixed(2)}</p>
@@ -94,7 +92,7 @@ const Cart = () => {
                                                 <div className="flex items-center gap-6">
                                                     <div className="flex items-center border border-default rounded-lg bg-page">
                                                         <button 
-                                                            onClick={() => qtyChangeHandler(item._id, item.variantId, item.qty - 1)} 
+                                                            onClick={() => qtyChangeHandler(item.cartId || item._id, item.qty - 1)} 
                                                             disabled={item.qty <= 1}
                                                             className="p-2 text-secondary hover:text-brand disabled:opacity-50 transition-colors"
                                                         >
@@ -102,7 +100,7 @@ const Cart = () => {
                                                         </button>
                                                         <span className="w-8 text-center font-medium text-primary">{item.qty}</span>
                                                         <button 
-                                                            onClick={() => qtyChangeHandler(item._id, item.variantId, item.qty + 1)} 
+                                                            onClick={() => qtyChangeHandler(item.cartId || item._id, item.qty + 1)} 
                                                             disabled={item.qty >= (item.variant ? item.variant.stock : item.stock)}
                                                             className="p-2 text-secondary hover:text-brand disabled:opacity-50 transition-colors"
                                                         >

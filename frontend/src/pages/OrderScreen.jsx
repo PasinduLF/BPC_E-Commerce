@@ -8,10 +8,13 @@ const OrderScreen = () => {
     const { id } = useParams();
     const [order, setOrder] = useState({});
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [slipImage, setSlipImage] = useState('');
     const [uploading, setUploading] = useState(false);
 
     const { userInfo } = useAuthStore();
+
+    const safeMoney = (value) => Number(value || 0).toFixed(2);
 
     useEffect(() => {
         const fetchOrder = async () => {
@@ -23,9 +26,11 @@ const OrderScreen = () => {
                 };
                 const { data } = await axios.get(`http://localhost:5000/api/orders/${id}`, config);
                 setOrder(data);
+                setError('');
                 setLoading(false);
             } catch (error) {
                 console.error('Error fetching order:', error);
+                setError(error.response?.data?.message || error.message || 'Failed to load order');
                 setLoading(false);
             }
         };
@@ -78,8 +83,7 @@ const OrderScreen = () => {
     const verifyPaymentHandler = async () => {
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            // Using existing status update endpoint which handles isPaid = true when status is Payment Verified
-            await axios.put(`http://localhost:5000/api/orders/${id}/status`, { status: 'Payment Verified' }, configHeader);
+            await axios.put(`http://localhost:5000/api/orders/${id}/status`, { paymentStatus: 'paid' }, configHeader);
 
             // refetch order
             const updatedData = await axios.get(`http://localhost:5000/api/orders/${id}`, configHeader);
@@ -87,6 +91,20 @@ const OrderScreen = () => {
             alert('Payment verified successfully!');
         } catch (error) {
             alert('Failed to verify payment');
+        }
+    };
+
+    const toggleDeliveryStatusHandler = async () => {
+        try {
+            const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+            await axios.put(`http://localhost:5000/api/orders/${id}/status`, {
+                deliveryStatus: order.isDelivered ? 'processing' : 'delivered'
+            }, configHeader);
+
+            const updatedData = await axios.get(`http://localhost:5000/api/orders/${id}`, configHeader);
+            setOrder(updatedData.data);
+        } catch (error) {
+            alert('Failed to update delivery status');
         }
     };
 
@@ -101,6 +119,9 @@ const OrderScreen = () => {
                     <h1 className="text-2xl sm:text-3xl font-black text-primary truncate max-w-full">
                         Order <span className="text-brand">#{order._id}</span>
                     </h1>
+                    <span className="text-xs sm:text-sm font-semibold bg-brand-subtle text-brand px-3 py-1 rounded-full border border-brand-subtle">
+                        {order.status || 'Pending'}
+                    </span>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -121,6 +142,14 @@ const OrderScreen = () => {
                                     <p className={`text-sm mt-1 ${order.isDelivered ? 'text-secondary' : 'text-secondary'}`}>
                                         {order.isDelivered ? `Delivered on ${new Date(order.deliveredAt).toLocaleDateString()}` : 'We are preparing your order.'}
                                     </p>
+                                    {userInfo?.isAdmin && (
+                                        <button
+                                            onClick={toggleDeliveryStatusHandler}
+                                            className="mt-3 text-xs px-3 py-1.5 rounded-lg border border-default bg-page hover:bg-muted text-primary font-semibold transition-colors"
+                                        >
+                                            {order.isDelivered ? 'Mark Processing' : 'Mark Delivered'}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -149,11 +178,11 @@ const OrderScreen = () => {
                                 <div>
                                     <h2 className="text-xl font-bold text-primary">Shipping Details</h2>
                                     <div className="mt-4 space-y-2 text-secondary">
-                                        <p><strong className="font-semibold text-primary">Name: </strong> {order.user.name}</p>
-                                        <p><strong className="font-semibold text-primary">Email: </strong> <a href={`mailto:${order.user.email}`} className="text-brand hover:underline">{order.user.email}</a></p>
+                                        <p><strong className="font-semibold text-primary">Name: </strong> {order.user?.name || 'N/A'}</p>
+                                        <p><strong className="font-semibold text-primary">Email: </strong> {order.user?.email ? <a href={`mailto:${order.user.email}`} className="text-brand hover:underline">{order.user.email}</a> : 'N/A'}</p>
                                         <p>
                                             <strong className="font-semibold text-primary">Address: </strong>
-                                            {order.shippingAddress.address}, {order.shippingAddress.city}, {order.shippingAddress.postalCode}, {order.shippingAddress.country}
+                                            {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.postalCode}, {order.shippingAddress?.country}
                                         </p>
                                     </div>
                                 </div>
@@ -184,12 +213,20 @@ const OrderScreen = () => {
                                                         <img src={order.paymentSlip.url} alt="Payment Slip" className="w-full h-auto object-cover max-h-64" />
                                                     </a>
                                                     {!order.isPaid && userInfo.isAdmin && (
-                                                        <button
-                                                            onClick={verifyPaymentHandler}
-                                                            className="mt-4 w-full md:w-auto bg-success hover:brightness-95 text-white flex items-center justify-center gap-2 font-bold py-2.5 px-6 rounded-lg transition-colors"
-                                                        >
-                                                            <CheckCircle size={18} /> Verify Payment & Approve
-                                                        </button>
+                                                        <div className="mt-4 flex flex-wrap gap-3">
+                                                            <button
+                                                                onClick={verifyPaymentHandler}
+                                                                className="w-full md:w-auto bg-success hover:brightness-95 text-white flex items-center justify-center gap-2 font-bold py-2.5 px-6 rounded-lg transition-colors"
+                                                            >
+                                                                <CheckCircle size={18} /> Verify Payment
+                                                            </button>
+                                                            <button
+                                                                onClick={toggleDeliveryStatusHandler}
+                                                                className="w-full md:w-auto bg-page hover:bg-muted text-primary border border-default flex items-center justify-center gap-2 font-bold py-2.5 px-6 rounded-lg transition-colors"
+                                                            >
+                                                                <Truck size={18} /> {order.isDelivered ? 'Mark Processing' : 'Mark Delivered'}
+                                                            </button>
+                                                        </div>
                                                     )}
                                                     {!order.isPaid && !userInfo.isAdmin && (
                                                         <p className="text-sm text-warning mt-4 flex items-center gap-2 bg-warning-bg p-3 rounded border border-warning-bg"><Clock size={16} /> Your slip is awaiting admin verification.</p>
@@ -223,7 +260,7 @@ const OrderScreen = () => {
                             <h2 className="text-xl font-bold text-primary mb-6 flex items-center gap-2">
                                 <Package size={20} className="text-brand" /> Items in Order
                             </h2>
-                            {order.orderItems.length === 0 ? (
+                            {!order.orderItems || order.orderItems.length === 0 ? (
                                 <p className="text-secondary">Order is empty</p>
                             ) : (
                                 <ul className="divide-y divide-default">
@@ -246,7 +283,7 @@ const OrderScreen = () => {
                                                     </p>
                                                 )}
                                                 <p className="text-secondary text-sm mt-1">
-                                                    {item.qty} x ${item.price.toFixed(2)} = <span className="font-medium text-primary">${(item.qty * item.price).toFixed(2)}</span>
+                                                    {item.qty || 0} x ${safeMoney(item.price)} = <span className="font-medium text-primary">${safeMoney((item.qty || 0) * (item.price || 0))}</span>
                                                 </p>
                                             </div>
                                         </li>
@@ -263,21 +300,21 @@ const OrderScreen = () => {
                             <div className="space-y-4 mb-6 text-sm">
                                 <div className="flex justify-between text-secondary">
                                     <span>Items</span>
-                                    <span className="font-medium text-primary">${order.itemsPrice.toFixed(2)}</span>
+                                    <span className="font-medium text-primary">${safeMoney(order.itemsPrice)}</span>
                                 </div>
                                 <div className="flex justify-between text-secondary">
                                     <span>Shipping</span>
-                                    <span className="font-medium text-primary">${order.shippingPrice.toFixed(2)}</span>
+                                    <span className="font-medium text-primary">${safeMoney(order.shippingPrice)}</span>
                                 </div>
                                 <div className="flex justify-between text-secondary">
                                     <span>Tax</span>
-                                    <span className="font-medium text-primary">${order.taxPrice.toFixed(2)}</span>
+                                    <span className="font-medium text-primary">${safeMoney(order.taxPrice)}</span>
                                 </div>
                             </div>
 
                             <div className="border-t border-default pt-4 mb-8 flex justify-between items-center bg-brand-subtle/50 p-4 rounded-xl">
                                 <span className="text-lg font-bold text-primary">Total</span>
-                                <span className="text-3xl font-bold text-brand">${order.totalPrice.toFixed(2)}</span>
+                                <span className="text-3xl font-bold text-brand">${safeMoney(order.totalPrice)}</span>
                             </div>
 
                             {!order.isPaid && order.paymentMethod === 'Cash on Delivery' && (

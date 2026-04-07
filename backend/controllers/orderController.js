@@ -1,65 +1,77 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 
+const deriveOrderStatus = (order) => {
+    if (order.isDelivered) return 'Delivered';
+    if (order.isPaid) return 'Payment Verified';
+    if (order.paymentMethod === 'Bank Transfer' && order.paymentSlip?.url) return 'Processing';
+    return 'Pending';
+};
+
 // @desc    Create new order
 // @route   POST /api/orders
 // @access  Private
 const addOrderItems = async (req, res) => {
-    const {
-        orderItems,
-        shippingAddress,
-        paymentMethod,
-        paymentSlip,
-        itemsPrice,
-        shippingPrice,
-        totalPrice,
-    } = req.body;
-
-    if (orderItems && orderItems.length === 0) {
-        res.status(400);
-        throw new Error('No order items');
-    } else {
-        const order = new Order({
-            orderItems: orderItems.map((x) => ({
-                name: x.name,
-                qty: x.qty,
-                image: x.image || (x.images && x.images.length > 0 ? x.images[0].url : 'placeholder'),
-                price: x.price,
-                costPrice: x.costPrice || 0,
-                product: x._id,
-                variantId: (x.variant && x.variant._id) ? x.variant._id : undefined,
-                variantName: x.variant ? `${x.variant.name}: ${x.variant.value}` : undefined,
-            })),
-            user: req.user._id,
+    try {
+        const {
+            orderItems,
             shippingAddress,
             paymentMethod,
             paymentSlip,
             itemsPrice,
             shippingPrice,
             totalPrice,
-        });
+        } = req.body;
 
-        const createdOrder = await order.save();
+        if (orderItems && orderItems.length === 0) {
+            res.status(400);
+            return res.json({ message: 'No order items' });
+        } else {
+            const order = new Order({
+                orderItems: orderItems.map((x) => ({
+                    name: x.name,
+                    qty: x.qty,
+                    image: x.image || (x.images && x.images.length > 0 ? x.images[0].url : 'placeholder'),
+                    price: x.price,
+                    costPrice: x.costPrice || 0,
+                    product: x._id,
+                    variantId: (x.variant && x.variant._id) ? x.variant._id : undefined,
+                    variantName: x.variant ? `${x.variant.name}: ${x.variant.value}` : undefined,
+                })),
+                user: req.user._id,
+                shippingAddress,
+                paymentMethod,
+                paymentSlip,
+                itemsPrice,
+                shippingPrice,
+                totalPrice,
+            });
 
-        // Deduct stock for each item depending on if it's a variant or base product
-        for (const item of createdOrder.orderItems) {
-            const productRecord = await Product.findById(item.product);
-            if (productRecord) {
-                if (item.variantId && productRecord.variants && productRecord.variants.length > 0) {
-                    const variant = productRecord.variants.id(item.variantId);
-                    if (variant) {
-                        variant.stock -= item.qty;
-                        if (variant.stock < 0) variant.stock = 0;
+            const createdOrder = await order.save();
+
+            // Deduct stock for each item depending on if it's a variant or base product
+            for (const item of createdOrder.orderItems) {
+                const productRecord = await Product.findById(item.product);
+                if (productRecord) {
+                    if (item.variantId && productRecord.variants && productRecord.variants.length > 0) {
+                        const variant = productRecord.variants.id(item.variantId);
+                        if (variant) {
+                            variant.stock -= item.qty;
+                            if (variant.stock < 0) variant.stock = 0;
+                        }
+                    } else {
+                        productRecord.stock -= item.qty;
+                        if (productRecord.stock < 0) productRecord.stock = 0;
                     }
-                } else {
-                    productRecord.stock -= item.qty;
-                    if (productRecord.stock < 0) productRecord.stock = 0;
+                    await productRecord.save();
                 }
-                await productRecord.save();
             }
-        }
 
-        res.status(201).json(createdOrder);
+            res.status(201).json(createdOrder);
+        }
+    } catch (error) {
+        console.error('Order creation error:', error);
+        res.status(500).json({ message: error.message || 'Error occurred while creating order' });
     }
 };
 
@@ -102,7 +114,7 @@ const updateOrderToPaid = async (req, res) => {
         };
         order.status = 'Processing';
 
-        const updatedOrder = await order.save();
+        const updatedOrder = await order.save({ validateBeforeSave: false });
         res.json(updatedOrder);
     } else {
         res.status(404);
@@ -120,9 +132,8 @@ const updateOrderToDelivered = async (req, res) => {
         order.isDelivered = true;
         order.deliveredAt = Date.now();
         order.status = 'Delivered';
-        order.isPaid = true; // Assuming delivery means payment was verified for COD or Bank Transfer
 
-        const updatedOrder = await order.save();
+        const updatedOrder = await order.save({ validateBeforeSave: false });
         res.json(updatedOrder);
     } else {
         res.status(404);
@@ -145,19 +156,50 @@ const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
-        order.status = req.body.status || order.status;
+        const { status, paymentStatus, deliveryStatus } = req.body;
 
-        if (req.body.status === 'Payment Verified' || req.body.status === 'Delivered') {
+        if (paymentStatus === 'paid') {
+            order.isPaid = true;
+            if (!order.paidAt) order.paidAt = Date.now();
+        } else if (paymentStatus === 'unpaid') {
+            order.isPaid = false;
+            order.paidAt = undefined;
+        }
+
+        if (deliveryStatus === 'delivered') {
+            order.isDelivered = true;
+            if (!order.deliveredAt) order.deliveredAt = Date.now();
+        } else if (deliveryStatus === 'processing') {
+            order.isDelivered = false;
+            order.deliveredAt = undefined;
+        }
+
+        if (status) {
+            order.status = status;
+        }
+
+        if (status === 'Payment Verified' || status === 'Delivered') {
             order.isPaid = true;
             if (!order.paidAt) order.paidAt = Date.now();
         }
 
-        if (req.body.status === 'Delivered') {
+        if (status === 'Pending') {
+            order.isPaid = false;
+            order.isDelivered = false;
+            order.paidAt = undefined;
+            order.deliveredAt = undefined;
+        }
+
+        if (status === 'Delivered') {
             order.isDelivered = true;
             order.deliveredAt = Date.now();
         }
 
-        const updatedOrder = await order.save();
+        if (!status) {
+            order.status = deriveOrderStatus(order);
+        }
+
+        const updatedOrder = await order.save({ validateBeforeSave: false });
         res.json(updatedOrder);
     } else {
         res.status(404);

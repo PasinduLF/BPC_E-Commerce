@@ -18,7 +18,7 @@ const PlaceOrder = () => {
     const [paymentSlip, setPaymentSlip] = useState(null);
 
     useEffect(() => {
-        if (!shippingAddress.address) {
+        if (!shippingAddress.name || !shippingAddress.address || !shippingAddress.phone) {
             navigate('/shipping');
         } else if (!paymentMethod) {
             navigate('/payment');
@@ -150,8 +150,16 @@ const PlaceOrder = () => {
                                 <div>
                                     <h2 className="text-xl font-bold text-primary">Shipping</h2>
                                     <p className="mt-2 text-secondary">
+                                        <strong className="font-semibold text-primary">Name: </strong>
+                                        {shippingAddress.name}
+                                    </p>
+                                    <p className="mt-2 text-secondary">
                                         <strong className="font-semibold text-primary">Address: </strong>
                                         {shippingAddress.address}, {shippingAddress.city}, {shippingAddress.postalCode}, {shippingAddress.country}
+                                    </p>
+                                    <p className="mt-2 text-secondary">
+                                        <strong className="font-semibold text-primary">Phone: </strong>
+                                        {shippingAddress.phone}
                                     </p>
                                 </div>
                             </div>

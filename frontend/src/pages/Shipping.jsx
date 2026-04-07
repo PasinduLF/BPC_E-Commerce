@@ -9,25 +9,28 @@ const Shipping = () => {
     const { userInfo } = useAuthStore();
     const navigate = useNavigate();
 
+    const [name, setName] = useState(shippingAddress.name || userInfo?.name || '');
     const [address, setAddress] = useState(shippingAddress.address || '');
     const [city, setCity] = useState(shippingAddress.city || '');
     const [postalCode, setPostalCode] = useState(shippingAddress.postalCode || '');
     const [country, setCountry] = useState(shippingAddress.country || '');
+    const [phone, setPhone] = useState(shippingAddress.phone || userInfo?.phone || '');
 
     const [showNewForm, setShowNewForm] = useState(!userInfo?.addresses?.length);
 
     const handleSelectSavedAddress = (addr) => {
+        setName(userInfo?.name || shippingAddress.name || '');
         setAddress(addr.address);
         setCity(addr.city);
         setPostalCode(addr.postalCode);
         setCountry(addr.country);
-        saveShippingAddress(addr);
-        navigate('/payment');
+        setPhone(shippingAddress.phone || userInfo?.phone || '');
+        setShowNewForm(true);
     };
 
     const submitHandler = (e) => {
         e.preventDefault();
-        saveShippingAddress({ address, city, postalCode, country });
+        saveShippingAddress({ name, address, city, postalCode, country, phone });
         navigate('/payment');
     };
 
@@ -83,6 +86,18 @@ const Shipping = () => {
                             <h2 className="text-lg font-bold text-primary mb-4">New Address Details</h2>
 
                             <div>
+                                <label className="block text-sm font-medium text-secondary mb-2">Full Name</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="w-full px-4 py-3 border border-default rounded-xl bg-muted focus:bg-surface input-focus text-primary"
+                                    placeholder="Your full name"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
+                            </div>
+
+                            <div>
                                 <label className="block text-sm font-medium text-secondary mb-2">Street Address</label>
                                 <input
                                     type="text"
@@ -129,6 +144,18 @@ const Shipping = () => {
                                     placeholder="United States"
                                     value={country}
                                     onChange={(e) => setCountry(e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-secondary mb-2">Phone Number</label>
+                                <input
+                                    type="tel"
+                                    required
+                                    className="w-full px-4 py-3 border border-default rounded-xl bg-muted focus:bg-surface input-focus text-primary"
+                                    placeholder="(555) 123-4567"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
                                 />
                             </div>
 

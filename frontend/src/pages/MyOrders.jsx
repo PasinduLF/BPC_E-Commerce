@@ -86,6 +86,10 @@ const MyOrders = () => {
                                             <p className="text-secondary mb-1">Total Amount</p>
                                             <p className="font-bold text-brand">{currency}{order.totalPrice.toFixed(2)}</p>
                                         </div>
+                                        <div>
+                                            <p className="text-secondary mb-1">Order Status</p>
+                                            <p className="font-semibold text-primary">{order.status || 'Pending'}</p>
+                                        </div>
                                         <div className="col-span-2 md:col-span-1">
                                             <p className="text-secondary mb-1">Order ID</p>
                                             <p className="font-mono text-primary">#{order._id}</p>
