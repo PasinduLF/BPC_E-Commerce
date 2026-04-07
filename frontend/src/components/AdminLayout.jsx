@@ -64,13 +64,13 @@ const AdminLayout = () => {
             {/* Mobile Sidebar Overlay */}
             {isMobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity"
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 xl:hidden transition-opacity"
                     onClick={() => setIsMobileMenuOpen(false)}
                 ></div>
             )}
 
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-default flex-col flex-shrink-0 transition-transform duration-300 ease-in-out md:flex md:static md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-default flex-col flex-shrink-0 transition-transform duration-300 ease-in-out xl:flex xl:static xl:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-6 flex items-start justify-between">
                     <div className="flex flex-col mb-1">
                         <img src={logoImage} alt="Beauty P&C Logo" className="h-8 w-auto object-contain mb-2 dark:brightness-0 dark:invert" />
@@ -82,7 +82,7 @@ const AdminLayout = () => {
                         <button onClick={toggleMode} className="text-secondary hover:text-brand p-1.5 rounded-full hover:bg-subtle focus:outline-none transition-colors" title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
                             {isDark ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
-                        <button className="md:hidden text-secondary hover:text-primary p-1 rounded-full hover:bg-subtle" onClick={() => setIsMobileMenuOpen(false)}>
+                        <button className="xl:hidden text-secondary hover:text-primary p-1 rounded-full hover:bg-subtle" onClick={() => setIsMobileMenuOpen(false)}>
                             <X size={24} />
                         </button>
                     </div>
@@ -115,7 +115,7 @@ const AdminLayout = () => {
             {/* Main Content Area */}
             <main className="flex-1 min-w-0 flex flex-col">
                 {/* Mobile Header */}
-                <div className="md:hidden bg-surface border-b border-default px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+                <div className="xl:hidden bg-surface border-b border-default px-4 py-4 flex items-center justify-between sticky top-0 z-10">
                     <div className="flex items-center gap-3">
                         <button className="text-secondary hover:text-primary p-1 rounded-full hover:bg-page" onClick={() => setIsMobileMenuOpen(true)}>
                             <Menu size={24} />
