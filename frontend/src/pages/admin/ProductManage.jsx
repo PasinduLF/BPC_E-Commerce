@@ -21,6 +21,7 @@ const ProductManage = () => {
     const [costPrice, setCostPrice] = useState('0'); // Admin only
     const [categoryId, setCategoryId] = useState('');
     const [subcategoryId, setSubcategoryId] = useState('');
+    const [innerSubcategoryId, setInnerSubcategoryId] = useState('');
     const [brandId, setBrandId] = useState('');
     const [stock, setStock] = useState('0');
     const [variants, setVariants] = useState([]);
@@ -112,6 +113,7 @@ const ProductManage = () => {
                 costPrice: variants.length > 0 ? (finalVariants[0]?.costPrice || 0) : Number(costPrice),
                 category: categoryId,
                 subcategory: subcategoryId || undefined,
+                innerSubcategory: innerSubcategoryId || undefined,
                 brand: brandId || undefined,
                 stock: variants.length > 0 ? finalVariants.reduce((sum, v) => sum + v.stock, 0) : Number(stock),
                 variants: finalVariants,
@@ -138,6 +140,7 @@ const ProductManage = () => {
             setCostPrice('0');
             setCategoryId('');
             setSubcategoryId('');
+            setInnerSubcategoryId('');
             setBrandId('');
             setStock('0');
             setVariants([]);
@@ -163,7 +166,8 @@ const ProductManage = () => {
         setDiscountPrice(product.discountPrice || '0');
         setCostPrice(product.costPrice || '0');
         setCategoryId(product.category?._id || product.category || '');
-        setSubcategoryId(product.subcategory || '');
+        setSubcategoryId(product.subcategory?._id || product.subcategory || '');
+        setInnerSubcategoryId(product.innerSubcategory?._id || product.innerSubcategory || '');
         setBrandId(product.brand?._id || product.brand || '');
         setStock(product.stock || '0');
         setVariants(product.variants || []);
@@ -261,13 +265,26 @@ const ProductManage = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-primary mb-1">Subcategory</label>
                                     <select
-                                        value={subcategoryId} onChange={(e) => setSubcategoryId(e.target.value)}
-                                        disabled={!categoryId || categories.find(c => c._id === categoryId)?.subcategories?.length === 0}
+                                        value={subcategoryId} onChange={(e) => { setSubcategoryId(e.target.value); setInnerSubcategoryId(''); }}
+                                        disabled={!categoryId}
                                         className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-page text-primary disabled:opacity-50"
                                     >
-                                        <option value="">{categoryId ? 'Select subcategory (Optional)' : 'Select category first'}</option>
+                                        <option value="">{categoryId ? 'Select subcategory' : 'Select category first'}</option>
                                         {categories.find(c => c._id === categoryId)?.subcategories?.map(sub => (
                                             <option key={sub._id} value={sub._id}>{sub.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-primary mb-1">Inner Subcategory (Optional)</label>
+                                    <select
+                                        value={innerSubcategoryId} onChange={(e) => setInnerSubcategoryId(e.target.value)}
+                                        disabled={!subcategoryId}
+                                        className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-page text-primary disabled:opacity-50"
+                                    >
+                                        <option value="">{subcategoryId ? 'Select inner subcategory' : 'Select subcategory first'}</option>
+                                        {categories.find(c => c._id === categoryId)?.subcategories?.find(s => s._id === subcategoryId)?.nestedSubcategories?.map(nested => (
+                                            <option key={nested._id} value={nested._id}>{nested.name}</option>
                                         ))}
                                     </select>
                                 </div>

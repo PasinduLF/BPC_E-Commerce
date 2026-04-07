@@ -95,10 +95,105 @@ const addSubcategory = async (req, res) => {
     }
 };
 
+// @desc    Update subcategory
+// @route   PUT /api/categories/:id/subcategories/:subId
+// @access  Private/Admin
+const updateSubcategory = async (req, res) => {
+    const { name, description } = req.body;
+    const category = await Category.findById(req.params.id);
+
+    if (category) {
+        const subcategory = category.subcategories.id(req.params.subId);
+        if (subcategory) {
+            subcategory.name = name || subcategory.name;
+            subcategory.description = description || subcategory.description;
+            await category.save();
+            res.json(category);
+        } else {
+            res.status(404);
+            throw new Error('Subcategory not found');
+        }
+    } else {
+        res.status(404);
+        throw new Error('Category not found');
+    }
+};
+
+// @desc    Delete subcategory
+// @route   DELETE /api/categories/:id/subcategories/:subId
+// @access  Private/Admin
+const deleteSubcategory = async (req, res) => {
+    const category = await Category.findById(req.params.id);
+
+    if (category) {
+        category.subcategories.pull(req.params.subId);
+        await category.save();
+        res.json({ message: 'Subcategory removed' });
+    } else {
+        res.status(404);
+        throw new Error('Category not found');
+    }
+};
+
+// @desc    Add nested subcategory
+// @route   POST /api/categories/:id/subcategories/:subId/nested
+// @access  Private/Admin
+const addNestedSubcategory = async (req, res) => {
+    const { name, description } = req.body;
+    const category = await Category.findById(req.params.id);
+
+    if (category) {
+        const subcategory = category.subcategories.id(req.params.subId);
+        if (!subcategory) {
+            res.status(404);
+            throw new Error('Subcategory not found');
+        }
+
+        const nestedExists = subcategory.nestedSubcategories.find(n => n.name === name);
+        if (nestedExists) {
+            res.status(400);
+            throw new Error('Nested subcategory already exists');
+        }
+
+        subcategory.nestedSubcategories.push({ name, description });
+        await category.save();
+        res.status(201).json(category);
+    } else {
+        res.status(404);
+        throw new Error('Category not found');
+    }
+};
+
+// @desc    Delete nested subcategory
+// @route   DELETE /api/categories/:id/subcategories/:subId/nested/:nestedId
+// @access  Private/Admin
+const deleteNestedSubcategory = async (req, res) => {
+    const category = await Category.findById(req.params.id);
+
+    if (category) {
+        const subcategory = category.subcategories.id(req.params.subId);
+        if (!subcategory) {
+            res.status(404);
+            throw new Error('Subcategory not found');
+        }
+
+        subcategory.nestedSubcategories.pull(req.params.nestedId);
+        await category.save();
+        res.json(category);
+    } else {
+        res.status(404);
+        throw new Error('Category not found');
+    }
+};
+
 module.exports = {
     getCategories,
     createCategory,
     updateCategory,
     deleteCategory,
-    addSubcategory
+    addSubcategory,
+    updateSubcategory,
+    deleteSubcategory,
+    addNestedSubcategory,
+    deleteNestedSubcategory
 };

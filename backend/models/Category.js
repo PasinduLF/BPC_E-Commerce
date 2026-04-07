@@ -7,6 +7,10 @@ const subcategorySchema = new mongoose.Schema({
         trim: true,
     },
     description: String,
+    nestedSubcategories: [{
+        name: { type: String, required: true },
+        description: String
+    }]
 });
 
 const categorySchema = new mongoose.Schema({

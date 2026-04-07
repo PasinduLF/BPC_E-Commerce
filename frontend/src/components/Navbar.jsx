@@ -19,6 +19,7 @@ const Navbar = () => {
     // Mega Menu State
     const [categories, setCategories] = useState([]);
     const [activeMegaMenu, setActiveMegaMenu] = useState(null);
+    const [hoveredSubId, setHoveredSubId] = useState(null); // Level 2 Hover state
     const [expandedCategory, setExpandedCategory] = useState(null); // For Mobile Accordion
 
     const { userInfo, logout } = useAuthStore();
@@ -127,39 +128,62 @@ const Navbar = () => {
                                         
                                         {/* Dropdown Panel */}
                                         {activeMegaMenu === category._id && category.subcategories?.length > 0 && (
-                                            <div className="absolute left-1/2 -translate-x-1/2 top-20 w-max min-w-[700px] max-w-5xl bg-surface border border-default shadow-2xl mega-menu-animate rounded-2xl overflow-hidden cursor-default pointer-events-auto">
-                                                <div className="flex">
-                                                    <div className="flex-1 p-8 grid grid-cols-3 gap-8">
-                                                        {category.subcategories.slice(0, 6).map(sub => (
-                                                            <div key={sub._id}>
-                                                                <h3 className="font-bold text-primary mb-3 border-b border-default pb-2">{sub.name}</h3>
-                                                                <ul className="space-y-2">
-                                                                    {sub.description?.split(',').map((item, index) => (
-                                                                        <li key={index}>
-                                                                            <Link to={`/shop?category=${category._id}&search=${item.trim()}`} className="text-sm text-secondary hover:text-brand transition-colors flex items-center gap-1 group/item">
-                                                                                <span className="w-1 h-1 rounded-full bg-brand/50 group-hover/item:bg-brand transition-colors"></span>
-                                                                                {item.trim()}
-                                                                            </Link>
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    
-                                                    {/* Promotional Ad Space */}
-                                                    <div className="w-64 bg-brand-subtle flex flex-col items-center justify-center p-8 text-center relative overflow-hidden group/ad">
-                                                        <div className="absolute inset-0 bg-brand/5 group-hover/ad:bg-brand/10 transition-colors"></div>
-                                                        <div className="w-20 h-20 bg-surface rounded-full flex items-center justify-center mb-6 shadow-md text-brand group-hover/ad:scale-110 transition-transform duration-500">
-                                                            <Sparkles size={32} />
-                                                        </div>
-                                                        <h4 className="font-black text-xl text-primary mb-2 z-10">Trending Now</h4>
-                                                        <p className="text-sm text-secondary mb-6 z-10 font-medium">Discover the best-sellers in {category.name}.</p>
-                                                        <Link to={`/shop?category=${category._id}&sort=top`} className="btn-primary py-2 px-6 rounded-full text-sm z-10 shadow-lg">
-                                                            Shop Collection
+                                            <div className="absolute left-1/2 -translate-x-1/2 top-20 w-max min-w-[700px] max-w-5xl bg-surface border border-default shadow-2xl mega-menu-animate rounded-2xl overflow-hidden cursor-default pointer-events-auto flex">
+                                                
+                                                {/* Left Sidebar: Subcategories */}
+                                                <div className="w-1/3 bg-subtle border-r border-default p-4 space-y-1">
+                                                    <h3 className="text-[10px] font-black uppercase text-tertiary tracking-widest px-3 mb-3">Browse {category.name}</h3>
+                                                    {category.subcategories.map(sub => (
+                                                        <Link 
+                                                            key={sub._id}
+                                                            to={`/shop?category=${category._id}&subcategory=${sub._id}`}
+                                                            onMouseEnter={() => setHoveredSubId(sub._id)}
+                                                            className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all group/sub ${hoveredSubId === sub._id ? 'bg-surface text-brand shadow-sm font-bold' : 'text-secondary hover:bg-surface/50'}`}
+                                                        >
+                                                            <span>{sub.name}</span>
+                                                            <ChevronRight size={14} className={`transition-transform ${hoveredSubId === sub._id ? 'translate-x-1' : 'opacity-0 group-hover/sub:opacity-100'}`} />
                                                         </Link>
-                                                    </div>
+                                                    ))}
                                                 </div>
+
+                                                {/* Right Content: Inner Items */}
+                                                <div className="flex-1 p-8 min-w-[400px]">
+                                                    {category.subcategories.find(s => s._id === (hoveredSubId || category.subcategories[0]._id))?.nestedSubcategories?.length > 0 ? (
+                                                        <div className="animate-fade-in">
+                                                            <div className="flex items-center justify-between mb-6 border-b border-default pb-4">
+                                                                <h4 className="text-xl font-black text-primary">
+                                                                    {category.subcategories.find(s => s._id === (hoveredSubId || category.subcategories[0]._id))?.name}
+                                                                </h4>
+                                                                <Link 
+                                                                    to={`/shop?category=${category._id}&subcategory=${hoveredSubId || category.subcategories[0]._id}`}
+                                                                    className="text-xs font-bold text-brand hover:underline"
+                                                                >
+                                                                    View All
+                                                                </Link>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                                                                {category.subcategories.find(s => s._id === (hoveredSubId || category.subcategories[0]._id))?.nestedSubcategories.map((nested, nIdx) => (
+                                                                    <Link 
+                                                                        key={nested._id || nIdx}
+                                                                        to={`/shop?category=${category._id}&subcategory=${hoveredSubId || category.subcategories[0]._id}&innerSubcategory=${nested._id}`}
+                                                                        className="text-sm text-secondary hover:text-brand transition-colors flex items-center gap-2 group/item"
+                                                                    >
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-brand/30 group-hover/item:bg-brand transition-colors"></div>
+                                                                        {nested.name}
+                                                                    </Link>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-full flex flex-col items-center justify-center text-center py-12 opacity-40">
+                                                            <Sparkles size={48} className="mb-4 text-tertiary" />
+                                                            <p className="font-bold text-secondary">Discover our premium range</p>
+                                                            <p className="text-sm">Explore specialized products for {category.subcategories.find(s => s._id === (hoveredSubId || category.subcategories[0]._id))?.name}.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Optional Promo Panel (Hidden for sidebar menu to keep width manageable, or made wider) */}
                                             </div>
                                         )}
                                     </div>
@@ -312,14 +336,14 @@ const Navbar = () => {
                                                 <div key={sub._id}>
                                                     <p className="text-xs font-black uppercase text-tertiary tracking-wider mb-2">{sub.name}</p>
                                                     <ul className="space-y-2 border-l-2 border-muted pl-3">
-                                                        {sub.description?.split(',').map((item, idx) => (
-                                                            <li key={idx}>
+                                                        {sub.nestedSubcategories?.map((nested, nIdx) => (
+                                                            <li key={nested._id || nIdx}>
                                                                 <Link 
-                                                                    to={`/shop?category=${category._id}&search=${item.trim()}`} 
+                                                                    to={`/shop?category=${category._id}&subcategory=${sub._id}&innerSubcategory=${nested._id}`} 
                                                                     className="text-sm font-medium text-secondary py-1 block hover:text-brand transition-colors"
                                                                     onClick={() => setIsOpen(false)}
                                                                 >
-                                                                    {item.trim()}
+                                                                    {nested.name}
                                                                 </Link>
                                                             </li>
                                                         ))}

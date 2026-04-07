@@ -18,6 +18,7 @@ const getProducts = async (req, res) => {
 
     const categoryFilter = req.query.category ? { category: { $in: req.query.category.split(',') } } : {};
     const subcategoryFilter = req.query.subcategory ? { subcategory: { $in: req.query.subcategory.split(',') } } : {};
+    const innerSubcategoryFilter = req.query.innerSubcategory ? { innerSubcategory: { $in: req.query.innerSubcategory.split(',') } } : {};
     const brandFilter = req.query.brand ? { brand: { $in: req.query.brand.split(',') } } : {};
 
     // Price Filter
@@ -46,6 +47,7 @@ const getProducts = async (req, res) => {
         ...keyword,
         ...categoryFilter,
         ...subcategoryFilter,
+        ...innerSubcategoryFilter,
         ...brandFilter,
         ...priceFilter,
         ...stockFilter,
@@ -55,8 +57,7 @@ const getProducts = async (req, res) => {
 
     const count = await Product.countDocuments(filterObj);
     const products = await Product.find(filterObj)
-        .populate('category', 'name')
-        .populate('subcategory', 'name')
+        .populate('category', 'name subcategories')
         .populate('brand', 'name')
         .sort(sortOption)
         .limit(pageSize)
@@ -96,6 +97,7 @@ const createProduct = async (req, res) => {
             images,
             category,
             subcategory,
+            innerSubcategory, // Accept innerSubcategory
             brand, // Accept brand field
             stock,
             variants, // Accept variants
@@ -112,6 +114,7 @@ const createProduct = async (req, res) => {
             images: images && images.length > 0 ? images : [{ public_id: 'sample', url: '/images/sample.jpg' }],
             category: category || null,
             subcategory: subcategory || undefined,
+            innerSubcategory: innerSubcategory || undefined, // Save innerSubcategory
             brand: brand || undefined, // Save brand field
             stock: stock || 0,
             variants: variants || [], // Default to empty array
@@ -138,6 +141,7 @@ const updateProduct = async (req, res) => {
         images,
         category,
         subcategory,
+        innerSubcategory, // Add innerSubcategory
         brand, // Add brand
         stock,
         variants, // Accept variants
@@ -156,6 +160,7 @@ const updateProduct = async (req, res) => {
         product.images = images || product.images;
         product.category = category || product.category;
         product.subcategory = subcategory || product.subcategory;
+        product.innerSubcategory = innerSubcategory || product.innerSubcategory; // Save innerSubcategory update
         product.brand = brand !== undefined ? brand : product.brand; // Save brand update
         product.stock = stock !== undefined ? stock : product.stock;
         product.variants = variants !== undefined ? variants : product.variants; // Save variants update

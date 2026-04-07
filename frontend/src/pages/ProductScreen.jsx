@@ -3,8 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../context/useCartStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import axios from 'axios';
-import { Star, Truck, ShieldCheck, ArrowLeft, Minus, Plus, ShoppingBag, Heart, CreditCard } from 'lucide-react';
+import { Star, Truck, ShieldCheck, ArrowLeft, Minus, Plus, ShoppingBag, Heart, CreditCard, ChevronLeft } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 const ProductScreen = () => {
     const { config } = useConfigStore();
@@ -78,9 +79,12 @@ const ProductScreen = () => {
     return (
         <div className="bg-page min-h-screen py-8 animate-fade-in">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <Link to="/shop" className="inline-flex items-center gap-2 text-secondary hover:text-brand font-medium transition-colors mb-6">
-                    <ChevronLeft size={20} /> Back to Shop
-                </Link>
+                <Breadcrumbs 
+                    category={product.category}
+                    subcategory={product.subcategory}
+                    innerSubcategory={product.innerSubcategory}
+                    productName={product.name}
+                />
 
                 <div className="bg-surface rounded-[2rem] shadow-sm border border-default overflow-hidden animate-slide-up lg:grid lg:grid-cols-2 lg:gap-8 p-6 lg:p-12">
 

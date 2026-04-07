@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Star, ShoppingBag, Filter, Heart } from 'lucide-react';
+import { Star, ShoppingBag, Filter, Heart, ChevronRight } from 'lucide-react';
+import Breadcrumbs from '../components/Breadcrumbs';
 import { useConfigStore } from '../context/useConfigStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useCartStore } from '../context/useCartStore';
@@ -21,6 +22,7 @@ const Shop = () => {
     // Filter states
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [selectedSubcategories, setSelectedSubcategories] = useState([]);
+    const [selectedInnerSubcategories, setSelectedInnerSubcategories] = useState([]); // New Level 3
     const [selectedBrands, setSelectedBrands] = useState([]);
     const [minPrice, setMinPrice] = useState('');
     const [maxPrice, setMaxPrice] = useState('');
@@ -34,19 +36,21 @@ const Shop = () => {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const category = params.get('category');
+        const subcategory = params.get('subcategory');
+        const innerSubcategory = params.get('innerSubcategory');
         const search = params.get('search');
         
-        if (category) {
-            setSelectedCategories([category]);
-        } else {
-            setSelectedCategories([]);
-        }
+        if (category) setSelectedCategories([category]);
+        else setSelectedCategories([]);
+
+        if (subcategory) setSelectedSubcategories([subcategory]);
+        else setSelectedSubcategories([]);
+
+        if (innerSubcategory) setSelectedInnerSubcategories([innerSubcategory]);
+        else setSelectedInnerSubcategories([]);
         
-        if (search) {
-            setSearchKeyword(search);
-        } else {
-            setSearchKeyword('');
-        }
+        if (search) setSearchKeyword(search);
+        else setSearchKeyword('');
     }, [location.search]);
 
     useEffect(() => {
@@ -73,6 +77,7 @@ const Shop = () => {
                 if (searchKeyword) url += `&keyword=${encodeURIComponent(searchKeyword)}`;
                 if (selectedCategories.length > 0) url += `&category=${selectedCategories.join(',')}`;
                 if (selectedSubcategories.length > 0) url += `&subcategory=${selectedSubcategories.join(',')}`;
+                if (selectedInnerSubcategories.length > 0) url += `&innerSubcategory=${selectedInnerSubcategories.join(',')}`;
                 if (selectedBrands.length > 0) url += `&brand=${selectedBrands.join(',')}`;
                 if (minPrice) url += `&minPrice=${minPrice}`;
                 if (maxPrice) url += `&maxPrice=${maxPrice}`;
@@ -88,30 +93,41 @@ const Shop = () => {
         };
 
         fetchProducts();
-    }, [selectedCategories, selectedSubcategories, selectedBrands, minPrice, maxPrice, inStockOnly, sort, searchKeyword]);
+    }, [selectedCategories, selectedSubcategories, selectedInnerSubcategories, selectedBrands, minPrice, maxPrice, inStockOnly, sort, searchKeyword]);
 
     // Handle Category change
     const handleCategoryChange = (catId) => {
         setSelectedCategories(prev => {
             if (prev.includes(catId)) {
-                // Remove category
-                const newCategories = prev.filter(id => id !== catId);
-                // Also remove any subcategories belonging to this category
+                // Remove category & its descendants
                 const categoryObj = categories.find(c => c._id === catId);
                 if (categoryObj && categoryObj.subcategories) {
                     const subIdsToRemove = categoryObj.subcategories.map(s => s._id);
                     setSelectedSubcategories(prevSubs => prevSubs.filter(subId => !subIdsToRemove.includes(subId)));
+                    // Also clear inner items for good measure
+                    setSelectedInnerSubcategories([]); 
                 }
-                return newCategories;
+                return prev.filter(id => id !== catId);
             } else {
                 return [...prev, catId];
             }
         });
     };
 
-    // Handle Subcategory change
     const handleSubcategoryChange = (subId) => {
         setSelectedSubcategories(prev => {
+            if (prev.includes(subId)) {
+                // Clear level 3 too
+                setSelectedInnerSubcategories([]);
+                return prev.filter(id => id !== subId);
+            } else {
+                return [...prev, subId];
+            }
+        });
+    };
+
+    const handleInnerSubcategoryChange = (subId) => {
+        setSelectedInnerSubcategories(prev => {
             if (prev.includes(subId)) {
                 return prev.filter(id => id !== subId);
             } else {
@@ -174,8 +190,8 @@ const Shop = () => {
                         <div className="bg-surface p-5 rounded-2xl border border-default shadow-sm">
                             <h3 className="font-bold text-primary tracking-wide mb-4 flex items-center justify-between pb-3 border-b border-default">
                                 Categories
-                                {(selectedCategories.length > 0 || selectedSubcategories.length > 0) && (
-                                    <button onClick={() => { setSelectedCategories([]); setSelectedSubcategories([]); }} className="text-[10px] text-brand hover:underline">Clear</button>
+                                {(selectedCategories.length > 0 || selectedSubcategories.length > 0 || selectedInnerSubcategories.length > 0) && (
+                                    <button onClick={() => { setSelectedCategories([]); setSelectedSubcategories([]); setSelectedInnerSubcategories([]); }} className="text-[10px] text-brand hover:underline">Clear</button>
                                 )}
                             </h3>
                             <ul className="space-y-4">
@@ -203,7 +219,7 @@ const Shop = () => {
                                                     {category.subcategories.map(sub => {
                                                         const isSubSelected = selectedSubcategories.includes(sub._id);
                                                         return (
-                                                            <li key={sub._id}>
+                                                            <li key={sub._id} className="flex flex-col">
                                                                 <label className="flex items-center gap-3 cursor-pointer group">
                                                                     <div className="relative flex items-center">
                                                                         <input
@@ -217,6 +233,30 @@ const Shop = () => {
                                                                         {sub.name}
                                                                     </span>
                                                                 </label>
+
+                                                                {/* Inner Subcategories (Level 3) */}
+                                                                {isSubSelected && sub.nestedSubcategories && sub.nestedSubcategories.length > 0 && (
+                                                                    <ul className="ml-4 mt-1.5 space-y-1.5 border-l border-brand/20 pl-4 animate-fade-in">
+                                                                        {sub.nestedSubcategories.map((nested, nIdx) => {
+                                                                            const isNestedSelected = selectedInnerSubcategories.includes(nested._id);
+                                                                            return (
+                                                                                <li key={nested._id || nIdx}>
+                                                                                    <label className="flex items-center gap-2 cursor-pointer group">
+                                                                                        <input
+                                                                                            type="checkbox"
+                                                                                            checked={isNestedSelected}
+                                                                                            onChange={() => handleInnerSubcategoryChange(nested._id)}
+                                                                                            className="w-3 h-3 text-brand/70 border-default rounded-sm focus:ring-brand cursor-pointer"
+                                                                                        />
+                                                                                        <span className={`text-xs transition-colors ${isNestedSelected ? 'text-brand font-bold' : 'text-tertiary group-hover:text-secondary'}`}>
+                                                                                            {nested.name}
+                                                                                        </span>
+                                                                                    </label>
+                                                                                </li>
+                                                                            );
+                                                                        })}
+                                                                    </ul>
+                                                                )}
                                                             </li>
                                                         );
                                                     })}
@@ -312,7 +352,12 @@ const Shop = () => {
                     </div>
 
                     {/* Product Grid Area */}
-                <div className="lg:w-3/4 animate-slide-up-delayed-1">
+                    <div className="lg:w-3/4 animate-slide-up-delayed-1">
+                        <Breadcrumbs 
+                            category={categories.find(c => selectedCategories.includes(c._id))}
+                            subcategory={categories.find(c => selectedCategories.includes(c._id))?.subcategories?.find(s => selectedSubcategories.includes(s._id))}
+                            innerSubcategory={selectedInnerSubcategories.length === 1 ? selectedInnerSubcategories[0] : null}
+                        />
                         {loading ? (
                             <div className="flex justify-center items-center h-64">
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
@@ -398,6 +443,7 @@ const Shop = () => {
                                         onClick={() => {
                                             setSelectedCategories([]);
                                             setSelectedSubcategories([]);
+                                            setSelectedInnerSubcategories([]);
                                             setSelectedBrands([]);
                                             setMinPrice('');
                                             setMaxPrice('');

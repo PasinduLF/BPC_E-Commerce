@@ -43,6 +43,10 @@ const productSchema = new mongoose.Schema({
         type: mongoose.Schema.ObjectId, // Will point to a Subcategory within the Category
         required: false
     },
+    innerSubcategory: {
+        type: mongoose.Schema.ObjectId, // Will point to a NestedSubcategory within the Subcategory
+        required: false
+    },
     brand: {
         type: mongoose.Schema.ObjectId,
         ref: 'Brand',
