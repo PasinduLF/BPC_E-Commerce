@@ -57,8 +57,8 @@ const Shop = () => {
         const fetchFilters = async () => {
             try {
                 const [categoryRes, brandRes] = await Promise.all([
-                    axios.get('http://localhost:5000/api/categories'),
-                    axios.get('http://localhost:5000/api/brands')
+                    axios.get('/api/categories'),
+                    axios.get('/api/brands')
                 ]);
                 setCategories(categoryRes.data);
                 setBrands(brandRes.data);
@@ -73,7 +73,7 @@ const Shop = () => {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
-                let url = `http://localhost:5000/api/products?sort=${sort}`;
+                let url = `/api/products?sort=${sort}`;
                 if (searchKeyword) url += `&keyword=${encodeURIComponent(searchKeyword)}`;
                 if (selectedCategories.length > 0) url += `&category=${selectedCategories.join(',')}`;
                 if (selectedSubcategories.length > 0) url += `&subcategory=${selectedSubcategories.join(',')}`;

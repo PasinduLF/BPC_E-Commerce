@@ -135,7 +135,7 @@ const SystemSettings = () => {
                 submitData.append('heroImage', heroImageFile);
             }
 
-            const { data } = await axios.put('http://localhost:5000/api/config', submitData, reqConfig);
+            const { data } = await axios.put('/api/config', submitData, reqConfig);
 
             updateConfigLocally(data);
             setMessage({ type: 'success', text: 'System configuration saved successfully!' });

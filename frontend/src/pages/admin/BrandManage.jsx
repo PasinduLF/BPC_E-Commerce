@@ -18,7 +18,7 @@ const BrandManage = () => {
     const fetchBrands = async () => {
         try {
             setLoading(true);
-            const { data } = await axios.get('http://localhost:5000/api/brands');
+            const { data } = await axios.get('/api/brands');
             setBrands(data);
             setLoading(false);
         } catch (error) {
@@ -41,13 +41,13 @@ const BrandManage = () => {
             if (imageFile) {
                 const formData = new FormData();
                 formData.append('image', imageFile);
-                const uploadRes = await axios.post('http://localhost:5000/api/upload', formData, {
+                const uploadRes = await axios.post('/api/upload', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 imageUrl = uploadRes.data.url;
             }
 
-            await axios.post('http://localhost:5000/api/brands', {
+            await axios.post('/api/brands', {
                 name,
                 description,
                 image: imageUrl
@@ -70,7 +70,7 @@ const BrandManage = () => {
         if (window.confirm(`Are you sure you want to delete brand "${brandName}"?`)) {
             try {
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                await axios.delete(`http://localhost:5000/api/brands/${id}`, config);
+                await axios.delete(`/api/brands/${id}`, config);
                 fetchBrands();
             } catch (error) {
                 alert(error.response?.data?.message || 'Failed to delete brand. It might be assigned to products.');

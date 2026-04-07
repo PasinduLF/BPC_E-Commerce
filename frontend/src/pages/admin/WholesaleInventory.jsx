@@ -40,7 +40,7 @@ const WholesaleInventory = () => {
     const fetchPurchases = async () => {
         try {
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            const { data } = await axios.get('http://localhost:5000/api/wholesale', config);
+            const { data } = await axios.get('/api/wholesale', config);
             setPurchases(data);
             setLoading(false);
         } catch (error) {
@@ -51,7 +51,7 @@ const WholesaleInventory = () => {
 
     const fetchProducts = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/products');
+            const { data } = await axios.get('/api/products');
             setProducts(data.products || data);
         } catch (error) {
             console.error('Failed to load products for dropdown', error);
@@ -106,7 +106,7 @@ const WholesaleInventory = () => {
             };
 
             await axios.post(
-                'http://localhost:5000/api/wholesale',
+                '/api/wholesale',
                 {
                     supplierName,
                     paymentMethod,
@@ -139,7 +139,7 @@ const WholesaleInventory = () => {
         if (window.confirm('Are you sure you want to delete this invoice? The stock received will be deducted.')) {
             try {
                 const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                await axios.delete(`http://localhost:5000/api/wholesale/${id}`, configHeader);
+                await axios.delete(`/api/wholesale/${id}`, configHeader);
                 fetchPurchases();
             } catch (error) {
                 alert(error.response?.data?.message || 'Failed to delete purchase');
@@ -150,7 +150,7 @@ const WholesaleInventory = () => {
     const openDetailsModal = async (id) => {
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            const { data } = await axios.get(`http://localhost:5000/api/wholesale/${id}`, configHeader);
+            const { data } = await axios.get(`/api/wholesale/${id}`, configHeader);
             setSelectedPurchase(data);
             setDetailsModalOpen(true);
         } catch (error) {
@@ -172,7 +172,7 @@ const WholesaleInventory = () => {
         e.preventDefault();
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            await axios.put(`http://localhost:5000/api/wholesale/${selectedPurchase._id}`, editFormData, configHeader);
+            await axios.put(`/api/wholesale/${selectedPurchase._id}`, editFormData, configHeader);
             setEditModalOpen(false);
             fetchPurchases();
             alert('Purchase updated successfully');

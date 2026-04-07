@@ -57,7 +57,7 @@ function App() {
           const reqConfig = {
             headers: { Authorization: `Bearer ${userInfo.token}` }
           };
-          const { data } = await axios.put('http://localhost:5000/api/users/profile', {
+          const { data } = await axios.put('/api/users/profile', {
             cart: cartItems,
             wishlist: wishlistItems
           }, reqConfig);

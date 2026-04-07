@@ -31,7 +31,7 @@ const IncomeExpenseManage = () => {
         try {
             setLoading(true);
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            const { data } = await axios.get('http://localhost:5000/api/transactions', config);
+            const { data } = await axios.get('/api/transactions', config);
             setTransactions(data);
             setLoading(false);
         } catch (error) {
@@ -55,7 +55,7 @@ const IncomeExpenseManage = () => {
             };
 
             await axios.post(
-                'http://localhost:5000/api/transactions',
+                '/api/transactions',
                 {
                     type,
                     amount: Number(amount),
@@ -84,7 +84,7 @@ const IncomeExpenseManage = () => {
         if (window.confirm('Are you sure you want to delete this transaction record?')) {
             try {
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                await axios.delete(`http://localhost:5000/api/transactions/${id}`, config);
+                await axios.delete(`/api/transactions/${id}`, config);
                 fetchTransactions();
             } catch (error) {
                 alert(error.response?.data?.message || 'Failed to delete transaction');
@@ -117,7 +117,7 @@ const IncomeExpenseManage = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
             await axios.put(
-                `http://localhost:5000/api/transactions/${selectedTx._id}`,
+                `/api/transactions/${selectedTx._id}`,
                 { type, amount: Number(amount), category, paymentMethod, description },
                 config
             );

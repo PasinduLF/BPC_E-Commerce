@@ -38,13 +38,13 @@ const Login = () => {
 
             if (isLogin) {
                 ({ data } = await axios.post(
-                    'http://localhost:5000/api/users/auth',
+                    '/api/users/auth',
                     { email, password },
                     config
                 ));
             } else {
                 ({ data } = await axios.post(
-                    'http://localhost:5000/api/users',
+                    '/api/users',
                     { name, email, password },
                     config
                 ));

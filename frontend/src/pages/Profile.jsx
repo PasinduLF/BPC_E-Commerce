@@ -44,7 +44,7 @@ const Profile = () => {
                 }
             };
 
-            const { data } = await axios.put('http://localhost:5000/api/users/profile', updates, config);
+            const { data } = await axios.put('/api/users/profile', updates, config);
 
             // Re-inject the token so authStore doesn't lose it on cache update
             const updatedUser = { ...data, token: userInfo.token };

@@ -17,7 +17,7 @@ const FinancialDashboard = () => {
         try {
             setLoading(true);
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            const { data } = await axios.get('http://localhost:5000/api/financials/balances', config);
+            const { data } = await axios.get('/api/financials/balances', config);
             setMetrics(data);
             setLoading(false);
         } catch (error) {

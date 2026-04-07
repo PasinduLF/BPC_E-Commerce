@@ -32,7 +32,7 @@ const ProductScreen = () => {
 
     const fetchProduct = async () => {
         try {
-            const { data } = await axios.get(`http://localhost:5000/api/products/${id}`);
+            const { data } = await axios.get(`/api/products/${id}`);
             setProduct(data);
             if (data.variants && data.variants.length > 0) {
                 setSelectedVariant((prev) => {
@@ -105,7 +105,7 @@ const ProductScreen = () => {
                 },
             };
 
-            await axios.post(`http://localhost:5000/api/products/${id}/reviews`, {
+            await axios.post(`/api/products/${id}/reviews`, {
                 rating: reviewRating,
                 comment: reviewComment,
             }, reqConfig);
@@ -135,7 +135,7 @@ const ProductScreen = () => {
                 },
             };
 
-            await axios.delete(`http://localhost:5000/api/products/${id}/reviews/${reviewId}`, reqConfig);
+            await axios.delete(`/api/products/${id}/reviews/${reviewId}`, reqConfig);
             setReviewSuccess('Review removed successfully.');
             await fetchProduct();
         } catch (error) {

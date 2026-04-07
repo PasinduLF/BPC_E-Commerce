@@ -27,7 +27,7 @@ const POSInterface = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             try {
-                const { data } = await axios.get('http://localhost:5000/api/products?keyword=' + search);
+                const { data } = await axios.get('/api/products?keyword=' + search);
                 setProducts(data.products || data);
                 setLoading(false);
             } catch (error) {
@@ -112,7 +112,7 @@ const POSInterface = () => {
                 const cash = paymentMethod === 'Cash' ? (parseFloat(cashGiven) || 0) : 0;
                 const change = paymentMethod === 'Cash' ? (cash - itemsPrice) : 0;
 
-                const { data } = await axios.post('http://localhost:5000/api/pos', {
+                const { data } = await axios.post('/api/pos', {
                     orderItems: cartItems.map(x => ({
                         name: x.name,
                         qty: x.qty,

@@ -22,9 +22,9 @@ const AdminDashboard = () => {
                 // In a real app, you'd likely create a specific /api/admin/stats endpoint
                 // For now, we fetch everything to calculate aggregate data on client (or simulate)
                 const [usersRes, productsRes, ordersRes] = await Promise.all([
-                    axios.get('http://localhost:5000/api/users', config),
-                    axios.get('http://localhost:5000/api/products'),
-                    axios.get('http://localhost:5000/api/orders', config)
+                    axios.get('/api/users', config),
+                    axios.get('/api/products'),
+                    axios.get('/api/orders', config)
                 ]);
 
                 const totalRev = ordersRes.data.reduce((acc, order) => order.isPaid ? acc + order.totalPrice : acc, 0);

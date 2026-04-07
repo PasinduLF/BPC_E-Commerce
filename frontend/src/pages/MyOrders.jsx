@@ -27,7 +27,7 @@ const MyOrders = () => {
                         Authorization: `Bearer ${userInfo.token}`,
                     },
                 };
-                const { data } = await axios.get('http://localhost:5000/api/orders/myorders', reqConfig);
+                const { data } = await axios.get('/api/orders/myorders', reqConfig);
                 // Sort by newest first
                 setOrders(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
                 setLoading(false);

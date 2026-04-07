@@ -29,7 +29,7 @@ const CategoryManage = () => {
 
     const fetchCategories = async () => {
         try {
-            const { data } = await axios.get('http://localhost:5000/api/categories');
+            const { data } = await axios.get('/api/categories');
             setCategories(data);
             setLoading(false);
         } catch (error) {
@@ -51,7 +51,7 @@ const CategoryManage = () => {
             if (selectedImageFile) {
                 const formData = new FormData();
                 formData.append('image', selectedImageFile);
-                const { data } = await axios.post('http://localhost:5000/api/upload', formData, {
+                const { data } = await axios.post('/api/upload', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 imageUrl = data.url;
@@ -60,25 +60,25 @@ const CategoryManage = () => {
             // LEVEL 0: ROOT CATEGORY
             if (navStack.length === 0) {
                 if (editingCategoryId) {
-                    await axios.put(`http://localhost:5000/api/categories/${editingCategoryId}`, { name: newCategoryName, description: newCategoryDesc, image: imageUrl }, config);
+                    await axios.put(`/api/categories/${editingCategoryId}`, { name: newCategoryName, description: newCategoryDesc, image: imageUrl }, config);
                 } else {
-                    await axios.post('http://localhost:5000/api/categories', { name: newCategoryName, description: newCategoryDesc, image: imageUrl }, config);
+                    await axios.post('/api/categories', { name: newCategoryName, description: newCategoryDesc, image: imageUrl }, config);
                 }
             } 
             // LEVEL 1: SUBCATEGORY (Drilled into CATEGORY)
             else if (navStack.length === 1) {
                 const catId = navStack[0].id;
                 if (editingCategoryId) {
-                    await axios.put(`http://localhost:5000/api/categories/${catId}/subcategories/${editingCategoryId}`, { name: newSubName, description: newSubDesc }, config);
+                    await axios.put(`/api/categories/${catId}/subcategories/${editingCategoryId}`, { name: newSubName, description: newSubDesc }, config);
                 } else {
-                    await axios.post(`http://localhost:5000/api/categories/${catId}/subcategories`, { name: newSubName, description: newSubDesc }, config);
+                    await axios.post(`/api/categories/${catId}/subcategories`, { name: newSubName, description: newSubDesc }, config);
                 }
             } 
             // LEVEL 2: NESTED (Drilled into SUBCATEGORY)
             else if (navStack.length === 2) {
                 const catId = navStack[0].id;
                 const subcategoryId = navStack[1].id;
-                await axios.post(`http://localhost:5000/api/categories/${catId}/subcategories/${subcategoryId}/nested`, { name: newSubName }, config);
+                await axios.post(`/api/categories/${catId}/subcategories/${subcategoryId}/nested`, { name: newSubName }, config);
             }
 
             setNewCategoryName('');
@@ -116,10 +116,10 @@ const CategoryManage = () => {
             try {
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
                 if (navStack.length === 0) {
-                    await axios.delete(`http://localhost:5000/api/categories/${id}`, config);
+                    await axios.delete(`/api/categories/${id}`, config);
                 } else {
                     const catId = navStack[0].id;
-                    await axios.delete(`http://localhost:5000/api/categories/${catId}/subcategories/${id}`, config);
+                    await axios.delete(`/api/categories/${catId}/subcategories/${id}`, config);
                 }
                 fetchCategories();
             } catch (error) {
@@ -132,7 +132,7 @@ const CategoryManage = () => {
         e.preventDefault();
         try {
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            await axios.post(`http://localhost:5000/api/categories/${categoryId}/subcategories`, {
+            await axios.post(`/api/categories/${categoryId}/subcategories`, {
                 name: newSubcategoryName
             }, config);
 
@@ -160,7 +160,7 @@ const CategoryManage = () => {
         if (!window.confirm('Delete this inner subcategory?')) return;
         try {
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            await axios.delete(`http://localhost:5000/api/categories/${catId}/subcategories/${subId}/nested/${nestedId}`, config);
+            await axios.delete(`/api/categories/${catId}/subcategories/${subId}/nested/${nestedId}`, config);
             fetchCategories();
         } catch (error) {
             alert('Failed to delete nested subcategory');

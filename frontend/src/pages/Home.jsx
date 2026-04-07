@@ -24,19 +24,19 @@ const Home = () => {
         const fetchHomeData = async () => {
             try {
                 // Fetch New Arrivals (Trending)
-                const trendingRes = await axios.get('http://localhost:5000/api/products?sort=newest');
+                const trendingRes = await axios.get('/api/products?sort=newest');
                 setTrendingProducts(trendingRes.data.products.slice(0, 4));
 
                 // Fetch Featured Products
-                const featuredRes = await axios.get('http://localhost:5000/api/products?isFeatured=true');
+                const featuredRes = await axios.get('/api/products?isFeatured=true');
                 setFeaturedProducts(featuredRes.data.products.slice(0, 4));
 
                 // Fetch Categories
-                const catRes = await axios.get('http://localhost:5000/api/categories');
+                const catRes = await axios.get('/api/categories');
                 setCategories(catRes.data.slice(0, 6)); // Top 6
 
                 // Fetch Brands
-                const brandRes = await axios.get('http://localhost:5000/api/brands');
+                const brandRes = await axios.get('/api/brands');
                 setBrands(brandRes.data);
             } catch (error) {
                 console.error("Failed to load home data:", error);

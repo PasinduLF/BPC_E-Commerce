@@ -30,7 +30,7 @@ const OrderManage = () => {
     const fetchOrders = async () => {
         try {
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            const { data } = await axios.get('http://localhost:5000/api/orders', config);
+            const { data } = await axios.get('/api/orders', config);
             setOrders(data);
             setLoading(false);
         } catch (error) {
@@ -48,7 +48,7 @@ const OrderManage = () => {
         setActionLoadingKey(key);
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            await axios.put(`http://localhost:5000/api/orders/${id}/status`, payload, configHeader);
+            await axios.put(`/api/orders/${id}/status`, payload, configHeader);
             fetchOrders(); // refresh
         } catch (error) {
             alert(error.response?.data?.message || 'Failed to update order status');
@@ -74,7 +74,7 @@ const OrderManage = () => {
             setActionLoadingKey(`delete-${id}`);
             try {
                 const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                await axios.delete(`http://localhost:5000/api/orders/${id}`, configHeader);
+                await axios.delete(`/api/orders/${id}`, configHeader);
                 fetchOrders();
             } catch (error) {
                 alert(error.response?.data?.message || 'Failed to delete order');
@@ -106,7 +106,7 @@ const OrderManage = () => {
                 ? (Number(editFormData.cashGiven) - editingOrder.itemsPrice)
                 : 0;
 
-            await axios.put(`http://localhost:5000/api/orders/${editingOrder._id}`, {
+            await axios.put(`/api/orders/${editingOrder._id}`, {
                 ...editFormData,
                 changeDue: change
             }, configHeader);

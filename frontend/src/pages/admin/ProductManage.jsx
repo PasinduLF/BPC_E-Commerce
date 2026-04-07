@@ -45,9 +45,9 @@ const ProductManage = () => {
         try {
             setLoading(true);
             const [prodRes, catRes, brandRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/products?admin=true'),
-                axios.get('http://localhost:5000/api/categories'),
-                axios.get('http://localhost:5000/api/brands')
+                axios.get('/api/products?admin=true'),
+                axios.get('/api/categories'),
+                axios.get('/api/brands')
             ]);
 
             setProducts(prodRes.data.products || prodRes.data);
@@ -76,7 +76,7 @@ const ProductManage = () => {
                 for (let i = 0; i < selectedFiles.length; i++) {
                     const formData = new FormData();
                     formData.append('image', selectedFiles[i]);
-                    const { data } = await axios.post('http://localhost:5000/api/upload', formData, {
+                    const { data } = await axios.post('/api/upload', formData, {
                         headers: { 'Content-Type': 'multipart/form-data' }
                     });
                     uploadedImages.push({ public_id: data.public_id, url: data.url });
@@ -89,7 +89,7 @@ const ProductManage = () => {
                 if (v.imageFile) {
                     const formData = new FormData();
                     formData.append('image', v.imageFile);
-                    const { data } = await axios.post('http://localhost:5000/api/upload', formData, {
+                    const { data } = await axios.post('/api/upload', formData, {
                         headers: { 'Content-Type': 'multipart/form-data' }
                     });
                     imageUrl = data.url;
@@ -126,10 +126,10 @@ const ProductManage = () => {
                 if (finalImages.length > 0) {
                     productData.images = finalImages;
                 }
-                await axios.put(`http://localhost:5000/api/products/${editingId}`, productData, config);
+                await axios.put(`/api/products/${editingId}`, productData, config);
             } else {
                 productData.images = finalImages.length > 0 ? finalImages : [{ public_id: 'placeholder', url: 'https://via.placeholder.com/300' }];
-                await axios.post('http://localhost:5000/api/products', productData, config);
+                await axios.post('/api/products', productData, config);
             }
 
             // Reset form
@@ -182,7 +182,7 @@ const ProductManage = () => {
         if (window.confirm(`Delete product ${title}?`)) {
             try {
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                await axios.delete(`http://localhost:5000/api/products/${id}`, config);
+                await axios.delete(`/api/products/${id}`, config);
                 fetchData();
             } catch (error) {
                 alert(error.response?.data?.message || 'Failed to delete product');

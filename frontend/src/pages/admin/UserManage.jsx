@@ -11,7 +11,7 @@ const UserManage = () => {
     const fetchUsers = async () => {
         try {
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            const { data } = await axios.get('http://localhost:5000/api/users', config);
+            const { data } = await axios.get('/api/users', config);
             setUsers(data);
             setLoading(false);
         } catch (error) {
@@ -28,7 +28,7 @@ const UserManage = () => {
         if (window.confirm(`Are you sure you want to delete user ${name}?`)) {
             try {
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                await axios.delete(`http://localhost:5000/api/users/${id}`, config);
+                await axios.delete(`/api/users/${id}`, config);
                 fetchUsers();
             } catch (error) {
                 alert(error.response?.data?.message || 'Failed to delete user');
@@ -45,7 +45,7 @@ const UserManage = () => {
         if (window.confirm(`Change admin status for ${user.name}?`)) {
             try {
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                await axios.put(`http://localhost:5000/api/users/${user._id}`, {
+                await axios.put(`/api/users/${user._id}`, {
                     role: user.role === 'admin' ? 'customer' : 'admin'
                 }, config);
                 fetchUsers();

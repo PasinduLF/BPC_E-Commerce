@@ -9,7 +9,7 @@ export const useConfigStore = create((set) => ({
     fetchConfig: async () => {
         set({ loading: true, error: null });
         try {
-            const { data } = await axios.get('http://localhost:5000/api/config');
+            const { data } = await axios.get('/api/config');
             set({ config: data, loading: false });
         } catch (error) {
             set({ error: error.message, loading: false });

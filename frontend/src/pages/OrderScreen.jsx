@@ -26,7 +26,7 @@ const OrderScreen = () => {
                         Authorization: `Bearer ${userInfo.token}`,
                     },
                 };
-                const { data } = await axios.get(`http://localhost:5000/api/orders/${id}`, config);
+                const { data } = await axios.get(`/api/orders/${id}`, config);
                 setOrder(data);
                 setError('');
                 setLoading(false);
@@ -54,11 +54,11 @@ const OrderScreen = () => {
                 },
             };
 
-            const { data } = await axios.post('http://localhost:5000/api/upload', formData, config);
+            const { data } = await axios.post('/api/upload', formData, config);
             setSlipImage(data.image);
 
             // Now update the order with the slip
-            await axios.put(`http://localhost:5000/api/orders/${id}/pay`, {
+            await axios.put(`/api/orders/${id}/pay`, {
                 paymentSlipUrl: data.url,
                 paymentSlipPublicId: data.public_id
             }, {
@@ -69,7 +69,7 @@ const OrderScreen = () => {
             });
 
             // refetch order to update UI
-            const updatedData = await axios.get(`http://localhost:5000/api/orders/${id}`, {
+            const updatedData = await axios.get(`/api/orders/${id}`, {
                 headers: { Authorization: `Bearer ${userInfo.token}` }
             });
             setOrder(updatedData.data);
@@ -87,10 +87,10 @@ const OrderScreen = () => {
         setPaymentUpdating(true);
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            await axios.put(`http://localhost:5000/api/orders/${id}/status`, { paymentStatus: 'paid' }, configHeader);
+            await axios.put(`/api/orders/${id}/status`, { paymentStatus: 'paid' }, configHeader);
 
             // refetch order
-            const updatedData = await axios.get(`http://localhost:5000/api/orders/${id}`, configHeader);
+            const updatedData = await axios.get(`/api/orders/${id}`, configHeader);
             setOrder(updatedData.data);
             alert('Payment verified successfully!');
         } catch (error) {
@@ -105,11 +105,11 @@ const OrderScreen = () => {
         setDeliveryUpdating(true);
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            await axios.put(`http://localhost:5000/api/orders/${id}/status`, {
+            await axios.put(`/api/orders/${id}/status`, {
                 deliveryStatus: order.isDelivered ? 'processing' : 'delivered'
             }, configHeader);
 
-            const updatedData = await axios.get(`http://localhost:5000/api/orders/${id}`, configHeader);
+            const updatedData = await axios.get(`/api/orders/${id}`, configHeader);
             setOrder(updatedData.data);
         } catch (error) {
             alert('Failed to update delivery status');
