@@ -12,12 +12,22 @@ const getFinancialBalances = async (req, res) => {
 
         let cashIn = 0;
         let bankIn = 0;
+        let salesRevenue = 0;
+        let costOfGoodsSold = 0;
 
         orders.forEach(order => {
+            salesRevenue += order.totalPrice;
+
             if (order.paymentMethod === 'Cash on Delivery' || order.paymentMethod === 'Cash') {
                 cashIn += order.totalPrice;
             } else if (order.paymentMethod === 'Bank Transfer') {
                 bankIn += order.totalPrice;
+            }
+
+            if (Array.isArray(order.orderItems)) {
+                order.orderItems.forEach((item) => {
+                    costOfGoodsSold += (Number(item.costPrice) || 0) * (Number(item.qty) || 0);
+                });
             }
         });
 
@@ -26,8 +36,11 @@ const getFinancialBalances = async (req, res) => {
 
         let cashOut = 0;
         let bankOut = 0;
+        let wholesaleExpense = 0;
 
         purchases.forEach(purchase => {
+            wholesaleExpense += purchase.totalCost;
+
             if (purchase.paymentMethod === 'Cash') {
                 cashOut += purchase.totalCost;
             } else if (purchase.paymentMethod === 'Bank Transfer') {
@@ -37,12 +50,16 @@ const getFinancialBalances = async (req, res) => {
 
         // 3. Process Manual Income & Expenses
         const manualTransactions = await Transaction.find({});
+        let manualIncome = 0;
+        let manualExpense = 0;
 
         manualTransactions.forEach(t => {
             if (t.type === 'Income') {
+                manualIncome += t.amount;
                 if (t.paymentMethod === 'Cash') cashIn += t.amount;
                 if (t.paymentMethod === 'Bank Transfer') bankIn += t.amount;
             } else if (t.type === 'Expense') {
+                manualExpense += t.amount;
                 if (t.paymentMethod === 'Cash') cashOut += t.amount;
                 if (t.paymentMethod === 'Bank Transfer') bankOut += t.amount;
             }
@@ -51,6 +68,11 @@ const getFinancialBalances = async (req, res) => {
         // 4. Final Balances
         const cashBalance = cashIn - cashOut;
         const bankBalance = bankIn - bankOut;
+        const totalIncome = salesRevenue + manualIncome;
+        const totalExpense = wholesaleExpense + manualExpense;
+        const grossProfit = salesRevenue - costOfGoodsSold;
+        const netProfit = totalIncome - totalExpense;
+        const totalAssets = cashBalance + bankBalance;
 
         res.json({
             cashIn,
@@ -59,7 +81,18 @@ const getFinancialBalances = async (req, res) => {
             bankIn,
             bankOut,
             bankBalance,
-            totalNetRevenue: cashBalance + bankBalance
+            totalNetRevenue: totalAssets,
+            salesRevenue,
+            costOfGoodsSold,
+            wholesaleExpense,
+            manualIncome,
+            manualExpense,
+            totalIncome,
+            totalExpense,
+            grossProfit,
+            netProfit,
+            paidOrdersCount: orders.length,
+            manualTransactionsCount: manualTransactions.length
         });
 
     } catch (error) {

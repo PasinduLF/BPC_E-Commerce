@@ -2,11 +2,16 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
 import { Wallet, Landmark, TrendingUp, TrendingDown, RefreshCcw } from 'lucide-react';
+import { useConfigStore } from '../../context/useConfigStore';
 
 const FinancialDashboard = () => {
     const { userInfo } = useAuthStore();
+    const { config } = useConfigStore();
+    const currency = config?.currencySymbol || '$';
     const [metrics, setMetrics] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    const money = (value) => `${currency}${Number(value || 0).toFixed(2)}`;
 
     const fetchBalances = async () => {
         try {
@@ -46,11 +51,35 @@ const FinancialDashboard = () => {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-primary">Financial Ledger</h1>
-                    <p className="text-secondary text-sm mt-1">Real-time balances across Cash and Bank assets.</p>
+                    <p className="text-secondary text-sm mt-1">Monitor income, expenses, gross profit, and net profit in real time.</p>
                 </div>
                 <button onClick={fetchBalances} className="btn-primary flex items-center gap-2">
                     <RefreshCcw size={16} /> Sync Balances
                 </button>
+            </div>
+
+            {/* Profitability Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="bg-surface border border-default rounded-2xl p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-tertiary">Total Income</p>
+                    <p className="text-2xl font-extrabold text-success mt-2">{money(metrics.totalIncome)}</p>
+                    <p className="text-xs text-secondary mt-2">Sales + manual income</p>
+                </div>
+                <div className="bg-surface border border-default rounded-2xl p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-tertiary">Total Expense</p>
+                    <p className="text-2xl font-extrabold text-error mt-2">{money(metrics.totalExpense)}</p>
+                    <p className="text-xs text-secondary mt-2">Wholesale + manual expenses</p>
+                </div>
+                <div className="bg-surface border border-default rounded-2xl p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-tertiary">Gross Profit</p>
+                    <p className={`text-2xl font-extrabold mt-2 ${metrics.grossProfit >= 0 ? 'text-success' : 'text-error'}`}>{money(metrics.grossProfit)}</p>
+                    <p className="text-xs text-secondary mt-2">Sales minus COGS</p>
+                </div>
+                <div className="bg-surface border border-default rounded-2xl p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-tertiary">Net Profit</p>
+                    <p className={`text-2xl font-extrabold mt-2 ${metrics.netProfit >= 0 ? 'text-success' : 'text-error'}`}>{money(metrics.netProfit)}</p>
+                    <p className="text-xs text-secondary mt-2">Income minus all expenses</p>
+                </div>
             </div>
 
             {/* Core Balances */}
@@ -66,17 +95,17 @@ const FinancialDashboard = () => {
                             <Wallet size={20} className="text-success" /> Actual Cash in Hand
                         </h3>
                         <div className="text-5xl font-extrabold tracking-tight mb-8">
-                            ${metrics.cashBalance.toFixed(2)}
+                            {money(metrics.cashBalance)}
                         </div>
 
                         <div className="bg-success-bg/50 border border-success-bg rounded-2xl p-5 backdrop-blur-sm grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-secondary text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-1"><TrendingUp size={12} className="text-success" /> Total IN</p>
-                                <p className="font-bold text-xl">${metrics.cashIn.toFixed(2)}</p>
+                                <p className="font-bold text-xl">{money(metrics.cashIn)}</p>
                             </div>
                             <div>
                                 <p className="text-secondary text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-1"><TrendingDown size={12} className="text-error" /> Total OUT</p>
-                                <p className="font-bold text-xl">${metrics.cashOut.toFixed(2)}</p>
+                                <p className="font-bold text-xl">{money(metrics.cashOut)}</p>
                             </div>
                         </div>
                     </div>
@@ -92,17 +121,17 @@ const FinancialDashboard = () => {
                             <Landmark size={20} className="text-brand" /> Total Bank Balance
                         </h3>
                         <div className="text-5xl font-extrabold tracking-tight mb-8">
-                            ${metrics.bankBalance.toFixed(2)}
+                            {money(metrics.bankBalance)}
                         </div>
 
                         <div className="bg-brand-subtle/50 border border-brand-subtle rounded-2xl p-5 backdrop-blur-sm grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-secondary text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-1"><TrendingUp size={12} className="text-success" /> Total IN</p>
-                                <p className="font-bold text-xl">${metrics.bankIn.toFixed(2)}</p>
+                                <p className="font-bold text-xl">{money(metrics.bankIn)}</p>
                             </div>
                             <div>
                                 <p className="text-secondary text-xs font-medium uppercase tracking-wider mb-1 flex items-center gap-1"><TrendingDown size={12} className="text-error" /> Total OUT</p>
-                                <p className="font-bold text-xl">${metrics.bankOut.toFixed(2)}</p>
+                                <p className="font-bold text-xl">{money(metrics.bankOut)}</p>
                             </div>
                         </div>
                     </div>
@@ -114,14 +143,20 @@ const FinancialDashboard = () => {
             <div className="bg-surface p-6 rounded-2xl border border-default shadow-sm mt-8">
                 <h4 className="text-sm font-bold text-primary mb-2">How this is calculated</h4>
                 <p className="text-secondary text-sm leading-relaxed mb-4">
-                    The numbers above are generated natively by analyzing every transaction in your system.
+                    The numbers above are generated by analyzing paid orders, wholesale purchases, and manual transactions.
                     <strong> Cash IN </strong> represents all physical walk-in POS sales and "Cash on Delivery" orders that have been successfully marked as Paid.
                     <strong> Bank IN </strong> targets all online Bank Transfer orders marked as Paid.
-                    The <strong>OUT</strong> values are drawn directly from the Wholesale Inventoy purchase logs based on the payment method you specified during the acquisition.
+                    The <strong>OUT</strong> values are drawn from wholesale purchases and manual expenses. Gross profit uses product cost prices from paid order items.
                 </p>
-                <div className="p-4 bg-page border border-default rounded-xl flex justify-between items-center text-sm font-medium">
-                    <span className="text-primary">Total Available Net Revenue (Cash + Bank balances)</span>
-                    <span className="text-xl font-bold text-brand">${metrics.totalNetRevenue.toFixed(2)}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="p-4 bg-page border border-default rounded-xl flex justify-between items-center text-sm font-medium">
+                        <span className="text-primary">Total Available Assets (Cash + Bank)</span>
+                        <span className="text-xl font-bold text-brand">{money(metrics.totalNetRevenue)}</span>
+                    </div>
+                    <div className="p-4 bg-page border border-default rounded-xl flex justify-between items-center text-sm font-medium">
+                        <span className="text-primary">COGS (from paid orders)</span>
+                        <span className="text-xl font-bold text-primary">{money(metrics.costOfGoodsSold)}</span>
+                    </div>
                 </div>
             </div>
 
