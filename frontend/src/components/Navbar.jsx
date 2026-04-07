@@ -86,7 +86,7 @@ const Navbar = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16 sm:h-20">
 
-                        {/* Mobile left side (Hamburger + Theme Toggle) */}
+                        {/* Mobile left side (Hamburger) */}
                         <div className="flex items-center gap-3 md:hidden">
                             <button
                                 onClick={() => setIsOpen(true)}
@@ -94,19 +94,16 @@ const Navbar = () => {
                             >
                                 <Menu size={24} />
                             </button>
-                            <button 
-                                onClick={toggleMode} 
-                                className="text-secondary hover:text-brand p-1.5 focus:outline-none transition-colors"
-                            >
-                                {isDark ? <Sun size={20} /> : <Moon size={20} />}
-                            </button>
                         </div>
 
                         {/* Logo & Brand (Center on mobile, Left on desktop) */}
                         <div className="flex items-center flex-1 md:flex-none justify-center md:justify-start">
                             <Link to="/" className="flex items-center gap-2 group">
-                                <img src={logoImage} alt="Beauty P&C Logo" className="h-8 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105" />
-                                <span className="text-xl sm:text-2xl font-black text-primary tracking-tight ml-1 hidden sm:block">
+                                <span className="md:hidden text-lg font-black text-primary tracking-tight">
+                                    Beauty P&C
+                                </span>
+                                <img src={logoImage} alt="Beauty P&C Logo" className="hidden md:block h-8 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105" />
+                                <span className="text-xl sm:text-2xl font-black text-primary tracking-tight ml-1 hidden md:block">
                                     {config?.businessName || 'Beauty P&C'}
                                 </span>
                             </Link>
@@ -275,10 +272,14 @@ const Navbar = () => {
                             </Link>
                         </div>
 
-                        {/* Mobile right side (Search placeholder) */}
+                        {/* Mobile right side (Theme Toggle) */}
                         <div className="flex items-center gap-3 md:hidden">
-                            <button className="text-secondary p-1" onClick={() => navigate('/shop')}>
-                                <Search size={22} />
+                            <button
+                                onClick={toggleMode}
+                                className="text-secondary hover:text-brand p-1.5 rounded-lg focus:outline-none transition-colors"
+                                aria-label="Toggle dark mode"
+                            >
+                                {isDark ? <Sun size={22} /> : <Moon size={22} />}
                             </button>
                         </div>
 
@@ -400,18 +401,7 @@ const Navbar = () => {
             )}
 
             {/* Bottom Mobile Navigation (Thumb friendly bar) */}
-            <BottomMobileNav 
-                onOpenCategories={() => setIsOpen(true)}
-                onOpenSearch={() => {
-                    const searchInput = document.querySelector('form input[type="text"]');
-                    if (searchInput) {
-                        setIsOpen(true);
-                        setTimeout(() => searchInput.focus(), 300);
-                    } else {
-                        navigate('/shop'); // Fallback if search isn't rendered
-                    }
-                }}
-            />
+            <BottomMobileNav />
         </header>
     );
 };
