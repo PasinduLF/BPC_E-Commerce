@@ -147,6 +147,18 @@ const Shop = () => {
         });
     };
 
+    const renderStars = (value, size = 16) => {
+        const filled = Math.round(Number(value || 0));
+        return Array.from({ length: 5 }).map((_, idx) => (
+            <Star
+                key={idx}
+                size={size}
+                fill={idx < filled ? 'currentColor' : 'none'}
+                className={idx < filled ? 'text-gold' : 'text-muted'}
+            />
+        ));
+    };
+
     return (
         <div className="bg-page min-h-screen py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
@@ -377,9 +389,11 @@ const Shop = () => {
                                                 ) : (
                                                     <div className="w-32 h-32 rounded-full bg-brand-subtle opacity-50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-500"></div>
                                                 )}
-                                                <div className="absolute top-4 right-4 bg-surface/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-brand">
-                                                    Top Rated
-                                                </div>
+                                                {Number(product.rating || 0) >= 4 && (
+                                                    <div className="absolute top-4 right-4 bg-surface/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-brand">
+                                                        Top Rated
+                                                    </div>
+                                                )}
                                             </div>
                                         </Link>
                                         <button
@@ -392,12 +406,8 @@ const Shop = () => {
 
                                         <div className="p-5 flex flex-col flex-1">
                                             <div className="flex items-center gap-1 text-gold mb-2">
-                                                <Star size={16} fill="currentColor" />
-                                                <Star size={16} fill="currentColor" />
-                                                <Star size={16} fill="currentColor" />
-                                                <Star size={16} fill="currentColor" />
-                                                <Star size={16} fill="currentColor" className="text-muted" />
-                                                <span className="text-tertiary text-xs ml-1">(12)</span>
+                                                {renderStars(product.rating, 16)}
+                                                <span className="text-tertiary text-xs ml-1">({product.numReviews || 0})</span>
                                             </div>
                                             {product.brand && (
                                                 <span className="block text-[10px] font-bold tracking-widest text-brand uppercase mb-1">

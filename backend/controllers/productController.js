@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const Order = require('../models/Order');
 
 // @desc    Fetch all products with filtering, sorting, pagination
 // @route   GET /api/products
@@ -191,10 +192,94 @@ const deleteProduct = async (req, res) => {
     }
 };
 
+// @desc    Create new review for a product
+// @route   POST /api/products/:id/reviews
+// @access  Private
+const createProductReview = async (req, res) => {
+    const { rating, comment } = req.body;
+
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+        res.status(404);
+        throw new Error('Product not found');
+    }
+
+    const alreadyReviewed = product.reviews.find(
+        (review) => review.user.toString() === req.user._id.toString()
+    );
+
+    if (alreadyReviewed) {
+        return res.status(400).json({ message: 'Product already reviewed' });
+    }
+
+    const parsedRating = Number(rating);
+    if (!parsedRating || parsedRating < 1 || parsedRating > 5) {
+        return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+
+    if (!comment || !comment.trim()) {
+        return res.status(400).json({ message: 'Comment is required' });
+    }
+
+    const hasCompletedPurchase = await Order.exists({
+        user: req.user._id,
+        isDelivered: true,
+        'orderItems.product': product._id,
+    });
+
+    if (!hasCompletedPurchase) {
+        return res.status(403).json({ message: 'You can only review products from completed orders' });
+    }
+
+    const review = {
+        name: req.user.name,
+        rating: parsedRating,
+        comment: comment.trim(),
+        user: req.user._id,
+    };
+
+    product.reviews.push(review);
+    product.numReviews = product.reviews.length;
+    product.rating = product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
+
+    await product.save();
+    res.status(201).json({ message: 'Review added' });
+};
+
+// @desc    Delete a review from a product
+// @route   DELETE /api/products/:id/reviews/:reviewId
+// @access  Private/Admin
+const deleteProductReview = async (req, res) => {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+        res.status(404);
+        throw new Error('Product not found');
+    }
+
+    const review = product.reviews.id(req.params.reviewId);
+    if (!review) {
+        return res.status(404).json({ message: 'Review not found' });
+    }
+
+    review.deleteOne();
+
+    product.numReviews = product.reviews.length;
+    product.rating = product.reviews.length > 0
+        ? product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length
+        : 0;
+
+    await product.save();
+    res.json({ message: 'Review removed' });
+};
+
 module.exports = {
     getProducts,
     getProductById,
     createProduct,
     updateProduct,
     deleteProduct,
+    createProductReview,
+    deleteProductReview,
 };

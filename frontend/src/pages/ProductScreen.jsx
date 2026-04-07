@@ -4,7 +4,7 @@ import { useCartStore } from '../context/useCartStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import axios from 'axios';
-import { Star, Truck, ShieldCheck, ArrowLeft, Minus, Plus, ShoppingBag, Heart, CreditCard, ChevronLeft } from 'lucide-react';
+import { Star, Truck, ShieldCheck, ArrowLeft, Minus, Plus, ShoppingBag, Heart, CreditCard, ChevronLeft, Trash2 } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
 import Breadcrumbs from '../components/Breadcrumbs';
 
@@ -19,26 +19,37 @@ const ProductScreen = () => {
     const [qty, setQty] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
     const [selectedVariant, setSelectedVariant] = useState(null);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState('');
+    const [reviewSubmitting, setReviewSubmitting] = useState(false);
+    const [reviewError, setReviewError] = useState('');
+    const [reviewSuccess, setReviewSuccess] = useState('');
+    const [deletingReviewId, setDeletingReviewId] = useState('');
 
     const { addToCart, setBuyNowItem } = useCartStore();
     const { userInfo } = useAuthStore();
     const { isInWishlist, toggleWishlist } = useWishlistStore();
 
-    useEffect(() => {
-        const fetchProduct = async () => {
-            try {
-                const { data } = await axios.get(`http://localhost:5000/api/products/${id}`);
-                setProduct(data);
-                if (data.variants && data.variants.length > 0) {
-                    setSelectedVariant(data.variants[0]);
-                }
-                setLoading(false);
-            } catch (error) {
-                console.error('Error fetching product:', error);
-                setLoading(false);
+    const fetchProduct = async () => {
+        try {
+            const { data } = await axios.get(`http://localhost:5000/api/products/${id}`);
+            setProduct(data);
+            if (data.variants && data.variants.length > 0) {
+                setSelectedVariant((prev) => {
+                    if (prev && data.variants.some((v) => v._id === prev._id)) {
+                        return data.variants.find((v) => v._id === prev._id);
+                    }
+                    return data.variants[0];
+                });
             }
-        };
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching product:', error);
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchProduct();
     }, [id]);
 
@@ -72,6 +83,78 @@ const ProductScreen = () => {
         } else {
             navigate('/login?redirect=/shipping');
         }
+    };
+
+    const submitReviewHandler = async (e) => {
+        e.preventDefault();
+
+        if (!userInfo) {
+            navigate(`/login?redirect=/product/${id}`);
+            return;
+        }
+
+        setReviewSubmitting(true);
+        setReviewError('');
+        setReviewSuccess('');
+
+        try {
+            const reqConfig = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${userInfo.token}`,
+                },
+            };
+
+            await axios.post(`http://localhost:5000/api/products/${id}/reviews`, {
+                rating: reviewRating,
+                comment: reviewComment,
+            }, reqConfig);
+
+            setReviewSuccess('Thanks! Your review has been submitted.');
+            setReviewComment('');
+            setReviewRating(5);
+            await fetchProduct();
+        } catch (error) {
+            setReviewError(error.response?.data?.message || 'Failed to submit review');
+        } finally {
+            setReviewSubmitting(false);
+        }
+    };
+
+    const deleteReviewHandler = async (reviewId) => {
+        if (!userInfo || userInfo.role !== 'admin') return;
+        if (!window.confirm('Remove this review?')) return;
+
+        setDeletingReviewId(reviewId);
+        setReviewError('');
+        setReviewSuccess('');
+        try {
+            const reqConfig = {
+                headers: {
+                    Authorization: `Bearer ${userInfo.token}`,
+                },
+            };
+
+            await axios.delete(`http://localhost:5000/api/products/${id}/reviews/${reviewId}`, reqConfig);
+            setReviewSuccess('Review removed successfully.');
+            await fetchProduct();
+        } catch (error) {
+            setReviewError(error.response?.data?.message || 'Failed to remove review');
+        } finally {
+            setDeletingReviewId('');
+        }
+    };
+
+    const renderStars = (value, size = 18) => {
+        const filled = Math.round(Number(value || 0));
+        return Array.from({ length: 5 }).map((_, idx) => (
+            <Star
+                key={idx}
+                size={size}
+                fill={idx < filled ? 'currentColor' : 'none'}
+                className={idx < filled ? 'text-gold' : 'text-muted'}
+            />
+        ));
     };
 
     if (loading) {
@@ -168,14 +251,10 @@ const ProductScreen = () => {
 
                             <div className="flex items-center gap-4 mb-6">
                                 <div className="flex items-center gap-1 text-gold">
-                                    <Star size={20} fill="currentColor" />
-                                    <Star size={20} fill="currentColor" />
-                                    <Star size={20} fill="currentColor" />
-                                    <Star size={20} fill="currentColor" />
-                                    <Star size={20} fill="currentColor" className="text-muted" />
+                                    {renderStars(product.rating, 20)}
                                 </div>
                                 <span className="text-secondary text-sm hover:text-brand cursor-pointer transition-colors border-b border-dashed border-default">
-                                    Read 24 Reviews
+                                    {product.numReviews || 0} Reviews
                                 </span>
                             </div>
 
@@ -300,6 +379,102 @@ const ProductScreen = () => {
                         </div>
                     </div>
 
+                </div>
+
+                <div className="mt-8 bg-surface rounded-[2rem] shadow-sm border border-default p-6 lg:p-10 animate-slide-up-delayed-1">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <div className="lg:col-span-5">
+                            <h2 className="text-2xl font-extrabold text-primary mb-3">Customer Reviews</h2>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="flex items-center gap-1">
+                                    {renderStars(product.rating, 18)}
+                                </div>
+                                <span className="font-semibold text-primary">{Number(product.rating || 0).toFixed(1)} / 5</span>
+                            </div>
+                            <p className="text-secondary text-sm">Based on {product.numReviews || 0} verified customer reviews.</p>
+
+                            <div className="mt-6 space-y-4 max-h-[360px] overflow-y-auto pr-2">
+                                {!product.reviews || product.reviews.length === 0 ? (
+                                    <p className="text-secondary text-sm">No reviews yet. Be the first to review this product.</p>
+                                ) : (
+                                    product.reviews.slice().reverse().map((review) => (
+                                        <div key={review._id} className="border border-default rounded-xl p-4 bg-page">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <p className="font-semibold text-primary">{review.name}</p>
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xs text-tertiary">{new Date(review.createdAt).toLocaleDateString()}</span>
+                                                    {userInfo?.role === 'admin' && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => deleteReviewHandler(review._id)}
+                                                            disabled={deletingReviewId === review._id}
+                                                            className="text-error hover:bg-error-bg border border-transparent hover:border-error-bg rounded-lg p-1.5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                                            title="Remove review"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1 mt-2">
+                                                {renderStars(review.rating, 14)}
+                                            </div>
+                                            <p className="text-secondary text-sm mt-3 leading-relaxed">{review.comment}</p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-7 border-t lg:border-t-0 lg:border-l border-default pt-6 lg:pt-0 lg:pl-8">
+                            <h3 className="text-xl font-bold text-primary mb-4">Write a Review</h3>
+                            {!userInfo ? (
+                                <p className="text-secondary text-sm">
+                                    Please <Link to={`/login?redirect=/product/${id}`} className="text-brand font-semibold hover:underline">sign in</Link> to write a review.
+                                </p>
+                            ) : (
+                                <form onSubmit={submitReviewHandler} className="space-y-4">
+                                    {reviewError && <p className="text-sm text-error bg-error-bg border border-error-bg rounded-lg p-3">{reviewError}</p>}
+                                    {reviewSuccess && <p className="text-sm text-success bg-success-bg border border-success-bg rounded-lg p-3">{reviewSuccess}</p>}
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-primary mb-2">Rating</label>
+                                        <select
+                                            value={reviewRating}
+                                            onChange={(e) => setReviewRating(Number(e.target.value))}
+                                            className="w-full sm:w-56 px-4 py-2 border border-default rounded-xl bg-page text-primary input-focus"
+                                        >
+                                            <option value={5}>5 - Excellent</option>
+                                            <option value={4}>4 - Very Good</option>
+                                            <option value={3}>3 - Good</option>
+                                            <option value={2}>2 - Fair</option>
+                                            <option value={1}>1 - Poor</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-primary mb-2">Comment</label>
+                                        <textarea
+                                            rows={5}
+                                            required
+                                            value={reviewComment}
+                                            onChange={(e) => setReviewComment(e.target.value)}
+                                            className="w-full px-4 py-3 border border-default rounded-xl bg-page text-primary input-focus"
+                                            placeholder="Share your experience with this product"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={reviewSubmitting}
+                                        className="btn-primary px-6 py-3 rounded-xl disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                                    </button>
+                                </form>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
