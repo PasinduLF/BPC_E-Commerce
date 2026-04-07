@@ -10,6 +10,7 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
     const navigate = useNavigate();
     const { search } = useLocation();
@@ -25,6 +26,7 @@ const Login = () => {
 
     const submitHandler = async (e) => {
         e.preventDefault();
+        setSubmitting(true);
         try {
             const config = {
                 headers: {
@@ -52,6 +54,8 @@ const Login = () => {
             navigate(redirect);
         } catch (err) {
             setError(err.response?.data?.message || err.message);
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -144,9 +148,10 @@ const Login = () => {
 
                         <button
                             type="submit"
-                            className="w-full flex justify-center items-center gap-2 py-2.5 px-4 btn-primary rounded-lg shadow-sm text-sm"
+                            disabled={submitting}
+                            className="w-full flex justify-center items-center gap-2 py-2.5 px-4 btn-primary rounded-lg shadow-sm text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            {isLogin ? 'Sign In' : 'Sign Up'} <ArrowRight size={18} />
+                            {submitting ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')} <ArrowRight size={18} />
                         </button>
 
                     </form>
@@ -155,14 +160,14 @@ const Login = () => {
                         {isLogin ? (
                             <span>
                                 New to Beauty P&C?{' '}
-                                <button onClick={() => setIsLogin(false)} className="font-medium text-brand hover:brightness-110 transition-colors">
+                                <button disabled={submitting} onClick={() => setIsLogin(false)} className="font-medium text-brand hover:brightness-110 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                                     Create an account
                                 </button>
                             </span>
                         ) : (
                             <span>
                                 Already have an account?{' '}
-                                <button onClick={() => setIsLogin(true)} className="font-medium text-brand hover:brightness-110 transition-colors">
+                                <button disabled={submitting} onClick={() => setIsLogin(true)} className="font-medium text-brand hover:brightness-110 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                                     Sign in instead
                                 </button>
                             </span>

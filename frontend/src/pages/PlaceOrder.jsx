@@ -15,6 +15,7 @@ const PlaceOrder = () => {
     const { userInfo } = useAuthStore();
 
     const [uploading, setUploading] = useState(false);
+    const [placingOrder, setPlacingOrder] = useState(false);
     const [paymentSlip, setPaymentSlip] = useState(null);
 
     useEffect(() => {
@@ -59,6 +60,8 @@ const PlaceOrder = () => {
     ).toFixed(2);
 
     const placeOrderHandler = async () => {
+        if (placingOrder) return;
+        setPlacingOrder(true);
         try {
             const config = {
                 headers: {
@@ -92,11 +95,15 @@ const PlaceOrder = () => {
         } catch (error) {
             console.error('Order creation failed', error);
             alert('Order failed to process. Please try again.');
+        } finally {
+            setPlacingOrder(false);
         }
     };
 
     const uploadFileHandler = async (e) => {
+        if (placingOrder) return;
         const file = e.target.files[0];
+        if (!file) return;
         const formData = new FormData();
         formData.append('image', file);
         setUploading(true);
@@ -226,7 +233,7 @@ const PlaceOrder = () => {
                                                         className="hidden"
                                                         onChange={uploadFileHandler}
                                                         accept="image/*"
-                                                        disabled={uploading}
+                                                        disabled={uploading || placingOrder}
                                                     />
                                                 </label>
                                             </>
@@ -240,7 +247,8 @@ const PlaceOrder = () => {
                                                 </h3>
                                                 <button
                                                     type="button"
-                                                    className="text-sm text-brand hover:brightness-90 mt-2 hover:underline"
+                                                    disabled={placingOrder}
+                                                    className="text-sm text-brand hover:brightness-90 mt-2 hover:underline disabled:opacity-60 disabled:cursor-not-allowed"
                                                     onClick={() => setPaymentSlip(null)}
                                                 >
                                                     Upload different file
@@ -319,10 +327,10 @@ const PlaceOrder = () => {
                             <button
                                 type="button"
                                 className="w-full btn-primary py-4 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
-                                disabled={checkoutItems.length === 0 || (paymentMethod === 'Bank Transfer' && !paymentSlip)}
+                                disabled={placingOrder || uploading || checkoutItems.length === 0 || (paymentMethod === 'Bank Transfer' && !paymentSlip)}
                                 onClick={placeOrderHandler}
                             >
-                                Place Order
+                                {placingOrder ? 'Placing Order...' : 'Place Order'}
                                 <CheckCircle size={20} className="group-hover:scale-110 transition-transform" />
                             </button>
                             {paymentMethod === 'Bank Transfer' && !paymentSlip && (

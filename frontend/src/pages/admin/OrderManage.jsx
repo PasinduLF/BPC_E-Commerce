@@ -12,16 +12,20 @@ const OrderManage = () => {
 
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [actionLoadingKey, setActionLoadingKey] = useState('');
 
     // Edit Modal State
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingOrder, setEditingOrder] = useState(null);
+    const [savingEdit, setSavingEdit] = useState(false);
     const [editFormData, setEditFormData] = useState({
         customerName: '',
         customerPhone: '',
         cashGiven: 0,
         paymentMethod: 'Cash'
     });
+
+    const isOrderBusy = (id) => actionLoadingKey.endsWith(`-${id}`);
 
     const fetchOrders = async () => {
         try {
@@ -39,36 +43,43 @@ const OrderManage = () => {
         fetchOrders();
     }, [userInfo.token]);
 
-    const updateOrderStatus = async (id, payload) => {
+    const updateOrderStatus = async (id, payload, actionType) => {
+        const key = `${actionType}-${id}`;
+        setActionLoadingKey(key);
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
             await axios.put(`http://localhost:5000/api/orders/${id}/status`, payload, configHeader);
             fetchOrders(); // refresh
         } catch (error) {
             alert(error.response?.data?.message || 'Failed to update order status');
+        } finally {
+            setActionLoadingKey('');
         }
     };
 
     const updateDeliveryStatus = async (id, isDelivered) => {
         await updateOrderStatus(id, {
             deliveryStatus: isDelivered ? 'processing' : 'delivered'
-        });
+        }, 'delivery');
     };
 
     const updatePaymentStatus = async (id, isPaid) => {
         await updateOrderStatus(id, {
             paymentStatus: isPaid ? 'unpaid' : 'paid'
-        });
+        }, 'payment');
     };
 
     const deleteHandler = async (id) => {
         if (window.confirm('Are you sure you want to delete this order? For POS orders, stock will be refunded.')) {
+            setActionLoadingKey(`delete-${id}`);
             try {
                 const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
                 await axios.delete(`http://localhost:5000/api/orders/${id}`, configHeader);
                 fetchOrders();
             } catch (error) {
                 alert(error.response?.data?.message || 'Failed to delete order');
+            } finally {
+                setActionLoadingKey('');
             }
         }
     };
@@ -86,6 +97,7 @@ const OrderManage = () => {
 
     const handleEditSubmit = async (e) => {
         e.preventDefault();
+        setSavingEdit(true);
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
@@ -104,6 +116,8 @@ const OrderManage = () => {
             alert('Order updated successfully');
         } catch (error) {
             alert(error.response?.data?.message || 'Failed to update order');
+        } finally {
+            setSavingEdit(false);
         }
     };
 
@@ -196,11 +210,12 @@ const OrderManage = () => {
                                                         {(order.paymentMethod === 'Cash on Delivery' || (order.paymentMethod === 'Bank Transfer' && order.paymentSlip?.url)) && (
                                                             <button
                                                                 onClick={() => updatePaymentStatus(order._id, order.isPaid)}
+                                                                disabled={isOrderBusy(order._id)}
                                                                 className={`text-xs px-2 py-1 rounded-lg border transition-colors ${order.isPaid
                                                                     ? 'text-error border-error-bg hover:bg-error-bg'
-                                                                    : 'text-success border-success-bg hover:bg-success-bg'}`}
+                                                                    : 'text-success border-success-bg hover:bg-success-bg'} disabled:opacity-60 disabled:cursor-not-allowed`}
                                                             >
-                                                                {order.isPaid ? 'Mark Unpaid' : (order.paymentMethod === 'Bank Transfer' ? 'Verify Payment' : 'Mark Paid')}
+                                                                {actionLoadingKey === `payment-${order._id}` ? 'Updating...' : (order.isPaid ? 'Mark Unpaid' : (order.paymentMethod === 'Bank Transfer' ? 'Verify Payment' : 'Mark Paid'))}
                                                             </button>
                                                         )}
                                                     </div>
@@ -219,11 +234,12 @@ const OrderManage = () => {
 
                                                         <button
                                                             onClick={() => updateDeliveryStatus(order._id, order.isDelivered)}
+                                                            disabled={isOrderBusy(order._id)}
                                                             className={`text-xs px-2 py-1 rounded-lg border transition-colors ${order.isDelivered
                                                                 ? 'text-warning border-warning-bg hover:bg-warning-bg'
-                                                                : 'text-success border-success-bg hover:bg-success-bg'}`}
+                                                                : 'text-success border-success-bg hover:bg-success-bg'} disabled:opacity-60 disabled:cursor-not-allowed`}
                                                         >
-                                                            {order.isDelivered ? 'Mark Processing' : 'Mark Delivered'}
+                                                            {actionLoadingKey === `delivery-${order._id}` ? 'Updating...' : (order.isDelivered ? 'Mark Processing' : 'Mark Delivered')}
                                                         </button>
                                                     </div>
                                                 </td>
@@ -236,7 +252,8 @@ const OrderManage = () => {
                                                         {order.isPOS && (
                                                             <button
                                                                 onClick={() => openEditModal(order)}
-                                                                className="text-success hover:bg-success-bg p-1.5 rounded-lg transition-colors border border-transparent"
+                                                                disabled={isOrderBusy(order._id)}
+                                                                className="text-success hover:bg-success-bg p-1.5 rounded-lg transition-colors border border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
                                                                 title="Edit POS Details"
                                                             >
                                                                 <Edit size={16} />
@@ -245,10 +262,11 @@ const OrderManage = () => {
 
                                                         <button
                                                             onClick={() => deleteHandler(order._id)}
-                                                            className="text-error hover:bg-error-bg p-1.5 rounded-lg transition-colors border border-transparent"
+                                                            disabled={isOrderBusy(order._id)}
+                                                            className="text-error hover:bg-error-bg p-1.5 rounded-lg transition-colors border border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
                                                             title="Delete Order"
                                                         >
-                                                            <Trash2 size={16} />
+                                                            {actionLoadingKey === `delete-${order._id}` ? '...' : <Trash2 size={16} />}
                                                         </button>
                                                     </div>
                                                 </td>
@@ -328,11 +346,11 @@ const OrderManage = () => {
                             </div>
 
                             <div className="pt-4 border-t border-default flex justify-end gap-3">
-                                <button type="button" onClick={() => setEditModalOpen(false)} className="px-5 py-2.5 text-secondary bg-page hover:bg-surface border border-default rounded-xl font-medium transition-colors">
+                                <button type="button" onClick={() => setEditModalOpen(false)} disabled={savingEdit} className="px-5 py-2.5 text-secondary bg-page hover:bg-surface border border-default rounded-xl font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                                     Cancel
                                 </button>
-                                <button type="submit" className="btn-primary px-5 py-2.5 rounded-xl font-medium shadow-sm">
-                                    Save Changes
+                                <button type="submit" disabled={savingEdit} className="btn-primary px-5 py-2.5 rounded-xl font-medium shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+                                    {savingEdit ? 'Saving...' : 'Save Changes'}
                                 </button>
                             </div>
                         </form>

@@ -148,8 +148,9 @@ const Profile = () => {
                                     <span className="capitalize">{userInfo.role} Account</span>
                                 </p>
                                 <button 
+                                    disabled={loading}
                                     onClick={() => setShowEditProfile(true)}
-                                    className="mt-4 text-xs font-semibold text-brand bg-brand-subtle hover:brightness-95 px-4 py-2 rounded-full transition-colors flex items-center gap-2"
+                                    className="mt-4 text-xs font-semibold text-brand bg-brand-subtle hover:brightness-95 px-4 py-2 rounded-full transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     <Edit3 size={14} /> Edit Profile
                                 </button>
@@ -197,8 +198,9 @@ const Profile = () => {
                                     <p className="text-sm text-secondary mt-1">Manage your shipping destinations</p>
                                 </div>
                                 <button
+                                    disabled={loading}
                                     onClick={() => setShowAddressForm(!showAddressForm)}
-                                    className="text-sm font-semibold btn-primary px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm"
+                                    className="text-sm font-semibold btn-primary px-4 py-2 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     <Plus size={16} /> Add New Address
                                 </button>
@@ -227,7 +229,7 @@ const Profile = () => {
                                             <input type="text" required value={newAddress.country} onChange={(e) => setNewAddress({ ...newAddress, country: e.target.value })} className="w-full px-4 py-2 border border-default rounded-xl input-focus text-primary text-sm bg-surface shadow-sm" placeholder="Sri Lanka" />
                                         </div>
                                         <div className="flex gap-3 pt-4 border-t border-default mt-6">
-                                            <button type="button" onClick={() => setShowAddressForm(false)} className="flex-1 px-4 py-2.5 border border-default text-secondary rounded-xl text-sm font-semibold hover:bg-surface bg-muted transition-colors">Cancel</button>
+                                            <button type="button" disabled={loading} onClick={() => setShowAddressForm(false)} className="flex-1 px-4 py-2.5 border border-default text-secondary rounded-xl text-sm font-semibold hover:bg-surface bg-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed">Cancel</button>
                                             <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 btn-primary rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">{loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Save Address'}</button>
                                         </div>
                                     </div>
@@ -250,7 +252,7 @@ const Profile = () => {
                                                 <p className="text-secondary font-medium">{addr.country}</p>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <button onClick={() => handleDeleteAddress(index)} className="p-2 sm:px-4 sm:py-2 text-error hover:bg-error-bg border border-transparent hover:border-error-bg rounded-xl transition-all flex items-center gap-2 text-sm font-semibold w-full sm:w-auto justify-center" title="Delete Address">
+                                                <button disabled={loading} onClick={() => handleDeleteAddress(index)} className="p-2 sm:px-4 sm:py-2 text-error hover:bg-error-bg border border-transparent hover:border-error-bg rounded-xl transition-all flex items-center gap-2 text-sm font-semibold w-full sm:w-auto justify-center disabled:opacity-60 disabled:cursor-not-allowed" title="Delete Address">
                                                     <Trash2 size={18} className="sm:hidden" />
                                                     <span className="hidden sm:inline">Delete</span>
                                                 </button>
@@ -321,7 +323,7 @@ const Profile = () => {
                                 </form>
                             </div>
                             <div className="p-6 border-t border-default flex gap-3">
-                                <button type="button" onClick={() => setShowEditProfile(false)} className="flex-1 px-4 py-3 border border-default text-secondary rounded-xl text-sm font-bold hover:bg-muted transition-colors">Cancel</button>
+                                <button type="button" disabled={loading} onClick={() => setShowEditProfile(false)} className="flex-1 px-4 py-3 border border-default text-secondary rounded-xl text-sm font-bold hover:bg-muted transition-colors disabled:opacity-60 disabled:cursor-not-allowed">Cancel</button>
                                 <button type="submit" form="editProfileForm" disabled={loading} className="flex-1 px-4 py-3 btn-primary rounded-xl text-sm font-bold transition-colors shadow-sm flex items-center justify-center">
                                     {loading ? <Loader2 size={18} className="animate-spin" /> : 'Save Changes'}
                                 </button>

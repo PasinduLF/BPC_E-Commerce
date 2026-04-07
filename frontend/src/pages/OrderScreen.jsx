@@ -11,6 +11,8 @@ const OrderScreen = () => {
     const [error, setError] = useState('');
     const [slipImage, setSlipImage] = useState('');
     const [uploading, setUploading] = useState(false);
+    const [paymentUpdating, setPaymentUpdating] = useState(false);
+    const [deliveryUpdating, setDeliveryUpdating] = useState(false);
 
     const { userInfo } = useAuthStore();
 
@@ -81,6 +83,8 @@ const OrderScreen = () => {
     };
 
     const verifyPaymentHandler = async () => {
+        if (paymentUpdating) return;
+        setPaymentUpdating(true);
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
             await axios.put(`http://localhost:5000/api/orders/${id}/status`, { paymentStatus: 'paid' }, configHeader);
@@ -91,10 +95,14 @@ const OrderScreen = () => {
             alert('Payment verified successfully!');
         } catch (error) {
             alert('Failed to verify payment');
+        } finally {
+            setPaymentUpdating(false);
         }
     };
 
     const toggleDeliveryStatusHandler = async () => {
+        if (deliveryUpdating) return;
+        setDeliveryUpdating(true);
         try {
             const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
             await axios.put(`http://localhost:5000/api/orders/${id}/status`, {
@@ -105,6 +113,8 @@ const OrderScreen = () => {
             setOrder(updatedData.data);
         } catch (error) {
             alert('Failed to update delivery status');
+        } finally {
+            setDeliveryUpdating(false);
         }
     };
 
@@ -145,9 +155,10 @@ const OrderScreen = () => {
                                     {userInfo?.isAdmin && (
                                         <button
                                             onClick={toggleDeliveryStatusHandler}
-                                            className="mt-3 text-xs px-3 py-1.5 rounded-lg border border-default bg-page hover:bg-muted text-primary font-semibold transition-colors"
+                                            disabled={deliveryUpdating || paymentUpdating}
+                                            className="mt-3 text-xs px-3 py-1.5 rounded-lg border border-default bg-page hover:bg-muted text-primary font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                         >
-                                            {order.isDelivered ? 'Mark Processing' : 'Mark Delivered'}
+                                            {deliveryUpdating ? 'Updating...' : (order.isDelivered ? 'Mark Processing' : 'Mark Delivered')}
                                         </button>
                                     )}
                                 </div>
@@ -216,15 +227,17 @@ const OrderScreen = () => {
                                                         <div className="mt-4 flex flex-wrap gap-3">
                                                             <button
                                                                 onClick={verifyPaymentHandler}
-                                                                className="w-full md:w-auto bg-success hover:brightness-95 text-white flex items-center justify-center gap-2 font-bold py-2.5 px-6 rounded-lg transition-colors"
+                                                                disabled={paymentUpdating || deliveryUpdating}
+                                                                className="w-full md:w-auto bg-success hover:brightness-95 text-white flex items-center justify-center gap-2 font-bold py-2.5 px-6 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                                             >
-                                                                <CheckCircle size={18} /> Verify Payment
+                                                                <CheckCircle size={18} /> {paymentUpdating ? 'Verifying...' : 'Verify Payment'}
                                                             </button>
                                                             <button
                                                                 onClick={toggleDeliveryStatusHandler}
-                                                                className="w-full md:w-auto bg-page hover:bg-muted text-primary border border-default flex items-center justify-center gap-2 font-bold py-2.5 px-6 rounded-lg transition-colors"
+                                                                disabled={deliveryUpdating || paymentUpdating}
+                                                                className="w-full md:w-auto bg-page hover:bg-muted text-primary border border-default flex items-center justify-center gap-2 font-bold py-2.5 px-6 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                                             >
-                                                                <Truck size={18} /> {order.isDelivered ? 'Mark Processing' : 'Mark Delivered'}
+                                                                <Truck size={18} /> {deliveryUpdating ? 'Updating...' : (order.isDelivered ? 'Mark Processing' : 'Mark Delivered')}
                                                             </button>
                                                         </div>
                                                     )}
