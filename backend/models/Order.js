@@ -40,7 +40,7 @@ const orderSchema = new mongoose.Schema({
     paymentMethod: {
         type: String,
         required: true,
-        enum: ['Cash on Delivery', 'Bank Transfer', 'Cash'] // 'Cash' used for POS physical sales
+        enum: ['Cash on Delivery', 'Bank Transfer', 'Cash', 'Credit'] // 'Cash'/'Credit' used for POS physical sales
     },
     fulfillmentType: {
         type: String,
@@ -137,6 +137,26 @@ const orderSchema = new mongoose.Schema({
         required: false,
         default: 0
     },
+    paidNowAmount: {
+        type: Number,
+        required: false,
+        default: 0
+    },
+    appliedCreditAmount: {
+        type: Number,
+        required: false,
+        default: 0
+    },
+    outstandingAddedAmount: {
+        type: Number,
+        required: false,
+        default: 0
+    },
+    creditAddedAmount: {
+        type: Number,
+        required: false,
+        default: 0
+    },
     status: {
         type: String,
         enum: ['Pending', 'Processing', 'Payment Verified', 'Ready for Pickup', 'Shipped', 'Delivered', 'Cancelled'],
@@ -146,9 +166,9 @@ const orderSchema = new mongoose.Schema({
     timestamps: true
 });
 
-orderSchema.pre('validate', async function (next) {
+orderSchema.pre('validate', async function () {
     if (!this.isNew || this.orderNumber) {
-        return next();
+        return;
     }
 
     try {
@@ -158,10 +178,19 @@ orderSchema.pre('validate', async function (next) {
             { upsert: true, new: true, setDefaultsOnInsert: true }
         );
 
-        this.orderNumber = `ORD-${String(counter.seq).padStart(6, '0')}`;
-        next();
+        if (!counter) {
+            throw new Error('Counter initialization failed');
+        }
+        
+        const seq = counter.seq || 0;
+        if (typeof seq !== 'number' || seq <= 0) {
+            throw new Error(`Invalid counter sequence: ${seq}`);
+        }
+
+        this.orderNumber = `ORD-${String(seq).padStart(6, '0')}`;
     } catch (error) {
-        next(error);
+        console.error('Order pre-validate hook error:', error.message);
+        throw error;
     }
 });
 

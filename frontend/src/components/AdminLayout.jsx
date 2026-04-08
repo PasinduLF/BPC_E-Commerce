@@ -16,7 +16,8 @@ import {
     Settings,
     Store,
     Sun,
-    Moon
+    Moon,
+    CreditCard
 } from 'lucide-react';
 
 const AdminLayout = () => {
@@ -48,6 +49,7 @@ const AdminLayout = () => {
         { name: 'Wholesale Inventory', path: '/admin/wholesale', icon: <Truck size={20} /> },
         { name: 'Ledger Balances', path: '/admin/financials', icon: <Truck size={20} /> },
         { name: 'Customers', path: '/admin/users', icon: <Users size={20} /> },
+        { name: 'Customer Credit', path: '/admin/customer-credit', icon: <CreditCard size={20} /> },
         { name: 'Income & Expense', path: '/admin/income-expense', icon: <Receipt size={20} /> },
         { name: 'System Settings', path: '/admin/settings', icon: <Settings size={20} /> },
     ];

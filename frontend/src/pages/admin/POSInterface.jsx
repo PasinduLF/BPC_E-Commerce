@@ -19,9 +19,15 @@ const POSInterface = () => {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
     const [cashGiven, setCashGiven] = useState('');
+    const [applyCreditAmount, setApplyCreditAmount] = useState('0');
     const [discountType, setDiscountType] = useState('none');
     const [discountValue, setDiscountValue] = useState('');
     const [receiptData, setReceiptData] = useState(null);
+    const [customerAccount, setCustomerAccount] = useState(null);
+    const [loadingAccount, setLoadingAccount] = useState(false);
+    const [accountMessage, setAccountMessage] = useState('');
+    const [recordPaymentAmount, setRecordPaymentAmount] = useState('');
+    const [recordingPayment, setRecordingPayment] = useState(false);
 
     const { config } = useConfigStore();
     const currency = config?.currencySymbol || '$';
@@ -39,6 +45,71 @@ const POSInterface = () => {
         };
         fetchProducts();
     }, [search]);
+
+    const loadCustomerAccount = async (phoneInput = customerPhone) => {
+        const phone = String(phoneInput || '').trim();
+        if (!phone) {
+            setCustomerAccount(null);
+            setAccountMessage('');
+            return;
+        }
+
+        setLoadingAccount(true);
+        setAccountMessage('');
+        try {
+            const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+            const { data } = await axios.get(`/api/pos/customer-account?phone=${encodeURIComponent(phone)}`, configHeader);
+            setCustomerAccount(data);
+            if (!data) {
+                setAccountMessage('No existing account found for this phone. A new account will be created on first credit transaction.');
+                return;
+            }
+
+            setCustomerName(data.customerName || phoneInput || '');
+            setApplyCreditAmount(String(Number(data.creditBalance || 0).toFixed(2)));
+            setAccountMessage('Customer account loaded. Name and available credit have been filled automatically.');
+        } catch (error) {
+            setAccountMessage(error.response?.data?.message || 'Failed to load customer account');
+            setCustomerAccount(null);
+        } finally {
+            setLoadingAccount(false);
+        }
+    };
+
+    const recordCustomerPayment = async () => {
+        const name = customerName.trim();
+        const phone = customerPhone.trim();
+        const amount = Math.max(Number(recordPaymentAmount) || 0, 0);
+
+        if (!name || !phone) {
+            alert('Customer name and phone are required to record a payment.');
+            return;
+        }
+        if (amount <= 0) {
+            alert('Enter a payment amount greater than zero.');
+            return;
+        }
+
+        setRecordingPayment(true);
+        try {
+            const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+            const { data } = await axios.post('/api/pos/customer-account/payment', {
+                customerName: name,
+                customerPhone: phone,
+                amount,
+                paymentMethod: paymentMethod === 'Credit' ? 'Cash' : paymentMethod,
+                note: 'Recorded from POS credit manager',
+            }, configHeader);
+
+            setCustomerAccount(data);
+            setRecordPaymentAmount('');
+            setAccountMessage('Payment recorded successfully.');
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to record payment');
+        } finally {
+            setRecordingPayment(false);
+        }
+    };
 
     const getEffectivePrice = (product, variant = null) => {
         if (variant) {
@@ -117,23 +188,34 @@ const POSInterface = () => {
             : 0;
     const discountAmount = Math.min(rawDiscount, itemsPrice);
     const totalDue = Math.max(itemsPrice - discountAmount, 0);
+    const currentCreditBalance = Number(customerAccount?.creditBalance || 0);
+    const currentOutstandingBalance = Number(customerAccount?.outstandingBalance || 0);
+    const requestedApplyCredit = Math.max(Number(applyCreditAmount) || 0, 0);
+    const appliedCredit = Math.min(requestedApplyCredit, currentCreditBalance, totalDue);
+    const dueAfterCredit = Math.max(totalDue - appliedCredit, 0);
+    const paidNowAmount = Math.max(Number(cashGiven) || 0, 0);
+    const outstandingToAdd = Math.max(dueAfterCredit - paidNowAmount, 0);
+    const advanceToAdd = Math.max(paidNowAmount - dueAfterCredit, 0);
 
     // Validation and Submission
     const placeOrderHandler = async () => {
-        if (paymentMethod === 'Cash') {
-            const cash = parseFloat(cashGiven) || 0;
-            if (cash < totalDue) {
-                alert(`Insufficient cash. Due: ${currency}${totalDue.toFixed(2)}, Given: ${currency}${cash.toFixed(2)}`);
-                return;
-            }
+        const trimmedName = customerName.trim();
+        const trimmedPhone = customerPhone.trim();
+        const usingCreditFlow = paymentMethod === 'Credit' || appliedCredit > 0 || paidNowAmount !== dueAfterCredit;
+
+        if (usingCreditFlow && (!trimmedName || !trimmedPhone)) {
+            alert('Customer name and phone are required for credit and advance-balance operations.');
+            return;
         }
 
-        if (window.confirm(`Process ${paymentMethod} payment of ${currency}${totalDue.toFixed(2)}?`)) {
+        if (paymentMethod === 'Cash' && paymentMethod !== 'Credit' && !usingCreditFlow && paidNowAmount < dueAfterCredit) {
+            alert(`Insufficient cash. Due: ${currency}${dueAfterCredit.toFixed(2)}, Given: ${currency}${paidNowAmount.toFixed(2)}`);
+            return;
+        }
+
+        if (window.confirm(`Process ${paymentMethod} transaction for ${currency}${totalDue.toFixed(2)}?`)) {
             try {
                 const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-
-                const cash = paymentMethod === 'Cash' ? (parseFloat(cashGiven) || 0) : 0;
-                const change = paymentMethod === 'Cash' ? (cash - totalDue) : 0;
 
                 const { data } = await axios.post('/api/pos', {
                     orderItems: cartItems.map(x => ({
@@ -150,10 +232,10 @@ const POSInterface = () => {
                     totalPrice: totalDue,
                     discountType,
                     discountValue: parsedDiscountValue,
-                    customerName: customerName.trim(),
-                    customerPhone: customerPhone.trim(),
-                    cashGiven: cash,
-                    changeDue: change
+                    customerName: trimmedName,
+                    customerPhone: trimmedPhone,
+                    cashGiven: paidNowAmount,
+                    applyCreditAmount: appliedCredit,
                 }, configHeader);
 
                 // Set receipt data from response
@@ -169,6 +251,9 @@ const POSInterface = () => {
                 setCustomerName('');
                 setCustomerPhone('');
                 setCashGiven('');
+                setApplyCreditAmount('0');
+                setCustomerAccount(null);
+                setRecordPaymentAmount('');
                 setDiscountType('none');
                 setDiscountValue('');
                 // Refetch products to update stock numbers visually
@@ -356,9 +441,9 @@ const POSInterface = () => {
                 {/* Checkout Actions */}
                 <div className="p-4 sm:p-5 border-t border-default bg-page flex flex-col gap-4 overflow-y-auto max-h-[50vh]">
 
-                    {/* Customer Info (Optional) */}
+                    {/* Customer Info */}
                     <div className="space-y-3 pb-3 border-b border-default border-dashed">
-                        <label className="block text-xs font-bold text-secondary uppercase tracking-wider">Customer Details (Optional)</label>
+                        <label className="block text-xs font-bold text-secondary uppercase tracking-wider">Customer Details</label>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="relative">
                                 <UserRound size={14} className="absolute left-3 top-2.5 text-tertiary" />
@@ -370,11 +455,30 @@ const POSInterface = () => {
                             <div className="relative">
                                 <Phone size={14} className="absolute left-3 top-2.5 text-tertiary" />
                                 <input
-                                    type="text" placeholder="Phone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)}
+                                    type="text" placeholder="Phone" value={customerPhone} onChange={(e) => { setCustomerPhone(e.target.value); setCustomerAccount(null); setAccountMessage(''); }} onBlur={() => customerPhone.trim() && loadCustomerAccount(customerPhone)}
                                     className="w-full pl-8 pr-3 py-2 border border-default rounded-lg text-sm bg-surface text-primary input-focus"
                                 />
                             </div>
                         </div>
+                        <div className="flex gap-2 items-center">
+                            <button
+                                type="button"
+                                onClick={() => loadCustomerAccount()}
+                                disabled={!customerPhone.trim() || loadingAccount}
+                                className="text-xs px-3 py-1.5 rounded-lg border border-default bg-surface hover:bg-page text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loadingAccount ? 'Checking...' : 'Check Credit Account'}
+                            </button>
+                            {accountMessage && <span className="text-[11px] text-secondary">{accountMessage}</span>}
+                        </div>
+
+                        {customerAccount && (
+                            <div className="bg-page border border-default rounded-lg p-3 text-xs text-secondary space-y-1">
+                                <p><span className="font-semibold text-primary">Account:</span> {customerAccount.customerName} ({customerAccount.customerPhone})</p>
+                                <p><span className="font-semibold text-success">Credit Balance:</span> {currency}{Number(customerAccount.creditBalance || 0).toFixed(2)}</p>
+                                <p><span className="font-semibold text-warning">Outstanding Balance:</span> {currency}{Number(customerAccount.outstandingBalance || 0).toFixed(2)}</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Payment Settings */}
@@ -393,7 +497,31 @@ const POSInterface = () => {
                             >
                                 <CreditCard size={16} /> Bank
                             </button>
+                            <button
+                                onClick={() => setPaymentMethod('Credit')}
+                                className={`col-span-2 flex items-center justify-center gap-2 py-2 px-4 rounded-xl border transition-all text-sm font-medium ${paymentMethod === 'Credit' ? 'bg-warning-bg border-warning text-warning shadow-sm' : 'bg-surface border-default text-secondary hover:bg-page'}`}
+                            >
+                                <CreditCard size={16} /> Credit Sale (Pay Later)
+                            </button>
                         </div>
+                    </div>
+
+                    {/* Credit Usage Controls */}
+                    <div className="space-y-2">
+                        <label className="block text-xs font-bold text-secondary uppercase tracking-wider">Use Existing Customer Credit</label>
+                        <div className="relative">
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={applyCreditAmount}
+                                onChange={(e) => setApplyCreditAmount(e.target.value)}
+                                className="w-full px-3 py-2 border border-default rounded-lg text-sm bg-surface text-primary input-focus"
+                                placeholder="0.00"
+                            />
+                            <span className="absolute right-3 top-2 text-xs text-tertiary">{currency}</span>
+                        </div>
+                        <p className="text-[11px] text-tertiary">Available credit: {currency}{currentCreditBalance.toFixed(2)} | Applied: {currency}{appliedCredit.toFixed(2)}</p>
                     </div>
 
                     {/* Discount Controls */}
@@ -444,10 +572,20 @@ const POSInterface = () => {
                             <span className="font-bold text-primary">{currency}{itemsPrice.toFixed(2)}</span>
                         </div>
 
-                        {paymentMethod === 'Cash' && (
+                        <div className="flex justify-between items-center text-secondary text-sm">
+                            <span className="font-medium">Applied Credit</span>
+                            <span className="font-bold text-info">-{currency}{appliedCredit.toFixed(2)}</span>
+                        </div>
+
+                        <div className="flex justify-between items-center text-secondary text-sm">
+                            <span className="font-medium">Due After Credit</span>
+                            <span className="font-bold text-primary">{currency}{dueAfterCredit.toFixed(2)}</span>
+                        </div>
+
+                        {(paymentMethod === 'Cash' || paymentMethod === 'Credit') && (
                             <>
                                 <div className="flex justify-between items-center text-secondary text-sm">
-                                    <span className="font-medium">Cash Given</span>
+                                    <span className="font-medium">Paid Now</span>
                                     <div className="relative w-24">
                                         <span className="absolute left-2 top-1 text-tertiary">{currency}</span>
                                         <input
@@ -457,14 +595,49 @@ const POSInterface = () => {
                                         />
                                     </div>
                                 </div>
-
-                                {cashGiven && (parseFloat(cashGiven) >= totalDue) && (
-                                    <div className="flex justify-between items-center text-secondary text-sm pt-2 border-t border-default border-dashed">
-                                        <span className="font-bold text-success">Change Due</span>
-                                        <span className="font-bold text-success">{currency}{(parseFloat(cashGiven) - totalDue).toFixed(2)}</span>
-                                    </div>
-                                )}
                             </>
+                        )}
+
+                        {paymentMethod === 'Bank Transfer' && (
+                            <div className="flex justify-between items-center text-secondary text-sm">
+                                <span className="font-medium">Paid Now (Bank)</span>
+                                <span className="font-bold text-primary">{currency}{dueAfterCredit.toFixed(2)}</span>
+                            </div>
+                        )}
+
+                        <div className="flex justify-between items-center text-secondary text-sm pt-2 border-t border-default border-dashed">
+                            <span className="font-bold text-warning">Outstanding To Add</span>
+                            <span className="font-bold text-warning">{currency}{outstandingToAdd.toFixed(2)}</span>
+                        </div>
+
+                        <div className="flex justify-between items-center text-secondary text-sm">
+                            <span className="font-bold text-success">Credit To Add</span>
+                            <span className="font-bold text-success">{currency}{advanceToAdd.toFixed(2)}</span>
+                        </div>
+
+                        {(currentOutstandingBalance > 0 || customerAccount) && (
+                            <div className="pt-2 border-t border-default border-dashed space-y-2">
+                                <label className="block text-xs font-bold text-secondary uppercase tracking-wider">Record Customer Payment (for previous dues)</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Amount"
+                                        value={recordPaymentAmount}
+                                        onChange={(e) => setRecordPaymentAmount(e.target.value)}
+                                        className="flex-1 px-3 py-2 border border-default rounded-lg text-sm bg-surface text-primary input-focus"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={recordCustomerPayment}
+                                        disabled={recordingPayment || !recordPaymentAmount}
+                                        className="px-3 py-2 text-xs rounded-lg border border-default bg-surface hover:bg-page text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {recordingPayment ? 'Saving...' : 'Record'}
+                                    </button>
+                                </div>
+                            </div>
                         )}
 
                         {discountAmount > 0 && (
@@ -485,7 +658,7 @@ const POSInterface = () => {
                         disabled={cartItems.length === 0}
                         className="btn-primary w-full py-4 mt-2 text-white rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md font-bold text-lg tracking-wide"
                     >
-                        Charge {currency}{totalDue.toFixed(2)}
+                        {paymentMethod === 'Credit' ? `Save Credit Sale (${currency}${totalDue.toFixed(2)})` : `Charge ${currency}${totalDue.toFixed(2)}`}
                     </button>
                 </div>
 
@@ -613,8 +786,26 @@ const POSInterface = () => {
                                 <div className="space-y-1 text-[10px] text-secondary">
                                     <div className="flex justify-between">
                                         <span className="text-tertiary">Tender ({receiptData.paymentMethod})</span>
-                                        <span className="text-tertiary font-medium">{receiptData.currency}{receiptData.paymentMethod === 'Cash' ? receiptData.cashGiven.toFixed(2) : receiptData.totalPrice.toFixed(2)}</span>
+                                        <span className="text-tertiary font-medium">{receiptData.currency}{Number(receiptData.paidNowAmount || receiptData.cashGiven || 0).toFixed(2)}</span>
                                     </div>
+                                    {Number(receiptData.appliedCreditAmount || 0) > 0 && (
+                                        <div className="flex justify-between font-semibold text-info">
+                                            <span>Credit Used</span>
+                                            <span>-{receiptData.currency}{Number(receiptData.appliedCreditAmount || 0).toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    {Number(receiptData.outstandingAddedAmount || 0) > 0 && (
+                                        <div className="flex justify-between font-semibold text-warning">
+                                            <span>Outstanding Added</span>
+                                            <span>{receiptData.currency}{Number(receiptData.outstandingAddedAmount || 0).toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    {Number(receiptData.creditAddedAmount || 0) > 0 && (
+                                        <div className="flex justify-between font-semibold text-success">
+                                            <span>Credit Added</span>
+                                            <span>{receiptData.currency}{Number(receiptData.creditAddedAmount || 0).toFixed(2)}</span>
+                                        </div>
+                                    )}
                                     {receiptData.paymentMethod === 'Cash' && receiptData.changeDue > 0 && (
                                         <div className="flex justify-between font-semibold text-success">
                                             <span>Change Due</span>

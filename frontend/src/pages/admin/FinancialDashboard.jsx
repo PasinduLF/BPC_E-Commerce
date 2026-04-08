@@ -139,6 +139,30 @@ const FinancialDashboard = () => {
 
             </div>
 
+            {/* Credit Ledger */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="bg-surface border border-default rounded-2xl p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-tertiary">Credit Sales</p>
+                    <p className="text-2xl font-extrabold text-warning mt-2">{money(metrics.creditSalesRevenue)}</p>
+                    <p className="text-xs text-secondary mt-2">Unpaid POS orders</p>
+                </div>
+                <div className="bg-surface border border-default rounded-2xl p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-tertiary">Customer Payments</p>
+                    <p className="text-2xl font-extrabold text-success mt-2">{money(metrics.customerPaymentReceived)}</p>
+                    <p className="text-xs text-secondary mt-2">Payments recorded in the credit dashboard</p>
+                </div>
+                <div className="bg-surface border border-default rounded-2xl p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-tertiary">Accounts Receivable</p>
+                    <p className="text-2xl font-extrabold text-error mt-2">{money(metrics.totalCustomerOutstandingBalance)}</p>
+                    <p className="text-xs text-secondary mt-2">Customer dues still owed</p>
+                </div>
+                <div className="bg-surface border border-default rounded-2xl p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-tertiary">Customer Credit</p>
+                    <p className="text-2xl font-extrabold text-brand mt-2">{money(metrics.totalCustomerCreditBalance)}</p>
+                    <p className="text-xs text-secondary mt-2">Credit available for future orders</p>
+                </div>
+            </div>
+
             {/* Note on Data Calculation */}
             <div className="bg-surface p-6 rounded-2xl border border-default shadow-sm mt-8">
                 <h4 className="text-sm font-bold text-primary mb-2">How this is calculated</h4>
@@ -154,7 +178,7 @@ const FinancialDashboard = () => {
                         <span className="text-xl font-bold text-brand">{money(metrics.totalNetRevenue)}</span>
                     </div>
                     <div className="p-4 bg-page border border-default rounded-xl flex justify-between items-center text-sm font-medium">
-                        <span className="text-primary">COGS (from paid orders)</span>
+                        <span className="text-primary">COGS (paid + credit orders)</span>
                         <span className="text-xl font-bold text-primary">{money(metrics.costOfGoodsSold)}</span>
                     </div>
                 </div>

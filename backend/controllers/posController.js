@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const CustomerAccount = require('../models/CustomerAccount');
 
 const getEffectiveUnitPrice = (price, discountPrice) => {
     const basePrice = Number(price || 0);
@@ -13,10 +14,15 @@ const createHttpError = (statusCode, message) => {
     return error;
 };
 
+const normalizePhone = (value = '') => String(value).replace(/\s+/g, '').trim();
+
 // @desc    Create a new POS (Point of Sale) physical order
 // @route   POST /api/pos
 // @access  Private/Admin
 const createPOSOrder = async (req, res) => {
+    console.log('=== POS Order Request Started ===');
+    console.log('Body keys:', Object.keys(req.body));
+    
     try {
         const {
             orderItems,
@@ -25,7 +31,9 @@ const createPOSOrder = async (req, res) => {
             customerPhone,
             cashGiven,
             discountType,
-            discountValue
+            discountValue,
+            applyCreditAmount,
+            note,
         } = req.body;
 
         if (orderItems && orderItems.length === 0) {
@@ -94,6 +102,8 @@ const createPOSOrder = async (req, res) => {
         }
 
         const subtotal = attachedItems.reduce((sum, item) => sum + (Number(item.price) * Number(item.qty)), 0);
+        console.log('Subtotal calculated:', subtotal);
+        console.log('AttachedItems count:', attachedItems.length);
         const normalizedDiscountType = ['percentage', 'fixed'].includes(discountType) ? discountType : 'none';
         const normalizedDiscountValue = Math.max(Number(discountValue) || 0, 0);
 
@@ -106,15 +116,47 @@ const createPOSOrder = async (req, res) => {
         if (discountAmount > subtotal) discountAmount = subtotal;
 
         const netTotal = Number((subtotal - discountAmount).toFixed(2));
-        const tenderedCash = Math.max(Number(cashGiven) || 0, 0);
+        const normalizedPaymentMethod = ['Cash', 'Bank Transfer', 'Credit'].includes(paymentMethod) ? paymentMethod : 'Cash';
+        const normalizedCustomerName = String(customerName || '').trim();
+        const normalizedCustomerPhone = normalizePhone(customerPhone || '');
+        const paidNowRaw = Math.max(Number(cashGiven) || 0, 0);
 
-        if ((paymentMethod || 'Cash') === 'Cash' && tenderedCash < netTotal) {
-            return res.status(400).json({ message: 'Insufficient cash amount for this discounted total' });
+        const wantsCreditFlow = normalizedPaymentMethod === 'Credit' || paidNowRaw !== netTotal || Number(applyCreditAmount || 0) > 0;
+        if (wantsCreditFlow && (!normalizedCustomerName || !normalizedCustomerPhone)) {
+            return res.status(400).json({ message: 'Customer name and phone are required for credit and advance-balance operations' });
         }
 
-        const finalChangeDue = (paymentMethod || 'Cash') === 'Cash'
-            ? Number((tenderedCash - netTotal).toFixed(2))
-            : 0;
+        let customerAccount = null;
+        if (normalizedCustomerPhone) {
+            customerAccount = await CustomerAccount.findOne({ customerPhone: normalizedCustomerPhone });
+        }
+
+        const currentCredit = Number(customerAccount?.creditBalance || 0);
+        const requestedCreditUse = Math.max(Number(applyCreditAmount) || 0, 0);
+        const creditUsed = Math.min(requestedCreditUse, currentCredit, netTotal);
+
+        const dueAfterCredit = Number((netTotal - creditUsed).toFixed(2));
+
+        let paidNowAmount = paidNowRaw;
+        if (normalizedPaymentMethod === 'Bank Transfer' && normalizedPaymentMethod !== 'Credit') {
+            paidNowAmount = dueAfterCredit;
+        }
+        if (normalizedPaymentMethod === 'Credit') {
+            paidNowAmount = paidNowRaw;
+        }
+
+        if (paidNowAmount < 0) paidNowAmount = 0;
+
+        const delta = Number((paidNowAmount - dueAfterCredit).toFixed(2));
+        const outstandingAddedAmount = delta < 0 ? Math.abs(delta) : 0;
+        const creditAddedAmount = delta > 0 ? delta : 0;
+        const isFullyPaid = outstandingAddedAmount === 0;
+
+        if (normalizedPaymentMethod === 'Cash' && !wantsCreditFlow && paidNowAmount < dueAfterCredit) {
+            return res.status(400).json({ message: 'Insufficient cash amount for this total' });
+        }
+
+        const finalChangeDue = 0;
 
         const appliedStockUpdates = [];
         try {
@@ -153,34 +195,105 @@ const createPOSOrder = async (req, res) => {
             const order = new Order({
                 orderItems: attachedItems,
                 shippingAddress: {
-                    name: customerName || 'Walk-in Customer',
+                    name: normalizedCustomerName || 'Walk-in Customer',
                     address: 'In-Store POS',
                     city: 'Local',
                     postalCode: '0000',
                     country: 'Local',
-                    phone: customerPhone || 'N/A'
+                    phone: normalizedCustomerPhone || 'N/A'
                 },
-                paymentMethod: paymentMethod || 'Cash', // default POS logic
+                paymentMethod: normalizedPaymentMethod,
                 itemsPrice: Number(subtotal.toFixed(2)),
                 shippingPrice: 0.0,
                 totalPrice: netTotal,
                 discountType: normalizedDiscountType,
                 discountValue: normalizedDiscountValue,
                 discountAmount: Number(discountAmount.toFixed(2)),
-                customerName: customerName || undefined,
-                customerPhone: customerPhone || undefined,
-                cashGiven: tenderedCash,
+                customerName: normalizedCustomerName || undefined,
+                customerPhone: normalizedCustomerPhone || undefined,
+                cashGiven: paidNowAmount,
                 changeDue: finalChangeDue,
-                isPaid: true, // POS implies immediate settlement
-                paidAt: Date.now(),
+                paidNowAmount,
+                appliedCreditAmount: Number(creditUsed.toFixed(2)),
+                outstandingAddedAmount: Number(outstandingAddedAmount.toFixed(2)),
+                creditAddedAmount: Number(creditAddedAmount.toFixed(2)),
+                isPaid: isFullyPaid,
+                paidAt: isFullyPaid ? Date.now() : undefined,
                 isDelivered: true, // Physical walk-out
                 deliveredAt: Date.now(),
                 isPOS: true,
-                status: 'Delivered'
+                status: isFullyPaid ? 'Delivered' : 'Processing'
             });
 
             const createdOrder = await order.save();
-            res.status(201).json(createdOrder);
+            console.log('Order saved successfully:', createdOrder._id);
+
+            if (wantsCreditFlow && normalizedCustomerPhone) {
+                if (!customerAccount) {
+                    customerAccount = await CustomerAccount.create({
+                        customerName: normalizedCustomerName,
+                        customerPhone: normalizedCustomerPhone,
+                        creditBalance: 0,
+                        outstandingBalance: 0,
+                        ledger: [],
+                    });
+                } else {
+                    if (normalizedCustomerName) customerAccount.customerName = normalizedCustomerName;
+                }
+
+                customerAccount.ledger.push({
+                    type: 'sale',
+                    amount: Number(netTotal.toFixed(2)),
+                    order: createdOrder._id,
+                    note: note || 'POS sale',
+                    paymentMethod: normalizedPaymentMethod,
+                });
+
+                if (creditUsed > 0) {
+                    customerAccount.creditBalance = Number((customerAccount.creditBalance - creditUsed).toFixed(2));
+                    if (customerAccount.creditBalance < 0) customerAccount.creditBalance = 0;
+                    customerAccount.ledger.push({
+                        type: 'credit-used',
+                        amount: Number(creditUsed.toFixed(2)),
+                        order: createdOrder._id,
+                        note: 'Applied existing customer credit to POS order',
+                    });
+                }
+
+                if (outstandingAddedAmount > 0) {
+                    customerAccount.outstandingBalance = Number((customerAccount.outstandingBalance + outstandingAddedAmount).toFixed(2));
+                    customerAccount.ledger.push({
+                        type: 'outstanding-added',
+                        amount: Number(outstandingAddedAmount.toFixed(2)),
+                        order: createdOrder._id,
+                        note: 'Outstanding amount recorded from POS order',
+                    });
+                }
+
+                if (creditAddedAmount > 0) {
+                    customerAccount.creditBalance = Number((customerAccount.creditBalance + creditAddedAmount).toFixed(2));
+                    customerAccount.ledger.push({
+                        type: 'credit-added',
+                        amount: Number(creditAddedAmount.toFixed(2)),
+                        order: createdOrder._id,
+                        note: 'Advance amount added to customer credit balance',
+                    });
+                }
+
+                await customerAccount.save();
+            }
+
+            const orderResponse = createdOrder.toObject();
+            if (customerAccount) {
+                orderResponse.customerAccount = {
+                    customerName: customerAccount.customerName,
+                    customerPhone: customerAccount.customerPhone,
+                    creditBalance: Number(customerAccount.creditBalance || 0),
+                    outstandingBalance: Number(customerAccount.outstandingBalance || 0),
+                };
+            }
+
+            res.status(201).json(orderResponse);
         } catch (error) {
             if (appliedStockUpdates.length > 0) {
                 for (const rollback of appliedStockUpdates) {
@@ -207,10 +320,142 @@ const createPOSOrder = async (req, res) => {
         }
 
     } catch (error) {
-        res.status(error.statusCode || 500).json({ message: error.message || 'Error processing POS order' });
+        console.error('POS Order Error:', {
+            message: error.message,
+            name: error.name,
+            errors: error.errors,
+            statusCode: error.statusCode,
+            stack: error.stack
+        });
+        res.status(error.statusCode || 500).json({ 
+            message: error.message || 'Error processing POS order',
+            errors: error.errors,
+            details: process.env.NODE_ENV !== 'production' ? error.message : undefined
+        });
+    }
+};
+
+// @desc    Get customer credit account by phone
+// @route   GET /api/pos/customer-account
+// @access  Private/Admin
+const getCustomerAccountByPhone = async (req, res) => {
+    const normalizedPhone = normalizePhone(req.query.phone || '');
+    if (!normalizedPhone) {
+        return res.status(400).json({ message: 'Phone is required' });
+    }
+
+    const account = await CustomerAccount.findOne({ customerPhone: normalizedPhone });
+    if (!account) {
+        return res.json(null);
+    }
+
+    res.json(account);
+};
+
+// @desc    Record a customer payment against outstanding balance
+// @route   POST /api/pos/customer-account/payment
+// @access  Private/Admin
+const recordCustomerPayment = async (req, res) => {
+    const normalizedPhone = normalizePhone(req.body.customerPhone || '');
+    const normalizedName = String(req.body.customerName || '').trim();
+    const paymentAmount = Math.max(Number(req.body.amount) || 0, 0);
+    const paymentMethod = String(req.body.paymentMethod || 'Cash').trim();
+    const note = String(req.body.note || '').trim();
+
+    if (!normalizedPhone || !normalizedName) {
+        return res.status(400).json({ message: 'Customer name and phone are required' });
+    }
+
+    if (paymentAmount <= 0) {
+        return res.status(400).json({ message: 'Payment amount must be greater than zero' });
+    }
+
+    let account = await CustomerAccount.findOne({ customerPhone: normalizedPhone });
+    if (!account) {
+        account = new CustomerAccount({
+            customerName: normalizedName,
+            customerPhone: normalizedPhone,
+            creditBalance: 0,
+            outstandingBalance: 0,
+            ledger: [],
+        });
+    }
+
+    account.customerName = normalizedName;
+
+    const outstandingBefore = Number(account.outstandingBalance || 0);
+    const settledAmount = Math.min(outstandingBefore, paymentAmount);
+    const extraAsCredit = Number((paymentAmount - settledAmount).toFixed(2));
+
+    if (settledAmount > 0) {
+        account.outstandingBalance = Number((account.outstandingBalance - settledAmount).toFixed(2));
+        if (account.outstandingBalance < 0) account.outstandingBalance = 0;
+        account.ledger.push({
+            type: 'outstanding-cleared',
+            amount: Number(settledAmount.toFixed(2)),
+            note: note || 'Customer payment against outstanding balance',
+            paymentMethod,
+        });
+    }
+
+    if (extraAsCredit > 0) {
+        account.creditBalance = Number((account.creditBalance + extraAsCredit).toFixed(2));
+        account.ledger.push({
+            type: 'credit-added',
+            amount: extraAsCredit,
+            note: note || 'Extra payment added to customer credit balance',
+            paymentMethod,
+        });
+    }
+
+    account.ledger.push({
+        type: 'payment-received',
+        amount: Number(paymentAmount.toFixed(2)),
+        note: note || 'Customer payment recorded',
+        paymentMethod,
+    });
+
+    await account.save();
+    res.json(account);
+};
+
+// @desc    Get all customer credit accounts with optional search
+// @route   GET /api/pos/customer-accounts
+// @access  Private/Admin
+const getAllCustomerAccounts = async (req, res) => {
+    try {
+        const search = String(req.query.search || '').toLowerCase().trim();
+        const sortBy = String(req.query.sortBy || 'createdAt');
+        const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+
+        let query = {};
+        if (search) {
+            // Search by phone or name
+            query = {
+                $or: [
+                    { customerPhone: { $regex: search, $options: 'i' } },
+                    { customerName: { $regex: search, $options: 'i' } },
+                ],
+            };
+        }
+
+        const sort = {};
+        if (sortBy === 'createdAt' || sortBy === 'updatedAt' || sortBy === 'creditBalance' || sortBy === 'outstandingBalance') {
+            sort[sortBy] = sortOrder;
+        } else {
+            sort.createdAt = -1;
+        }
+
+        const accounts = await CustomerAccount.find(query).sort(sort);
+        res.json(accounts);
+    } catch (error) {
+        res.status(error.statusCode || 500).json({ message: error.message || 'Error fetching customer accounts' });
     }
 };
 
 module.exports = {
-    createPOSOrder
+    createPOSOrder,
+    getCustomerAccountByPhone,
+    recordCustomerPayment,
+    getAllCustomerAccounts,
 };

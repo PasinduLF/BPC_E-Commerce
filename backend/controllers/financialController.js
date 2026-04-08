@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const WholesalePurchase = require('../models/WholesalePurchase');
 const Transaction = require('../models/Transaction');
+const CustomerAccount = require('../models/CustomerAccount');
 
 // @desc    Get financial ledger balances (Cash vs Bank)
 // @route   GET /api/financials/balances
@@ -9,11 +10,27 @@ const getFinancialBalances = async (req, res) => {
     try {
         // 1. Calculate incoming revenue from Paid Orders
         const orders = await Order.find({ isPaid: true });
+        const creditOrders = await Order.find({
+            isPOS: true,
+            isPaid: false,
+            $or: [
+                { paymentMethod: 'Credit' },
+                { outstandingAddedAmount: { $gt: 0 } },
+                { appliedCreditAmount: { $gt: 0 } },
+            ],
+        });
 
         let cashIn = 0;
         let bankIn = 0;
         let salesRevenue = 0;
         let costOfGoodsSold = 0;
+        let creditSalesRevenue = 0;
+        let creditSalesCost = 0;
+        let creditOrdersCount = 0;
+        let customerPaymentReceived = 0;
+        let customerPaymentCount = 0;
+        let totalCustomerCreditBalance = 0;
+        let totalCustomerOutstandingBalance = 0;
 
         orders.forEach(order => {
             salesRevenue += order.totalPrice;
@@ -29,6 +46,41 @@ const getFinancialBalances = async (req, res) => {
                     costOfGoodsSold += (Number(item.costPrice) || 0) * (Number(item.qty) || 0);
                 });
             }
+        });
+
+        creditOrders.forEach(order => {
+            creditOrdersCount += 1;
+            creditSalesRevenue += Number(order.totalPrice || 0);
+
+            if (Array.isArray(order.orderItems)) {
+                order.orderItems.forEach((item) => {
+                    creditSalesCost += (Number(item.costPrice) || 0) * (Number(item.qty) || 0);
+                });
+            }
+        });
+
+        const customerAccounts = await CustomerAccount.find({}).select('creditBalance outstandingBalance ledger');
+        customerAccounts.forEach((account) => {
+            totalCustomerCreditBalance += Number(account.creditBalance || 0);
+            totalCustomerOutstandingBalance += Number(account.outstandingBalance || 0);
+
+            if (!Array.isArray(account.ledger)) {
+                return;
+            }
+
+            account.ledger.forEach((entry) => {
+                if (entry.type === 'payment-received') {
+                    const amount = Number(entry.amount || 0);
+                    customerPaymentReceived += amount;
+                    customerPaymentCount += 1;
+
+                    if (entry.paymentMethod === 'Cash') {
+                        cashIn += amount;
+                    } else if (entry.paymentMethod === 'Bank Transfer') {
+                        bankIn += amount;
+                    }
+                }
+            });
         });
 
         // 2. Calculate outgoing expenses from Wholesale Purchases
@@ -68,9 +120,9 @@ const getFinancialBalances = async (req, res) => {
         // 4. Final Balances
         const cashBalance = cashIn - cashOut;
         const bankBalance = bankIn - bankOut;
-        const totalIncome = salesRevenue + manualIncome;
+        const totalIncome = salesRevenue + creditSalesRevenue + manualIncome;
         const totalExpense = wholesaleExpense + manualExpense;
-        const grossProfit = salesRevenue - costOfGoodsSold;
+        const grossProfit = (salesRevenue + creditSalesRevenue) - (costOfGoodsSold + creditSalesCost);
         const netProfit = totalIncome - totalExpense;
         const totalAssets = cashBalance + bankBalance;
 
@@ -87,12 +139,19 @@ const getFinancialBalances = async (req, res) => {
             wholesaleExpense,
             manualIncome,
             manualExpense,
+            creditSalesRevenue,
+            creditSalesCost,
+            creditOrdersCount,
+            customerPaymentReceived,
+            customerPaymentCount,
+            totalCustomerCreditBalance,
+            totalCustomerOutstandingBalance,
             totalIncome,
             totalExpense,
             grossProfit,
             netProfit,
             paidOrdersCount: orders.length,
-            manualTransactionsCount: manualTransactions.length
+            manualTransactionsCount: manualTransactions.length,
         });
 
     } catch (error) {

@@ -27,6 +27,7 @@ import BrandManage from './pages/admin/BrandManage';
 import OrderManage from './pages/admin/OrderManage';
 import WholesaleInventory from './pages/admin/WholesaleInventory';
 import UserManage from './pages/admin/UserManage';
+import CustomerCreditDashboard from './pages/admin/CustomerCreditDashboard';
 
 import FinancialDashboard from './pages/admin/FinancialDashboard';
 import POSInterface from './pages/admin/POSInterface';
@@ -118,6 +119,7 @@ function AppShell() {
               <Route path="orders" element={<OrderManage />} />
               <Route path="wholesale" element={<WholesaleInventory />} />
               <Route path="users" element={<UserManage />} />
+              <Route path="customer-credit" element={<CustomerCreditDashboard />} />
               <Route path="financials" element={<FinancialDashboard />} />
               <Route path="pos" element={<POSInterface />} />
               <Route path="income-expense" element={<IncomeExpenseManage />} />

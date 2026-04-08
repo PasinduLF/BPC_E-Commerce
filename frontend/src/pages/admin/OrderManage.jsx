@@ -274,7 +274,7 @@ const OrderManage = () => {
                                                             </a>
                                                         )}
 
-                                                        {(order.paymentMethod === 'Cash on Delivery' || (order.paymentMethod === 'Bank Transfer' && order.paymentSlip?.url)) && (
+                                                        {(order.paymentMethod === 'Cash on Delivery' || order.paymentMethod === 'Cash' || order.paymentMethod === 'Credit' || (order.paymentMethod === 'Bank Transfer' && order.paymentSlip?.url)) && (
                                                             <button
                                                                 onClick={() => updatePaymentStatus(order._id, order.isPaid)}
                                                                 disabled={isOrderBusy(order._id)}
