@@ -285,7 +285,7 @@ const POSInterface = () => {
                                                 <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">No Img</div>
                                             )}
                                         </div>
-                                        <h3 className="font-bold text-primary text-sm line-clamp-1">{product.name}</h3>
+                                        <h3 className="font-bold text-primary text-sm leading-snug break-words">{product.name}</h3>
                                         <div className="flex items-center justify-between mt-1">
                                             <span className="text-brand font-bold text-sm">
                                                 {(product.variants && product.variants.length > 0) ? 'From ' : ''}{currency}{displayPrice.toFixed(2)}

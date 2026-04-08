@@ -95,6 +95,7 @@ const createProduct = async (req, res) => {
             discountPrice,
             costPrice,
             description,
+            descriptionSections,
             images,
             category,
             subcategory,
@@ -112,6 +113,14 @@ const createProduct = async (req, res) => {
             discountPrice: discountPrice || 0,
             costPrice: costPrice || 0,
             description: description || 'Sample description',
+            descriptionSections: {
+                details: descriptionSections?.details || '',
+                benefits: descriptionSections?.benefits || '',
+                howToUse: descriptionSections?.howToUse || '',
+                ingredients: descriptionSections?.ingredients || '',
+                specifications: descriptionSections?.specifications || '',
+                shippingInformation: descriptionSections?.shippingInformation || ''
+            },
             images: images && images.length > 0 ? images : [{ public_id: 'sample', url: '/images/sample.jpg' }],
             category: category || null,
             subcategory: subcategory || undefined,
@@ -139,6 +148,7 @@ const updateProduct = async (req, res) => {
         discountPrice,
         costPrice,
         description,
+        descriptionSections,
         images,
         category,
         subcategory,
@@ -158,6 +168,14 @@ const updateProduct = async (req, res) => {
         product.discountPrice = discountPrice !== undefined ? discountPrice : product.discountPrice;
         product.costPrice = costPrice !== undefined ? costPrice : product.costPrice;
         product.description = description || product.description;
+        product.descriptionSections = {
+            details: descriptionSections?.details ?? product.descriptionSections?.details ?? '',
+            benefits: descriptionSections?.benefits ?? product.descriptionSections?.benefits ?? '',
+            howToUse: descriptionSections?.howToUse ?? product.descriptionSections?.howToUse ?? '',
+            ingredients: descriptionSections?.ingredients ?? product.descriptionSections?.ingredients ?? '',
+            specifications: descriptionSections?.specifications ?? product.descriptionSections?.specifications ?? '',
+            shippingInformation: descriptionSections?.shippingInformation ?? product.descriptionSections?.shippingInformation ?? ''
+        };
         product.images = images || product.images;
         product.category = category || product.category;
         product.subcategory = subcategory || product.subcategory;

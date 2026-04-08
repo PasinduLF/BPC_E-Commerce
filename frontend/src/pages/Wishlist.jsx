@@ -71,7 +71,7 @@ const Wishlist = () => {
                                         </span>
                                     )}
                                     <Link to={`/product/${product._id}`}>
-                                        <h3 className="text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors line-clamp-1">{product.name}</h3>
+                                        <h3 className="text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
                                     </Link>
                                     <div className="mt-auto pt-4 flex flex-col gap-3">
                                         <div className="flex items-center">

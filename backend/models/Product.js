@@ -39,6 +39,14 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add a description']
     },
+    descriptionSections: {
+        details: { type: String, default: '' },
+        benefits: { type: String, default: '' },
+        howToUse: { type: String, default: '' },
+        ingredients: { type: String, default: '' },
+        specifications: { type: String, default: '' },
+        shippingInformation: { type: String, default: '' }
+    },
     price: {
         type: Number,
         required: [true, 'Please add a selling price']

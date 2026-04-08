@@ -121,7 +121,7 @@ const Home = () => {
                     </span>
                 )}
                 <Link to={`/product/${product._id}`}>
-                    <h3 className="text-lg font-bold text-primary mb-1 hover:text-brand transition-colors line-clamp-1">{product.name}</h3>
+                    <h3 className="text-lg font-bold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
                 </Link>
                 <p className="text-sm font-medium text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
 

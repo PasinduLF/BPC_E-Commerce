@@ -4,7 +4,7 @@ import { useCartStore } from '../context/useCartStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import axios from 'axios';
-import { Star, Truck, ShieldCheck, ArrowLeft, Minus, Plus, ShoppingBag, Heart, CreditCard, ChevronLeft, Trash2 } from 'lucide-react';
+import { Star, Truck, ShieldCheck, Minus, Plus, ShoppingBag, Heart, CreditCard, ChevronDown, Trash2 } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
 import Breadcrumbs from '../components/Breadcrumbs';
 
@@ -25,6 +25,7 @@ const ProductScreen = () => {
     const [reviewError, setReviewError] = useState('');
     const [reviewSuccess, setReviewSuccess] = useState('');
     const [deletingReviewId, setDeletingReviewId] = useState('');
+    const [openDescriptionSection, setOpenDescriptionSection] = useState('details');
 
     const { addToCart, setBuyNowItem } = useCartStore();
     const { userInfo } = useAuthStore();
@@ -157,6 +158,32 @@ const ProductScreen = () => {
         ));
     };
 
+    const formatDescription = (text = '') => {
+        return String(text)
+            .replace(/\r\n/g, '\n')
+            .replace(/\s*---\s*/g, '\n\n')
+            .replace(/^#{1,6}\s*/gm, '')
+            .replace(/\*\*/g, '')
+            .trim();
+    };
+
+    const sectionMeta = [
+        { key: 'details', label: 'Details' },
+        { key: 'benefits', label: 'Key Benefits' },
+        { key: 'howToUse', label: 'How to Use' },
+        { key: 'ingredients', label: 'Core Ingredients' },
+        { key: 'specifications', label: 'Specifications' },
+        { key: 'shippingInformation', label: 'Shipping information' },
+    ];
+
+    const descriptionPanels = sectionMeta
+        .map(({ key, label }) => ({
+            key,
+            label,
+            content: formatDescription(product?.descriptionSections?.[key] || ''),
+        }))
+        .filter((section) => section.content.length > 0);
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-screen bg-page">
@@ -258,6 +285,10 @@ const ProductScreen = () => {
                                 </span>
                             </div>
 
+                            <p className="text-secondary leading-relaxed mb-6">
+                                {formatDescription(product.description)}
+                            </p>
+
                             <div className="flex items-center gap-3 mb-6">
                                 {hasDiscount ? (
                                     <>
@@ -304,9 +335,6 @@ const ProductScreen = () => {
                                 </div>
                             )}
 
-                            <p className="text-secondary leading-relaxed max-w-2xl mb-8">
-                                {product.description}
-                            </p>
                         </div>
 
                         <div className="mt-auto border-t border-default pt-8">
@@ -317,17 +345,17 @@ const ProductScreen = () => {
                                         <button
                                             onClick={() => setQty(qty > 1 ? qty - 1 : 1)}
                                             disabled={qty === 1}
-                                            className="p-3 text-secondary hover:text-brand hover:bg-surface rounded-lg disabled:opacity-50 transition-all flex-1 flex justify-center"
+                                            className="p-3 text-primary hover:text-brand hover:bg-surface rounded-lg disabled:opacity-50 transition-all flex-1 flex justify-center"
                                         >
-                                            <Minus size={18} />
+                                            <Minus size={18} className="text-primary" />
                                         </button>
                                         <span className="w-12 text-center font-bold text-primary text-lg">{qty}</span>
                                         <button
                                             onClick={() => setQty(qty < displayStock ? qty + 1 : qty)}
                                             disabled={qty >= displayStock}
-                                            className="p-3 text-secondary hover:text-brand hover:bg-surface rounded-lg disabled:opacity-50 transition-all flex-1 flex justify-center"
+                                            className="p-3 text-primary hover:text-brand hover:bg-surface rounded-lg disabled:opacity-50 transition-all flex-1 flex justify-center"
                                         >
-                                            <Plus size={18} />
+                                            <Plus size={18} className="text-primary" />
                                         </button>
                                     </div>
 
@@ -375,6 +403,34 @@ const ProductScreen = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {descriptionPanels.length > 0 && (
+                                <div className="mt-8 border-t border-default pt-4">
+                                    {descriptionPanels.map((section) => {
+                                        const isOpen = openDescriptionSection === section.key;
+                                        return (
+                                            <div key={section.key} className="border-b border-default">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOpenDescriptionSection(isOpen ? '' : section.key)}
+                                                    className="w-full py-4 flex items-center justify-between text-left"
+                                                >
+                                                    <span className="text-primary font-medium text-xl">{section.label}</span>
+                                                    <ChevronDown
+                                                        size={18}
+                                                        className={`text-tertiary transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                                                    />
+                                                </button>
+                                                {isOpen && (
+                                                    <div className="pb-4 text-secondary leading-relaxed whitespace-pre-line text-sm">
+                                                        {section.content}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
 
                         </div>
                     </div>

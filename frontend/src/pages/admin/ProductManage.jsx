@@ -16,6 +16,14 @@ const ProductManage = () => {
     const [editingId, setEditingId] = useState(null);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const [descriptionSections, setDescriptionSections] = useState({
+        details: '',
+        benefits: '',
+        howToUse: '',
+        ingredients: '',
+        specifications: '',
+        shippingInformation: ''
+    });
     const [price, setPrice] = useState('');
     const [discountPrice, setDiscountPrice] = useState('0');
     const [costPrice, setCostPrice] = useState('0'); // Admin only
@@ -108,6 +116,7 @@ const ProductManage = () => {
             const productData = {
                 name,
                 description,
+                descriptionSections,
                 price: variants.length > 0 ? (finalVariants[0]?.price || 0) : Number(price),
                 discountPrice: variants.length > 0 ? (finalVariants[0]?.discountPrice || 0) : Number(discountPrice),
                 costPrice: variants.length > 0 ? (finalVariants[0]?.costPrice || 0) : Number(costPrice),
@@ -135,6 +144,14 @@ const ProductManage = () => {
             // Reset form
             setName('');
             setDescription('');
+            setDescriptionSections({
+                details: '',
+                benefits: '',
+                howToUse: '',
+                ingredients: '',
+                specifications: '',
+                shippingInformation: ''
+            });
             setPrice('');
             setDiscountPrice('0');
             setCostPrice('0');
@@ -162,6 +179,14 @@ const ProductManage = () => {
         setEditingId(product._id);
         setName(product.name);
         setDescription(product.description);
+        setDescriptionSections({
+            details: product.descriptionSections?.details || '',
+            benefits: product.descriptionSections?.benefits || '',
+            howToUse: product.descriptionSections?.howToUse || '',
+            ingredients: product.descriptionSections?.ingredients || '',
+            specifications: product.descriptionSections?.specifications || '',
+            shippingInformation: product.descriptionSections?.shippingInformation || ''
+        });
         setPrice(product.price);
         setDiscountPrice(product.discountPrice || '0');
         setCostPrice(product.costPrice || '0');
@@ -205,6 +230,14 @@ const ProductManage = () => {
                             setEditingId(null);
                             setName('');
                             setDescription('');
+                            setDescriptionSections({
+                                details: '',
+                                benefits: '',
+                                howToUse: '',
+                                ingredients: '',
+                                specifications: '',
+                                shippingInformation: ''
+                            });
                             setPrice('');
                             setDiscountPrice('0');
                             setCostPrice('0');
@@ -292,12 +325,73 @@ const ProductManage = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-primary mb-1">Description</label>
+                            <label className="block text-sm font-medium text-primary mb-1">Short Description</label>
                             <textarea
                                 required value={description} onChange={(e) => setDescription(e.target.value)}
                                 rows="3"
+                                placeholder="Short summary shown near product title"
                                 className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-page text-primary"
                             ></textarea>
+                        </div>
+
+                        <div className="bg-page p-5 rounded-xl border border-default space-y-4">
+                            <h3 className="text-sm font-bold text-primary uppercase tracking-wide">Product Description Sections</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-primary mb-1">Details</label>
+                                    <textarea
+                                        value={descriptionSections.details}
+                                        onChange={(e) => setDescriptionSections((prev) => ({ ...prev, details: e.target.value }))}
+                                        rows="4"
+                                        className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-primary mb-1">Benefits</label>
+                                    <textarea
+                                        value={descriptionSections.benefits}
+                                        onChange={(e) => setDescriptionSections((prev) => ({ ...prev, benefits: e.target.value }))}
+                                        rows="4"
+                                        className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-primary mb-1">How to Use</label>
+                                    <textarea
+                                        value={descriptionSections.howToUse}
+                                        onChange={(e) => setDescriptionSections((prev) => ({ ...prev, howToUse: e.target.value }))}
+                                        rows="4"
+                                        className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-primary mb-1">Ingredients</label>
+                                    <textarea
+                                        value={descriptionSections.ingredients}
+                                        onChange={(e) => setDescriptionSections((prev) => ({ ...prev, ingredients: e.target.value }))}
+                                        rows="4"
+                                        className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-primary mb-1">Specifications</label>
+                                    <textarea
+                                        value={descriptionSections.specifications}
+                                        onChange={(e) => setDescriptionSections((prev) => ({ ...prev, specifications: e.target.value }))}
+                                        rows="4"
+                                        className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-primary mb-1">Shipping Information</label>
+                                    <textarea
+                                        value={descriptionSections.shippingInformation}
+                                        onChange={(e) => setDescriptionSections((prev) => ({ ...prev, shippingInformation: e.target.value }))}
+                                        rows="4"
+                                        className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         {variants.length === 0 && (
