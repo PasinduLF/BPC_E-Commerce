@@ -48,6 +48,34 @@ const ProductManage = () => {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [existingImages, setExistingImages] = useState([]);
     const [uploading, setUploading] = useState(false);
+    const [dragActive, setDragActive] = useState(false);
+
+    const handleDrag = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === 'dragenter' || e.type === 'dragover') {
+            setDragActive(true);
+        } else if (e.type === 'dragleave') {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const files = e.dataTransfer.files;
+            const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (imageFiles.length > 0) {
+                const newFiles = new DataTransfer();
+                Array.from(selectedFiles || []).forEach(f => newFiles.items.add(f));
+                imageFiles.forEach(f => newFiles.items.add(f));
+                setSelectedFiles(newFiles.files);
+            }
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -510,7 +538,7 @@ const ProductManage = () => {
                             )}
                         </div>
 
-                        <div className="bg-brand-subtle p-6 rounded-xl border border-brand/20 border-dashed">
+                        <div className="bg-brand-subtle p-6 rounded-xl border border-brand/20 border-dashed" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}>
                             <h3 className="text-sm font-bold text-brand mb-3 flex items-center gap-2">
                                 <UploadCloud size={18} /> Upload Product Images
                             </h3>
@@ -546,11 +574,26 @@ const ProductManage = () => {
                                     </div>
                                 )}
 
-                                <input
-                                    type="file" multiple accept="image/*"
-                                    onChange={(e) => setSelectedFiles(e.target.files)}
-                                    className="w-full px-3 py-2 border border-default rounded text-sm bg-surface text-primary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-subtle file:text-brand hover:file:brightness-105"
-                                />
+                                <div className={`p-4 rounded-lg border-2 transition-all ${dragActive ? 'border-brand bg-brand/5' : 'border-default bg-surface'}`}>
+                                    <label htmlFor="file-input" className={`block text-center cursor-pointer ${dragActive ? 'text-brand' : 'text-secondary'}`}>
+                                        <p className="text-sm font-medium mb-1">{dragActive ? '📌 Drop images here' : '📁 Drag & drop images here or click to browse'}</p>
+                                        <p className="text-xs text-tertiary">Supports JPG, PNG, WebP, GIF</p>
+                                    </label>
+                                    <input
+                                        id="file-input"
+                                        type="file" multiple accept="image/*"
+                                        onChange={(e) => {
+                                            const files = e.target.files;
+                                            if (files) {
+                                                const newFiles = new DataTransfer();
+                                                Array.from(selectedFiles || []).forEach(f => newFiles.items.add(f));
+                                                Array.from(files).forEach(f => newFiles.items.add(f));
+                                                setSelectedFiles(newFiles.files);
+                                            }
+                                        }}
+                                        className="hidden"
+                                    />
+                                </div>
                                 <p className="text-xs text-brand mt-2">Select new files to append to the product gallery.</p>
                                 {selectedFiles.length > 0 && (
                                     <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
