@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Twitter } from 'lucide-react';
+import { Facebook, Instagram, Mail, MessageCircle, Music2, Radio, BookOpen } from 'lucide-react';
 import logoImage from '../assets/logo-no-background.png';
 
 const Footer = () => {
@@ -15,16 +15,59 @@ const Footer = () => {
                         <p className="text-gray-400 max-w-sm mb-6">
                             Your ultimate destination for premium cosmetics and beauty products. We bring you the best brands with seamless delivery.
                         </p>
-                        <div className="flex space-x-4">
-                            <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-brand hover:text-white transition-all">
+                        <div className="flex flex-wrap gap-3">
+                            <a
+                                href="https://www.facebook.com/beautypanc"
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label="Facebook"
+                                className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-brand hover:text-white transition-all"
+                            >
                                 <Facebook size={20} />
                             </a>
-                            <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-brand hover:text-white transition-all">
+                            <a
+                                href="https://www.instagram.com/beautypandc"
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label="Instagram"
+                                className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-brand hover:text-white transition-all"
+                            >
                                 <Instagram size={20} />
                             </a>
-                            <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-brand hover:text-white transition-all">
-                                <Twitter size={20} />
+                            <a
+                                href="https://wa.me/94785993262"
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label="WhatsApp"
+                                className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-brand hover:text-white transition-all"
+                            >
+                                <MessageCircle size={20} />
                             </a>
+                            <a
+                                href="mailto:beautypandc@gmail.com"
+                                aria-label="Email"
+                                className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-brand hover:text-white transition-all"
+                            >
+                                <Mail size={20} />
+                            </a>
+                        </div>
+                        <div className="mt-4 space-y-2 text-sm text-gray-400">
+                            <p>
+                                <a href="https://www.tiktok.com/@beauty.pc" target="_blank" rel="noreferrer" className="hover:text-brand transition-colors inline-flex items-center gap-2">
+                                    <Music2 size={14} />
+                                    <span>TikTok: @beauty.pc</span>
+                                </a>
+                            </p>
+                            <div className="flex flex-wrap gap-x-4 gap-y-2">
+                                <a href="https://whatsapp.com/channel/0029Vaa30pmJuyAA3qmdJ61V" target="_blank" rel="noreferrer" className="hover:text-brand transition-colors inline-flex items-center gap-2">
+                                    <Radio size={14} />
+                                    <span>WhatsApp Channel</span>
+                                </a>
+                                <a href="https://wa.me/c/94785993262" target="_blank" rel="noreferrer" className="hover:text-brand transition-colors inline-flex items-center gap-2">
+                                    <BookOpen size={14} />
+                                    <span>WhatsApp Catalog</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
 

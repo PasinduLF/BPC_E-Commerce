@@ -1,6 +1,51 @@
 import { useState } from 'react';
-import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send, Facebook, Instagram, Music2, MessageCircle, BookOpen, Radio, ExternalLink } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
+
+const socialLinks = [
+    {
+        label: 'Facebook',
+        subtitle: '@beautypanc',
+        url: 'https://www.facebook.com/beautypanc',
+        icon: Facebook,
+    },
+    {
+        label: 'Instagram',
+        subtitle: '@beautypandc',
+        url: 'https://www.instagram.com/beautypandc',
+        icon: Instagram,
+    },
+    {
+        label: 'TikTok',
+        subtitle: '@beauty.pc',
+        url: 'https://www.tiktok.com/@beauty.pc',
+        icon: Music2,
+    },
+    {
+        label: 'WhatsApp Channel',
+        subtitle: 'Join our updates channel',
+        url: 'https://whatsapp.com/channel/0029Vaa30pmJuyAA3qmdJ61V',
+        icon: Radio,
+    },
+    {
+        label: 'WhatsApp Chat',
+        subtitle: '+94 785 993 262',
+        url: 'https://wa.me/94785993262',
+        icon: MessageCircle,
+    },
+    {
+        label: 'WhatsApp Catalog',
+        subtitle: 'Browse products on WhatsApp',
+        url: 'https://wa.me/c/94785993262',
+        icon: BookOpen,
+    },
+    {
+        label: 'Email',
+        subtitle: 'beautypandc@gmail.com',
+        url: 'mailto:beautypandc@gmail.com',
+        icon: Mail,
+    },
+];
 
 const Contact = () => {
     const { config } = useConfigStore();
@@ -100,6 +145,33 @@ const Contact = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div className="bg-surface rounded-3xl p-8 border border-default shadow-sm hover:shadow-lg transition-all">
+                            <h3 className="text-xl font-bold text-primary mb-4">Follow & Chat With Us</h3>
+                            <ul className="space-y-3">
+                                {socialLinks.map((link) => (
+                                    <li key={link.label}>
+                                        <a
+                                            href={link.url}
+                                            target={link.url.startsWith('http') ? '_blank' : undefined}
+                                            rel={link.url.startsWith('http') ? 'noreferrer' : undefined}
+                                            className="group flex items-center justify-between rounded-xl border border-default bg-page px-4 py-3 hover:border-brand hover:bg-brand-subtle/40 transition-all"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-10 h-10 rounded-full bg-surface border border-default flex items-center justify-center text-brand group-hover:scale-105 transition-transform">
+                                                    <link.icon size={18} />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-semibold text-primary leading-tight">{link.label}</p>
+                                                    <p className="text-sm text-secondary truncate">{link.subtitle}</p>
+                                                </div>
+                                            </div>
+                                            <ExternalLink size={16} className="text-tertiary group-hover:text-brand transition-colors" />
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     </div>
 
