@@ -110,11 +110,11 @@ const MyOrders = () => {
                                             {/* Delivery Status Tag */}
                                             {order.isDelivered ? (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success-bg text-success text-sm font-medium border border-success-bg">
-                                                    <CheckCircle size={16} /> Delivered
+                                                    <CheckCircle size={16} /> {order.fulfillmentType === 'pickup' ? 'Picked Up' : 'Delivered'}
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-warning-bg text-warning text-sm font-medium border border-warning-bg">
-                                                    <Clock size={16} /> Processing Shipping
+                                                    <Clock size={16} /> {order.fulfillmentType === 'pickup' ? (order.isReadyForPickup ? 'Ready for Pickup' : 'Preparing Pickup') : 'Processing Shipping'}
                                                 </span>
                                             )}
 

@@ -15,6 +15,7 @@ const OrderScreen = () => {
     const [deliveryUpdating, setDeliveryUpdating] = useState(false);
 
     const { userInfo } = useAuthStore();
+    const isPickupOrder = order.fulfillmentType === 'pickup';
 
     const safeMoney = (value) => Number(value || 0).toFixed(2);
 
@@ -140,17 +141,21 @@ const OrderScreen = () => {
 
                         {/* Status Indicators */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Delivery Status */}
+                            {/* Delivery / Pickup Status */}
                             <div className={`p-6 rounded-2xl border flex items-start gap-4 ${order.isDelivered ? 'bg-success-bg border-success-bg' : 'bg-warning-bg border-warning-bg'}`}>
                                 <div className={`p-3 rounded-xl ${order.isDelivered ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning'}`}>
                                     {order.isDelivered ? <CheckCircle size={24} /> : <Clock size={24} />}
                                 </div>
                                 <div>
                                     <h3 className={`text-lg font-bold ${order.isDelivered ? 'text-success' : 'text-warning'}`}>
-                                        {order.isDelivered ? 'Delivered' : 'Processing Delivery'}
+                                        {order.isDelivered ? (isPickupOrder ? 'Picked Up' : 'Delivered') : (isPickupOrder ? (order.isReadyForPickup ? 'Ready for Pickup' : 'Preparing Pickup') : 'Processing Delivery')}
                                     </h3>
                                     <p className={`text-sm mt-1 ${order.isDelivered ? 'text-secondary' : 'text-secondary'}`}>
-                                        {order.isDelivered ? `Delivered on ${new Date(order.deliveredAt).toLocaleDateString()}` : 'We are preparing your order.'}
+                                        {order.isDelivered
+                                            ? `${isPickupOrder ? 'Picked up' : 'Delivered'} on ${new Date(order.deliveredAt).toLocaleDateString()}`
+                                            : isPickupOrder
+                                                ? (order.isReadyForPickup ? 'Please visit the store to collect your order.' : 'Admin will notify once this order is ready for pickup.')
+                                                : 'We are preparing your order.'}
                                     </p>
                                     {userInfo?.isAdmin && (
                                         <button
@@ -180,21 +185,31 @@ const OrderScreen = () => {
                             </div>
                         </div>
 
-                        {/* Application Information */}
+                        {/* Shipping / Pickup Information */}
                         <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 md:p-8">
                             <div className="flex items-start gap-4 mb-6">
                                 <div className="p-3 bg-brand-subtle rounded-xl text-brand">
                                     <Truck size={24} />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-primary">Shipping Details</h2>
+                                    <h2 className="text-xl font-bold text-primary">{isPickupOrder ? 'Pickup Details' : 'Shipping Details'}</h2>
                                     <div className="mt-4 space-y-2 text-secondary">
-                                        <p><strong className="font-semibold text-primary">Name: </strong> {order.user?.name || 'N/A'}</p>
+                                        <p><strong className="font-semibold text-primary">Name: </strong> {order.shippingAddress?.name || order.user?.name || 'N/A'}</p>
                                         <p><strong className="font-semibold text-primary">Email: </strong> {order.user?.email ? <a href={`mailto:${order.user.email}`} className="text-brand hover:underline">{order.user.email}</a> : 'N/A'}</p>
-                                        <p>
-                                            <strong className="font-semibold text-primary">Address: </strong>
-                                            {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.postalCode}, {order.shippingAddress?.country}
-                                        </p>
+                                        {isPickupOrder ? (
+                                            <>
+                                                <p><strong className="font-semibold text-primary">Pickup Store: </strong>{order.pickupStore?.storeName || 'Store Pickup'}</p>
+                                                <p><strong className="font-semibold text-primary">Store Address: </strong>{order.pickupStore?.address}, {order.pickupStore?.city}</p>
+                                                {order.pickupStore?.phone && <p><strong className="font-semibold text-primary">Store Phone: </strong>{order.pickupStore.phone}</p>}
+                                                {order.pickupStore?.openingHours && <p><strong className="font-semibold text-primary">Store Hours: </strong>{order.pickupStore.openingHours}</p>}
+                                                <p><strong className="font-semibold text-primary">Pickup Status: </strong>{order.isReadyForPickup ? 'Ready' : 'Not Ready Yet'}</p>
+                                            </>
+                                        ) : (
+                                            <p>
+                                                <strong className="font-semibold text-primary">Address: </strong>
+                                                {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.postalCode}, {order.shippingAddress?.country}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>

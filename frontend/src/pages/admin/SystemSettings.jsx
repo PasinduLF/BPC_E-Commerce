@@ -18,6 +18,14 @@ const SystemSettings = () => {
         bankDetails: [],
         contactEmail: '',
         contactPhone: '',
+        pickupStore: {
+            storeName: '',
+            address: '',
+            city: '',
+            phone: '',
+            openingHours: '',
+            notes: ''
+        },
         storefrontAppearance: {
             heroTitle: '',
             heroSubtitle: '',
@@ -46,6 +54,14 @@ const SystemSettings = () => {
                 bankDetails: Array.isArray(config.bankDetails) ? config.bankDetails : [],
                 contactEmail: config.contactEmail || '',
                 contactPhone: config.contactPhone || '',
+                pickupStore: {
+                    storeName: config.pickupStore?.storeName || '',
+                    address: config.pickupStore?.address || '',
+                    city: config.pickupStore?.city || '',
+                    phone: config.pickupStore?.phone || '',
+                    openingHours: config.pickupStore?.openingHours || '',
+                    notes: config.pickupStore?.notes || ''
+                },
                 storefrontAppearance: {
                     heroTitle: config.storefrontAppearance?.heroTitle || '',
                     heroSubtitle: config.storefrontAppearance?.heroSubtitle || '',
@@ -68,6 +84,16 @@ const SystemSettings = () => {
             ...formData,
             storefrontAppearance: {
                 ...formData.storefrontAppearance,
+                [e.target.name]: e.target.value
+            }
+        });
+    };
+
+    const handlePickupStoreChange = (e) => {
+        setFormData({
+            ...formData,
+            pickupStore: {
+                ...formData.pickupStore,
                 [e.target.name]: e.target.value
             }
         });
@@ -123,6 +149,7 @@ const SystemSettings = () => {
             
             // Append Bank Details as JSON string
             submitData.append('bankDetails', JSON.stringify(formData.bankDetails));
+            submitData.append('pickupStore', JSON.stringify(formData.pickupStore));
             
             // Append Storefront Appearance as JSON string
             submitData.append('storefrontAppearance', JSON.stringify({
@@ -391,6 +418,76 @@ const SystemSettings = () => {
                                 </div>
                             )}
                             <p className="text-xs text-tertiary mt-3">These accounts will be shown to customers when they select Bank Transfer at checkout.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Pickup Store Settings */}
+                <div className="bg-surface p-6 sm:p-8 rounded-2xl shadow-sm border border-default">
+                    <h2 className="text-lg font-bold text-primary mb-6 pb-2 border-b border-default">Pickup Store Settings</h2>
+                    <p className="text-sm text-secondary mb-5">Customers selecting in-store pickup will see these details at checkout and on the order page.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="block text-sm font-bold text-primary mb-2">Store Name</label>
+                            <input
+                                type="text"
+                                name="storeName"
+                                value={formData.pickupStore.storeName}
+                                onChange={handlePickupStoreChange}
+                                className="w-full px-4 py-2 bg-page border border-default rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none text-primary"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-primary mb-2">City</label>
+                            <input
+                                type="text"
+                                name="city"
+                                value={formData.pickupStore.city}
+                                onChange={handlePickupStoreChange}
+                                className="w-full px-4 py-2 bg-page border border-default rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none text-primary"
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold text-primary mb-2">Store Address</label>
+                            <input
+                                type="text"
+                                name="address"
+                                value={formData.pickupStore.address}
+                                onChange={handlePickupStoreChange}
+                                className="w-full px-4 py-2 bg-page border border-default rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none text-primary"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-primary mb-2">Store Phone</label>
+                            <input
+                                type="text"
+                                name="phone"
+                                value={formData.pickupStore.phone}
+                                onChange={handlePickupStoreChange}
+                                className="w-full px-4 py-2 bg-page border border-default rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none text-primary"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-primary mb-2">Opening Hours</label>
+                            <input
+                                type="text"
+                                name="openingHours"
+                                value={formData.pickupStore.openingHours}
+                                onChange={handlePickupStoreChange}
+                                placeholder="e.g. Mon-Sat 9:00 AM - 6:00 PM"
+                                className="w-full px-4 py-2 bg-page border border-default rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none text-primary"
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold text-primary mb-2">Pickup Notes</label>
+                            <textarea
+                                name="notes"
+                                value={formData.pickupStore.notes}
+                                onChange={handlePickupStoreChange}
+                                rows="3"
+                                placeholder="e.g. Bring your order ID and payment confirmation"
+                                className="w-full px-4 py-2 bg-page border border-default rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none text-primary"
+                            />
                         </div>
                     </div>
                 </div>

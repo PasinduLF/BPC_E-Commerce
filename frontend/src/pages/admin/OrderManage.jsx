@@ -219,6 +219,7 @@ const OrderManage = () => {
                                     <tr><td colSpan="8" className="text-center py-12 text-secondary">No orders found.</td></tr>
                                 ) : (
                                     orders.map(order => {
+                                        const isPickupOrder = order.fulfillmentType === 'pickup';
                                         // Calculate profit
                                         const totalCost = order.orderItems.reduce((acc, item) => acc + (item.costPrice * item.qty), 0);
                                         const grossProfit = order.itemsPrice - totalCost;
@@ -249,7 +250,7 @@ const OrderManage = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                                     <div className="flex flex-col items-center gap-2">
                                                         <span className="text-[11px] font-semibold text-secondary">
-                                                            {order.paymentMethod}
+                                                            {order.paymentMethod}{isPickupOrder ? ' • Pickup' : ''}
                                                         </span>
                                                         {order.isPaid ? (
                                                             <span className="inline-flex items-center justify-center p-1.5 bg-success-bg text-success rounded-lg" title={order.paidAt ? `Paid on ${new Date(order.paidAt).toLocaleDateString()}` : 'Paid'}>
@@ -287,25 +288,64 @@ const OrderManage = () => {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                                     <div className="flex flex-col items-center gap-2">
-                                                        {order.isDelivered ? (
-                                                            <span className="inline-flex items-center justify-center p-1.5 bg-success-bg text-success rounded-lg" title="Delivered">
-                                                                <CheckCircle size={18} />
-                                                            </span>
+                                                        {isPickupOrder ? (
+                                                            order.isDelivered ? (
+                                                                <span className="inline-flex items-center justify-center p-1.5 bg-success-bg text-success rounded-lg" title="Picked up">
+                                                                    <CheckCircle size={18} />
+                                                                </span>
+                                                            ) : order.isReadyForPickup ? (
+                                                                <span className="inline-flex items-center justify-center p-1.5 bg-info-bg text-info rounded-lg" title="Ready for pickup">
+                                                                    <Clock size={18} />
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center justify-center p-1.5 bg-warning-bg text-warning rounded-lg" title="Preparing pickup">
+                                                                    <Clock size={18} />
+                                                                </span>
+                                                            )
                                                         ) : (
-                                                            <span className="inline-flex items-center justify-center p-1.5 bg-warning-bg text-warning rounded-lg" title="Processing delivery">
-                                                                <Clock size={18} />
-                                                            </span>
+                                                            order.isDelivered ? (
+                                                                <span className="inline-flex items-center justify-center p-1.5 bg-success-bg text-success rounded-lg" title="Delivered">
+                                                                    <CheckCircle size={18} />
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center justify-center p-1.5 bg-warning-bg text-warning rounded-lg" title="Processing delivery">
+                                                                    <Clock size={18} />
+                                                                </span>
+                                                            )
                                                         )}
 
-                                                        <button
-                                                            onClick={() => updateDeliveryStatus(order._id, order.isDelivered)}
-                                                            disabled={isOrderBusy(order._id)}
-                                                            className={`text-xs px-2 py-1 rounded-lg border transition-colors ${order.isDelivered
-                                                                ? 'text-warning border-warning-bg hover:bg-warning-bg'
-                                                                : 'text-success border-success-bg hover:bg-success-bg'} disabled:opacity-60 disabled:cursor-not-allowed`}
-                                                        >
-                                                            {actionLoadingKey === `delivery-${order._id}` ? 'Updating...' : (order.isDelivered ? 'Mark Processing' : 'Mark Delivered')}
-                                                        </button>
+                                                        {isPickupOrder ? (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => updateOrderStatus(order._id, { isReadyForPickup: !order.isReadyForPickup }, 'pickup-ready')}
+                                                                    disabled={isOrderBusy(order._id) || order.isDelivered}
+                                                                    className={`text-xs px-2 py-1 rounded-lg border transition-colors ${order.isReadyForPickup
+                                                                        ? 'text-warning border-warning-bg hover:bg-warning-bg'
+                                                                        : 'text-info border-info-bg hover:bg-info-bg'} disabled:opacity-60 disabled:cursor-not-allowed`}
+                                                                >
+                                                                    {actionLoadingKey === `pickup-ready-${order._id}` ? 'Updating...' : (order.isReadyForPickup ? 'Mark Not Ready' : 'Mark Ready')}
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => updateDeliveryStatus(order._id, order.isDelivered)}
+                                                                    disabled={isOrderBusy(order._id) || (!order.isReadyForPickup && !order.isDelivered)}
+                                                                    className={`text-xs px-2 py-1 rounded-lg border transition-colors ${order.isDelivered
+                                                                        ? 'text-warning border-warning-bg hover:bg-warning-bg'
+                                                                        : 'text-success border-success-bg hover:bg-success-bg'} disabled:opacity-60 disabled:cursor-not-allowed`}
+                                                                >
+                                                                    {actionLoadingKey === `delivery-${order._id}` ? 'Updating...' : (order.isDelivered ? 'Mark Not Picked' : 'Mark Picked Up')}
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => updateDeliveryStatus(order._id, order.isDelivered)}
+                                                                disabled={isOrderBusy(order._id)}
+                                                                className={`text-xs px-2 py-1 rounded-lg border transition-colors ${order.isDelivered
+                                                                    ? 'text-warning border-warning-bg hover:bg-warning-bg'
+                                                                    : 'text-success border-success-bg hover:bg-success-bg'} disabled:opacity-60 disabled:cursor-not-allowed`}
+                                                            >
+                                                                {actionLoadingKey === `delivery-${order._id}` ? 'Updating...' : (order.isDelivered ? 'Mark Processing' : 'Mark Delivered')}
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">

@@ -53,6 +53,28 @@ const updateConfig = async (req, res) => {
         if (req.body.contactEmail !== undefined) config.contactEmail = req.body.contactEmail;
         if (req.body.contactPhone !== undefined) config.contactPhone = req.body.contactPhone;
 
+        if (req.body.pickupStore !== undefined) {
+            let parsedPickupStore = req.body.pickupStore;
+            if (typeof parsedPickupStore === 'string') {
+                try {
+                    parsedPickupStore = JSON.parse(parsedPickupStore);
+                } catch (e) {
+                    parsedPickupStore = {};
+                }
+            }
+
+            if (!config.pickupStore) {
+                config.pickupStore = {};
+            }
+
+            if (parsedPickupStore.storeName !== undefined) config.pickupStore.storeName = parsedPickupStore.storeName;
+            if (parsedPickupStore.address !== undefined) config.pickupStore.address = parsedPickupStore.address;
+            if (parsedPickupStore.city !== undefined) config.pickupStore.city = parsedPickupStore.city;
+            if (parsedPickupStore.phone !== undefined) config.pickupStore.phone = parsedPickupStore.phone;
+            if (parsedPickupStore.openingHours !== undefined) config.pickupStore.openingHours = parsedPickupStore.openingHours;
+            if (parsedPickupStore.notes !== undefined) config.pickupStore.notes = parsedPickupStore.notes;
+        }
+
         if (req.body.storefrontAppearance !== undefined) {
             let parsedAppearance = req.body.storefrontAppearance;
             if (typeof parsedAppearance === 'string') {

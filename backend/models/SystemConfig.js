@@ -46,6 +46,32 @@ const systemConfigSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    pickupStore: {
+        storeName: {
+            type: String,
+            default: ''
+        },
+        address: {
+            type: String,
+            default: ''
+        },
+        city: {
+            type: String,
+            default: ''
+        },
+        phone: {
+            type: String,
+            default: ''
+        },
+        openingHours: {
+            type: String,
+            default: ''
+        },
+        notes: {
+            type: String,
+            default: ''
+        }
+    },
     storefrontAppearance: {
         heroTitle: {
             type: String,

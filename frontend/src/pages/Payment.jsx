@@ -8,8 +8,9 @@ const Payment = () => {
     const navigate = useNavigate();
     const { userInfo } = useAuthStore();
     const { shippingAddress, paymentMethod, savePaymentMethod } = useCartStore();
+    const isPickupOrder = shippingAddress?.fulfillmentType === 'pickup';
 
-    const [selectedMethod, setSelectedMethod] = useState(paymentMethod || 'Cash on Delivery');
+    const [selectedMethod, setSelectedMethod] = useState(isPickupOrder ? 'Bank Transfer' : (paymentMethod || 'Cash on Delivery'));
     const [selectedCardId, setSelectedCardId] = useState('');
 
     useEffect(() => {
@@ -17,6 +18,12 @@ const Payment = () => {
             navigate('/shipping');
         }
     }, [shippingAddress, navigate]);
+
+    useEffect(() => {
+        if (isPickupOrder) {
+            setSelectedMethod('Bank Transfer');
+        }
+    }, [isPickupOrder]);
 
     const submitHandler = (e) => {
         e.preventDefault();
@@ -50,30 +57,31 @@ const Payment = () => {
                             <legend className="sr-only">Choose a payment method</legend>
                             <div className="space-y-4">
 
-                                {/* Cash on Delivery Option */}
-                                <label className={`relative flex items-center p-6 cursor-pointer rounded-2xl border-2 transition-all ${selectedMethod === 'Cash on Delivery' ? 'border-brand bg-brand-subtle/50' : 'border-default bg-surface hover:border-brand-subtle'}`}>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center shadow-sm text-brand">
-                                            <Wallet size={24} />
+                                {!isPickupOrder && (
+                                    <label className={`relative flex items-center p-6 cursor-pointer rounded-2xl border-2 transition-all ${selectedMethod === 'Cash on Delivery' ? 'border-brand bg-brand-subtle/50' : 'border-default bg-surface hover:border-brand-subtle'}`}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center shadow-sm text-brand">
+                                                <Wallet size={24} />
+                                            </div>
+                                            <div>
+                                                <p className="text-lg font-semibold text-primary">Cash on Delivery</p>
+                                                <p className="text-secondary text-sm mt-1">Pay when you receive your order.</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-lg font-semibold text-primary">Cash on Delivery</p>
-                                            <p className="text-secondary text-sm mt-1">Pay when you receive your order.</p>
+                                        <div className="ml-auto">
+                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'Cash on Delivery' ? 'border-brand' : 'border-muted'}`}>
+                                                {selectedMethod === 'Cash on Delivery' && <div className="w-3 h-3 bg-brand rounded-full"></div>}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="ml-auto">
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'Cash on Delivery' ? 'border-brand' : 'border-muted'}`}>
-                                            {selectedMethod === 'Cash on Delivery' && <div className="w-3 h-3 bg-brand rounded-full"></div>}
-                                        </div>
-                                    </div>
-                                    <input
-                                        type="radio"
-                                        className="sr-only"
-                                        name="paymentMethod"
-                                        value="Cash on Delivery"
-                                        onChange={(e) => setSelectedMethod(e.target.value)}
-                                    />
-                                </label>
+                                        <input
+                                            type="radio"
+                                            className="sr-only"
+                                            name="paymentMethod"
+                                            value="Cash on Delivery"
+                                            onChange={(e) => setSelectedMethod(e.target.value)}
+                                        />
+                                    </label>
+                                )}
 
                                 {/* Bank Transfer Option */}
                                 <label className={`relative flex items-center p-6 cursor-pointer rounded-2xl border-2 transition-all ${selectedMethod === 'Bank Transfer' ? 'border-brand bg-brand-subtle/50' : 'border-default bg-surface hover:border-brand-subtle'}`}>
@@ -99,6 +107,12 @@ const Payment = () => {
                                         onChange={(e) => setSelectedMethod(e.target.value)}
                                     />
                                 </label>
+
+                                {isPickupOrder && (
+                                    <p className="text-sm text-secondary bg-page border border-default rounded-xl p-4">
+                                        Store pickup orders can only be paid via bank transfer.
+                                    </p>
+                                )}
 
                             </div>
                         </fieldset>

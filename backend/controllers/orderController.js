@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const SystemConfig = require('../models/SystemConfig');
 
 const ORDER_PAYMENT_METHODS = ['Cash on Delivery', 'Bank Transfer', 'Cash'];
 
@@ -19,6 +20,7 @@ const createHttpError = (statusCode, message) => {
 
 const deriveOrderStatus = (order) => {
     if (order.isDelivered) return 'Delivered';
+    if (order.fulfillmentType === 'pickup' && order.isReadyForPickup) return 'Ready for Pickup';
     if (order.isPaid) return 'Payment Verified';
     if (order.paymentMethod === 'Bank Transfer' && order.paymentSlip?.url) return 'Processing';
     return 'Pending';
@@ -35,12 +37,14 @@ const addOrderItems = async (req, res) => {
             paymentMethod,
             paymentSlip,
             shippingPrice,
+            fulfillmentType,
         } = req.body;
 
         if (!Array.isArray(orderItems) || orderItems.length === 0) {
             res.status(400);
             return res.json({ message: 'No order items' });
         } else {
+            const normalizedFulfillmentType = fulfillmentType === 'pickup' ? 'pickup' : 'delivery';
             const normalizedShippingAddress = {
                 name: shippingAddress?.name || req.user?.name || 'Customer',
                 address: shippingAddress?.address,
@@ -49,6 +53,33 @@ const addOrderItems = async (req, res) => {
                 country: shippingAddress?.country,
                 phone: shippingAddress?.phone,
             };
+
+            let pickupStoreSnapshot = undefined;
+
+            if (normalizedFulfillmentType === 'pickup') {
+                const systemConfig = await SystemConfig.findOne();
+                const pickupStore = systemConfig?.pickupStore || {};
+
+                if (!pickupStore.storeName || !pickupStore.address || !pickupStore.city) {
+                    return res.status(400).json({
+                        message: 'Pickup is currently unavailable. Please contact support.',
+                    });
+                }
+
+                pickupStoreSnapshot = {
+                    storeName: pickupStore.storeName,
+                    address: pickupStore.address,
+                    city: pickupStore.city,
+                    phone: pickupStore.phone || '',
+                    openingHours: pickupStore.openingHours || '',
+                    notes: pickupStore.notes || '',
+                };
+
+                normalizedShippingAddress.address = pickupStore.address;
+                normalizedShippingAddress.city = pickupStore.city;
+                normalizedShippingAddress.postalCode = normalizedShippingAddress.postalCode || 'N/A';
+                normalizedShippingAddress.country = normalizedShippingAddress.country || 'N/A';
+            }
 
             if (
                 !normalizedShippingAddress.name ||
@@ -66,6 +97,12 @@ const addOrderItems = async (req, res) => {
             const normalizedPaymentMethod = ORDER_PAYMENT_METHODS.includes(paymentMethod)
                 ? paymentMethod
                 : 'Cash on Delivery';
+
+            if (normalizedFulfillmentType === 'pickup' && normalizedPaymentMethod !== 'Bank Transfer') {
+                return res.status(400).json({
+                    message: 'Pickup orders require Bank Transfer payment method',
+                });
+            }
 
             const preparedOrderItems = [];
             const stockUpdates = [];
@@ -134,7 +171,9 @@ const addOrderItems = async (req, res) => {
                 });
             }
 
-            const normalizedShippingPrice = Math.max(Number(shippingPrice) || 0, 0);
+            const normalizedShippingPrice = normalizedFulfillmentType === 'pickup'
+                ? 0
+                : Math.max(Number(shippingPrice) || 0, 0);
             const normalizedItemsPrice = Number(computedItemsPrice.toFixed(2));
             const normalizedTotalPrice = Number((normalizedItemsPrice + normalizedShippingPrice).toFixed(2));
 
@@ -177,6 +216,8 @@ const addOrderItems = async (req, res) => {
                     user: req.user._id,
                     shippingAddress: normalizedShippingAddress,
                     paymentMethod: normalizedPaymentMethod,
+                    fulfillmentType: normalizedFulfillmentType,
+                    pickupStore: pickupStoreSnapshot,
                     paymentSlip,
                     itemsPrice: normalizedItemsPrice,
                     shippingPrice: normalizedShippingPrice,
@@ -288,8 +329,14 @@ const updateOrderToDelivered = async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
+        if (order.fulfillmentType === 'pickup' && !order.isReadyForPickup) {
+            return res.status(400).json({ message: 'Pickup order is not ready yet' });
+        }
         order.isDelivered = true;
         order.deliveredAt = Date.now();
+        if (order.fulfillmentType === 'pickup') {
+            order.pickedUpAt = Date.now();
+        }
         order.status = 'Delivered';
 
         const updatedOrder = await order.save({ validateBeforeSave: false });
@@ -316,6 +363,8 @@ const updateOrderStatus = async (req, res) => {
 
     if (order) {
         const { status, paymentStatus, deliveryStatus } = req.body;
+        const { isReadyForPickup } = req.body;
+        const isPickupOrder = order.fulfillmentType === 'pickup';
 
         if (paymentStatus === 'paid') {
             order.isPaid = true;
@@ -325,12 +374,36 @@ const updateOrderStatus = async (req, res) => {
             order.paidAt = undefined;
         }
 
+        if (isPickupOrder && typeof isReadyForPickup === 'boolean') {
+            order.isReadyForPickup = isReadyForPickup;
+            if (isReadyForPickup) {
+                if (!order.readyForPickupAt) order.readyForPickupAt = Date.now();
+                if (!order.isDelivered) {
+                    order.status = 'Ready for Pickup';
+                }
+            } else {
+                order.readyForPickupAt = undefined;
+                if (!order.isDelivered) {
+                    order.status = order.isPaid ? 'Payment Verified' : 'Processing';
+                }
+            }
+        }
+
         if (deliveryStatus === 'delivered') {
+            if (isPickupOrder && !order.isReadyForPickup) {
+                return res.status(400).json({ message: 'Pickup order is not ready yet' });
+            }
             order.isDelivered = true;
             if (!order.deliveredAt) order.deliveredAt = Date.now();
+            if (isPickupOrder) {
+                order.pickedUpAt = Date.now();
+            }
         } else if (deliveryStatus === 'processing') {
             order.isDelivered = false;
             order.deliveredAt = undefined;
+            if (isPickupOrder) {
+                order.pickedUpAt = undefined;
+            }
         }
 
         if (status) {
@@ -347,6 +420,11 @@ const updateOrderStatus = async (req, res) => {
             order.isDelivered = false;
             order.paidAt = undefined;
             order.deliveredAt = undefined;
+            if (isPickupOrder) {
+                order.isReadyForPickup = false;
+                order.readyForPickupAt = undefined;
+                order.pickedUpAt = undefined;
+            }
         }
 
         if (status === 'Delivered') {
@@ -418,6 +496,9 @@ const updateOrderAdmin = async (req, res) => {
 
         // Allow updating payment method if we made a mistake
         if (req.body.paymentMethod) {
+            if (order.fulfillmentType === 'pickup' && req.body.paymentMethod !== 'Bank Transfer') {
+                return res.status(400).json({ message: 'Pickup orders must use Bank Transfer payment method' });
+            }
             order.paymentMethod = req.body.paymentMethod;
         }
 

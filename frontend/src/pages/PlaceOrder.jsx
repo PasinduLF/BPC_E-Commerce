@@ -13,6 +13,7 @@ const PlaceOrder = () => {
     const navigate = useNavigate();
     const { cartItems, shippingAddress, paymentMethod, clearCart, buyNowItem, clearBuyNowItem } = useCartStore();
     const { userInfo } = useAuthStore();
+    const isPickupOrder = shippingAddress?.fulfillmentType === 'pickup';
 
     const [uploading, setUploading] = useState(false);
     const [placingOrder, setPlacingOrder] = useState(false);
@@ -44,7 +45,9 @@ const PlaceOrder = () => {
     const codDeliveryCharge = config?.codDeliveryCharge || 0;
 
     let calculatedShipping = 0;
-    if (paymentMethod === 'Cash on Delivery' && codDeliveryCharge > 0) {
+    if (isPickupOrder) {
+        calculatedShipping = 0;
+    } else if (paymentMethod === 'Cash on Delivery' && codDeliveryCharge > 0) {
         calculatedShipping = codDeliveryCharge;
     } else {
         calculatedShipping = (freeShippingThreshold > 0 && itemsPrice > freeShippingThreshold) ? 0 : baseShippingFee;
@@ -76,6 +79,7 @@ const PlaceOrder = () => {
                     orderItems: checkoutItems,
                     shippingAddress,
                     paymentMethod,
+                    fulfillmentType: isPickupOrder ? 'pickup' : 'delivery',
                     paymentSlip: paymentMethod === 'Bank Transfer' ? paymentSlip : undefined,
                     itemsPrice,
                     shippingPrice,
@@ -148,26 +152,50 @@ const PlaceOrder = () => {
 
                     <div className="lg:col-span-8 space-y-6 animate-slide-up">
 
-                        {/* Shipping Summary */}
+                        {/* Shipping / Pickup Summary */}
                         <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 md:p-8">
                             <div className="flex items-start gap-4 mb-4">
                                 <div className="p-3 bg-brand-subtle rounded-xl text-brand">
                                     <Truck size={24} />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-primary">Shipping</h2>
+                                    <h2 className="text-xl font-bold text-primary">{isPickupOrder ? 'Pickup' : 'Shipping'}</h2>
                                     <p className="mt-2 text-secondary">
                                         <strong className="font-semibold text-primary">Name: </strong>
                                         {shippingAddress.name}
                                     </p>
-                                    <p className="mt-2 text-secondary">
-                                        <strong className="font-semibold text-primary">Address: </strong>
-                                        {shippingAddress.address}, {shippingAddress.city}, {shippingAddress.postalCode}, {shippingAddress.country}
-                                    </p>
+                                    {!isPickupOrder ? (
+                                        <p className="mt-2 text-secondary">
+                                            <strong className="font-semibold text-primary">Address: </strong>
+                                            {shippingAddress.address}, {shippingAddress.city}, {shippingAddress.postalCode}, {shippingAddress.country}
+                                        </p>
+                                    ) : (
+                                        <>
+                                            <p className="mt-2 text-secondary">
+                                                <strong className="font-semibold text-primary">Pickup Store: </strong>
+                                                {config?.pickupStore?.storeName || 'Store Pickup'}
+                                            </p>
+                                            <p className="mt-2 text-secondary">
+                                                <strong className="font-semibold text-primary">Store Address: </strong>
+                                                {config?.pickupStore?.address || 'N/A'}, {config?.pickupStore?.city || ''}
+                                            </p>
+                                            {config?.pickupStore?.openingHours && (
+                                                <p className="mt-2 text-secondary">
+                                                    <strong className="font-semibold text-primary">Store Hours: </strong>
+                                                    {config.pickupStore.openingHours}
+                                                </p>
+                                            )}
+                                        </>
+                                    )}
                                     <p className="mt-2 text-secondary">
                                         <strong className="font-semibold text-primary">Phone: </strong>
                                         {shippingAddress.phone}
                                     </p>
+                                    {isPickupOrder && (
+                                        <p className="mt-3 text-sm text-warning bg-warning-bg border border-warning-bg rounded-lg px-3 py-2">
+                                            You can collect this order only after admin marks it as ready for pickup.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -311,7 +339,7 @@ const PlaceOrder = () => {
                                 </div>
                                 <div className="flex justify-between text-secondary">
                                     <span>Shipping</span>
-                                    <span className="font-medium text-primary">{currency}{shippingPrice}</span>
+                                    <span className="font-medium text-primary">{isPickupOrder ? `${currency}0.00 (Pickup)` : `${currency}${shippingPrice}`}</span>
                                 </div>
                                 <div className="flex justify-between text-secondary">
                                     <span>Tax ({taxRate}%)</span>

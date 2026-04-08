@@ -35,6 +35,29 @@ const orderSchema = new mongoose.Schema({
         required: true,
         enum: ['Cash on Delivery', 'Bank Transfer', 'Cash'] // 'Cash' used for POS physical sales
     },
+    fulfillmentType: {
+        type: String,
+        enum: ['delivery', 'pickup'],
+        default: 'delivery'
+    },
+    pickupStore: {
+        storeName: { type: String, default: '' },
+        address: { type: String, default: '' },
+        city: { type: String, default: '' },
+        phone: { type: String, default: '' },
+        openingHours: { type: String, default: '' },
+        notes: { type: String, default: '' }
+    },
+    isReadyForPickup: {
+        type: Boolean,
+        default: false
+    },
+    readyForPickupAt: {
+        type: Date
+    },
+    pickedUpAt: {
+        type: Date
+    },
     paymentSlip: {
         public_id: { type: String },
         url: { type: String } // Cloudinary URL for bank slips
@@ -109,7 +132,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Processing', 'Payment Verified', 'Shipped', 'Delivered', 'Cancelled'],
+        enum: ['Pending', 'Processing', 'Payment Verified', 'Ready for Pickup', 'Shipped', 'Delivered', 'Cancelled'],
         default: 'Pending'
     }
 }, {
