@@ -1,6 +1,13 @@
 const mongoose = require('mongoose');
+const Counter = require('./Counter');
 
 const orderSchema = new mongoose.Schema({
+    orderNumber: {
+        type: String,
+        unique: true,
+        sparse: true,
+        immutable: true
+    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         required: false, // Optional for POS / walk-in customers
@@ -137,6 +144,25 @@ const orderSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
+});
+
+orderSchema.pre('validate', async function (next) {
+    if (!this.isNew || this.orderNumber) {
+        return next();
+    }
+
+    try {
+        const counter = await Counter.findByIdAndUpdate(
+            { _id: 'orderNumber' },
+            { $inc: { seq: 1 } },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        this.orderNumber = `ORD-${String(counter.seq).padStart(6, '0')}`;
+        next();
+    } catch (error) {
+        next(error);
+    }
 });
 
 module.exports = mongoose.model('Order', orderSchema);

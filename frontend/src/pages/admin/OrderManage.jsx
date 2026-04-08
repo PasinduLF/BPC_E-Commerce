@@ -146,11 +146,12 @@ const OrderManage = () => {
         const { default: html2pdf } = await import('html2pdf.js');
         const receiptWidthMm = 80;
         const receiptHeightMm = Math.max((receiptElement.scrollHeight / receiptElement.offsetWidth) * receiptWidthMm, 120);
+        const receiptId = viewingOrder.orderNumber || `ORD-${viewingOrder._id.slice(-6).toUpperCase()}`;
 
         html2pdf()
             .set({
                 margin: 0,
-                filename: `pos-receipt-${viewingOrder._id.slice(-8)}.pdf`,
+                filename: `pos-receipt-${receiptId}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'mm', format: [receiptWidthMm, Math.max(receiptHeightMm, 240)], orientation: 'portrait' },
@@ -227,7 +228,7 @@ const OrderManage = () => {
                                         return (
                                             <tr key={order._id} className="hover:bg-page transition-colors">
                                                 <td className="px-6 py-4 whitespace-nowrap text-secondary font-mono text-xs">
-                                                    ...{order._id.substring(order._id.length - 6)}
+                                                    {order.orderNumber || `ORD-${order._id.substring(order._id.length - 6).toUpperCase()}`}
                                                     {order.isPOS && <span className="ml-2 bg-brand-subtle text-brand font-bold px-2 py-0.5 rounded text-[10px]">POS</span>}
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -501,7 +502,7 @@ const OrderManage = () => {
                                 <h2 className="text-lg font-bold text-primary uppercase tracking-[0.2em] mb-1">{config?.businessName || 'Beauty P&C'}</h2>
                                 <p className="text-[9px] text-tertiary uppercase tracking-[0.12em] font-light mb-3">Official Receipt</p>
                                 <div className="h-px bg-gradient-to-r from-transparent via-default to-transparent mb-3"></div>
-                                <p className="text-[10px] text-secondary">Receipt #{viewingOrder._id.substring(viewingOrder._id.length - 8).toUpperCase()}</p>
+                                <p className="text-[10px] text-secondary">Receipt #{viewingOrder.orderNumber || `ORD-${viewingOrder._id.substring(viewingOrder._id.length - 6).toUpperCase()}`}</p>
                             </div>
 
                             <div className="mb-3 text-[10px] text-secondary space-y-0.5">

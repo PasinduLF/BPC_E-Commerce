@@ -221,7 +221,7 @@ const POSInterface = () => {
 
         const { default: html2pdf } = await import('html2pdf.js');
 
-        const filename = `pos-invoice-${receiptData?._id?.slice(-8) || 'receipt'}.pdf`;
+        const filename = `pos-invoice-${receiptData?.orderNumber || (receiptData?._id ? `ORD-${receiptData._id.slice(-6).toUpperCase()}` : 'receipt')}.pdf`;
         const receiptWidthMm = 80;
         const receiptHeightMm = Math.max(
             (receiptElement.scrollHeight / receiptElement.offsetWidth) * receiptWidthMm,
@@ -555,7 +555,7 @@ const POSInterface = () => {
                                     <p className="text-[9px] text-tertiary mb-3">{receiptData.contactPhone} {receiptData.contactPhone && receiptData.contactEmail && '•'} {receiptData.contactEmail}</p>
                                 )}
                                 <div className="h-px bg-gradient-to-r from-transparent via-default to-transparent mb-3"></div>
-                                <p className="text-[10px] text-secondary">Receipt #{receiptData._id.substring(receiptData._id.length - 8).toUpperCase()}</p>
+                                <p className="text-[10px] text-secondary">Receipt #{receiptData.orderNumber || `ORD-${receiptData._id.substring(receiptData._id.length - 6).toUpperCase()}`}</p>
                             </div>
 
                             <div className="border-b border-dashed border-default pb-2 mb-3 text-[10px] text-secondary space-y-0.5">
