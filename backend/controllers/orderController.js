@@ -77,7 +77,13 @@ const notifyCustomer = (recipient, templateName, data) => {
     });
 };
 
-const buildOrderEmailDetails = (order) => {
+const getCurrencySymbol = async () => {
+    const config = await SystemConfig.findOne().select('currencySymbol');
+    return config?.currencySymbol || '$';
+};
+
+const buildOrderEmailDetails = async (order) => {
+    const currencySymbol = await getCurrencySymbol();
     const items = (order?.orderItems || []).map((item) => ({
         name: item?.name || 'Product',
         variantName: item?.variantName || '',
@@ -93,6 +99,7 @@ const buildOrderEmailDetails = (order) => {
         itemsPrice: Number(order?.itemsPrice || 0),
         shippingPrice: Number(order?.shippingPrice || 0),
         totalPrice: Number(order?.totalPrice || 0),
+        currencySymbol,
         shippingAddress: {
             name: order?.shippingAddress?.name || '',
             phone: order?.shippingAddress?.phone || '',
@@ -306,7 +313,7 @@ const addOrderItems = async (req, res) => {
                 const createdOrder = await order.save();
 
                 const customerRecipient = await getCustomerRecipientForOrder(createdOrder, req.user);
-                const orderEmailDetails = buildOrderEmailDetails(createdOrder);
+                const orderEmailDetails = await buildOrderEmailDetails(createdOrder);
                 notifyCustomer(customerRecipient, 'orderPlaced', {
                     ...orderEmailDetails,
                 });
@@ -444,7 +451,7 @@ const updateOrderToDelivered = async (req, res) => {
 
         if (!wasDelivered) {
             const customerRecipient = await getCustomerRecipientForOrder(updatedOrder);
-            const orderEmailDetails = buildOrderEmailDetails(updatedOrder);
+            const orderEmailDetails = await buildOrderEmailDetails(updatedOrder);
             notifyCustomer(customerRecipient, 'orderDelivered', {
                 ...orderEmailDetails,
             });
@@ -555,7 +562,7 @@ const updateOrderStatus = async (req, res) => {
         const updatedOrder = await order.save({ validateBeforeSave: false });
 
         const customerRecipient = await getCustomerRecipientForOrder(updatedOrder);
-        const orderEmailDetails = buildOrderEmailDetails(updatedOrder);
+        const orderEmailDetails = await buildOrderEmailDetails(updatedOrder);
 
         if (!previousFlags.isPaid && updatedOrder.isPaid) {
             notifyCustomer(customerRecipient, 'paymentVerified', {

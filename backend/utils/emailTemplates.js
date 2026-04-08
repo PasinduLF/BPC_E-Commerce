@@ -6,9 +6,9 @@ const escapeHtml = (value = '') =>
         .replace(/\"/g, '&quot;')
         .replace(/'/g, '&#39;');
 
-const money = (value) => `P${Number(value || 0).toFixed(2)}`;
+const money = (value, currencySymbol = '$') => `${currencySymbol}${Number(value || 0).toFixed(2)}`;
 
-const formatOrderItems = (items = []) => {
+const formatOrderItems = (items = [], currencySymbol = '$') => {
     if (!Array.isArray(items) || items.length === 0) {
         return ['Products: N/A'];
     }
@@ -17,7 +17,7 @@ const formatOrderItems = (items = []) => {
         'Products:',
         ...items.map((item, index) => {
             const variant = item?.variantName ? ` (${item.variantName})` : '';
-            return `${index + 1}. ${item?.name || 'Product'}${variant} x${Number(item?.qty || 0)} @ ${money(item?.unitPrice)} = ${money(item?.lineTotal)}`;
+            return `${index + 1}. ${item?.name || 'Product'}${variant} x${Number(item?.qty || 0)} @ ${money(item?.unitPrice, currencySymbol)} = ${money(item?.lineTotal, currencySymbol)}`;
         }),
     ];
 };
@@ -122,6 +122,7 @@ const templates = {
         shippingPrice,
         shippingAddress,
         items,
+        currencySymbol,
     }) => ({
         subject: `Order received: ${orderNumber}`,
         ...baseTemplate({
@@ -133,10 +134,10 @@ const templates = {
                 `Customer Name: ${shippingAddress?.name || 'N/A'}`,
                 `Phone: ${shippingAddress?.phone || 'N/A'}`,
                 `Address: ${formatShippingAddress(shippingAddress) || 'N/A'}`,
-                `Items Subtotal: ${money(itemsPrice)}`,
-                `Shipping Fee: ${money(shippingPrice)}`,
-                `Total: ${money(totalPrice)}`,
-                ...formatOrderItems(items),
+                `Items Subtotal: ${money(itemsPrice, currencySymbol)}`,
+                `Shipping Fee: ${money(shippingPrice, currencySymbol)}`,
+                `Total: ${money(totalPrice, currencySymbol)}`,
+                ...formatOrderItems(items, currencySymbol),
                 'We will notify you as your order progresses.',
             ],
         }),
@@ -153,6 +154,7 @@ const templates = {
         shippingPrice,
         shippingAddress,
         items,
+        currencySymbol,
     }) => ({
         subject: `New order received: ${orderNumber}`,
         ...baseTemplate({
@@ -165,10 +167,10 @@ const templates = {
                 `Payment Method: ${paymentMethod || 'N/A'}`,
                 `Phone: ${shippingAddress?.phone || 'N/A'}`,
                 `Address: ${formatShippingAddress(shippingAddress) || 'N/A'}`,
-                `Items Subtotal: ${money(itemsPrice)}`,
-                `Shipping Fee: ${money(shippingPrice)}`,
-                `Total: ${money(totalPrice)}`,
-                ...formatOrderItems(items),
+                `Items Subtotal: ${money(itemsPrice, currencySymbol)}`,
+                `Shipping Fee: ${money(shippingPrice, currencySymbol)}`,
+                `Total: ${money(totalPrice, currencySymbol)}`,
+                ...formatOrderItems(items, currencySymbol),
             ],
             footerNote: 'Admin notification from Beauty P&C order system.',
         }),
@@ -184,6 +186,7 @@ const templates = {
         shippingPrice,
         shippingAddress,
         items,
+        currencySymbol,
     }) => ({
         subject: `Payment verified for ${orderNumber}`,
         ...baseTemplate({
@@ -195,10 +198,10 @@ const templates = {
                 `Customer Name: ${shippingAddress?.name || 'N/A'}`,
                 `Phone: ${shippingAddress?.phone || 'N/A'}`,
                 `Address: ${formatShippingAddress(shippingAddress) || 'N/A'}`,
-                `Items Subtotal: ${money(itemsPrice)}`,
-                `Shipping Fee: ${money(shippingPrice)}`,
-                `Total: ${money(totalPrice)}`,
-                ...formatOrderItems(items),
+                `Items Subtotal: ${money(itemsPrice, currencySymbol)}`,
+                `Shipping Fee: ${money(shippingPrice, currencySymbol)}`,
+                `Total: ${money(totalPrice, currencySymbol)}`,
+                ...formatOrderItems(items, currencySymbol),
                 'Your order is now being prepared for delivery or pickup.',
             ],
         }),
@@ -214,6 +217,7 @@ const templates = {
         shippingPrice,
         shippingAddress,
         items,
+        currencySymbol,
     }) => ({
         subject: `Order delivered: ${orderNumber}`,
         ...baseTemplate({
@@ -225,10 +229,10 @@ const templates = {
                 `Customer Name: ${shippingAddress?.name || 'N/A'}`,
                 `Phone: ${shippingAddress?.phone || 'N/A'}`,
                 `Address: ${formatShippingAddress(shippingAddress) || 'N/A'}`,
-                `Items Subtotal: ${money(itemsPrice)}`,
-                `Shipping Fee: ${money(shippingPrice)}`,
-                `Total: ${money(totalPrice)}`,
-                ...formatOrderItems(items),
+                `Items Subtotal: ${money(itemsPrice, currencySymbol)}`,
+                `Shipping Fee: ${money(shippingPrice, currencySymbol)}`,
+                `Total: ${money(totalPrice, currencySymbol)}`,
+                ...formatOrderItems(items, currencySymbol),
                 'Thank you for shopping with Beauty P&C.',
             ],
         }),

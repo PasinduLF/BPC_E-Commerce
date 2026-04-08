@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
+import { useConfigStore } from '../../context/useConfigStore';
 import { Package, Plus, Edit, Trash2, Tag, UploadCloud, ExternalLink } from 'lucide-react';
 
 const ProductManage = () => {
     const { userInfo } = useAuthStore();
+    const { config } = useConfigStore();
+    const currency = config?.currencySymbol || '$';
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
@@ -679,10 +682,10 @@ const ProductManage = () => {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-success">
-                                            ${product.price?.toFixed(2) || '0.00'}
+                                            {currency}{product.price?.toFixed(2) || '0.00'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right font-medium text-warning">
-                                            ${product.costPrice?.toFixed(2) || '0.00'}
+                                            {currency}{product.costPrice?.toFixed(2) || '0.00'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
                                             {product.stock > 0 ? (

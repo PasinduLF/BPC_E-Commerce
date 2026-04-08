@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../context/useAuthStore';
+import { useConfigStore } from '../context/useConfigStore';
 import { Package, Truck, Wallet, CheckCircle, Clock, UploadCloud } from 'lucide-react';
 
 const OrderScreen = () => {
@@ -15,6 +16,8 @@ const OrderScreen = () => {
     const [deliveryUpdating, setDeliveryUpdating] = useState(false);
 
     const { userInfo } = useAuthStore();
+    const { config } = useConfigStore();
+    const currency = config?.currencySymbol || '$';
     const isPickupOrder = order.fulfillmentType === 'pickup';
     const displayOrderId = order.orderNumber || (order._id ? `ORD-${order._id.slice(-6).toUpperCase()}` : 'N/A');
 
@@ -312,7 +315,7 @@ const OrderScreen = () => {
                                                     </p>
                                                 )}
                                                 <p className="text-secondary text-sm mt-1">
-                                                    {item.qty || 0} x ${safeMoney(item.price)} = <span className="font-medium text-primary">${safeMoney((item.qty || 0) * (item.price || 0))}</span>
+                                                    {item.qty || 0} x {currency}{safeMoney(item.price)} = <span className="font-medium text-primary">{currency}{safeMoney((item.qty || 0) * (item.price || 0))}</span>
                                                 </p>
                                             </div>
                                         </li>
@@ -329,21 +332,21 @@ const OrderScreen = () => {
                             <div className="space-y-4 mb-6 text-sm">
                                 <div className="flex justify-between text-secondary">
                                     <span>Items</span>
-                                    <span className="font-medium text-primary">${safeMoney(order.itemsPrice)}</span>
+                                    <span className="font-medium text-primary">{currency}{safeMoney(order.itemsPrice)}</span>
                                 </div>
                                 <div className="flex justify-between text-secondary">
                                     <span>Shipping</span>
-                                    <span className="font-medium text-primary">${safeMoney(order.shippingPrice)}</span>
+                                    <span className="font-medium text-primary">{currency}{safeMoney(order.shippingPrice)}</span>
                                 </div>
                                 <div className="flex justify-between text-secondary">
                                     <span>Tax</span>
-                                    <span className="font-medium text-primary">${safeMoney(order.taxPrice)}</span>
+                                    <span className="font-medium text-primary">{currency}{safeMoney(order.taxPrice)}</span>
                                 </div>
                             </div>
 
                             <div className="border-t border-default pt-4 mb-8 flex justify-between items-center bg-brand-subtle/50 p-4 rounded-xl">
                                 <span className="text-lg font-bold text-primary">Total</span>
-                                <span className="text-3xl font-bold text-brand">${safeMoney(order.totalPrice)}</span>
+                                <span className="text-3xl font-bold text-brand">{currency}{safeMoney(order.totalPrice)}</span>
                             </div>
 
                             {!order.isPaid && order.paymentMethod === 'Cash on Delivery' && (

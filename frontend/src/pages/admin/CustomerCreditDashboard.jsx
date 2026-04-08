@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
+import { useConfigStore } from '../../context/useConfigStore';
 import { Search, TrendingUp, TrendingDown, PhoneOff, User, DollarSign, Eye as EyeIcon, X, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CustomerCreditDashboard = () => {
     const { userInfo } = useAuthStore();
+    const { config } = useConfigStore();
+    const currency = config?.currencySymbol || '$';
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -108,7 +111,7 @@ const CustomerCreditDashboard = () => {
     };
 
     const formatCurrency = (amount) => {
-        return `₱${Number(amount || 0).toFixed(2)}`;
+        return `${currency}${Number(amount || 0).toFixed(2)}`;
     };
 
     const formatDate = (date) => {

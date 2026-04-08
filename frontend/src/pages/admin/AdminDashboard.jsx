@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
+import { useConfigStore } from '../../context/useConfigStore';
 import { Users, Package, ShoppingCart, DollarSign } from 'lucide-react';
 
 const AdminDashboard = () => {
     const { userInfo } = useAuthStore();
+    const { config } = useConfigStore();
+    const currency = config?.currencySymbol || '$';
 
     const [stats, setStats] = useState({
         users: 0,
@@ -64,7 +67,7 @@ const AdminDashboard = () => {
                     <div className="p-4 bg-brand-subtle text-brand rounded-xl"><DollarSign size={24} /></div>
                     <div>
                         <p className="text-sm font-medium text-secondary">Total Revenue</p>
-                        <p className="text-2xl font-bold text-primary">${stats.revenue.toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-primary">{currency}{stats.revenue.toFixed(2)}</p>
                     </div>
                 </div>
 
