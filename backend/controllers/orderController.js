@@ -77,6 +77,34 @@ const notifyCustomer = (recipient, templateName, data) => {
     });
 };
 
+const buildOrderEmailDetails = (order) => {
+    const items = (order?.orderItems || []).map((item) => ({
+        name: item?.name || 'Product',
+        variantName: item?.variantName || '',
+        qty: Number(item?.qty || 0),
+        unitPrice: Number(item?.price || 0),
+        lineTotal: Number(item?.price || 0) * Number(item?.qty || 0),
+    }));
+
+    return {
+        orderNumber: order?.orderNumber,
+        fulfillmentType: order?.fulfillmentType,
+        paymentMethod: order?.paymentMethod,
+        itemsPrice: Number(order?.itemsPrice || 0),
+        shippingPrice: Number(order?.shippingPrice || 0),
+        totalPrice: Number(order?.totalPrice || 0),
+        shippingAddress: {
+            name: order?.shippingAddress?.name || '',
+            phone: order?.shippingAddress?.phone || '',
+            address: order?.shippingAddress?.address || '',
+            city: order?.shippingAddress?.city || '',
+            postalCode: order?.shippingAddress?.postalCode || '',
+            country: order?.shippingAddress?.country || '',
+        },
+        items,
+    };
+};
+
 // @desc    Create new order
 // @route   POST /api/orders
 // @access  Private
@@ -278,10 +306,9 @@ const addOrderItems = async (req, res) => {
                 const createdOrder = await order.save();
 
                 const customerRecipient = await getCustomerRecipientForOrder(createdOrder, req.user);
+                const orderEmailDetails = buildOrderEmailDetails(createdOrder);
                 notifyCustomer(customerRecipient, 'orderPlaced', {
-                    orderNumber: createdOrder.orderNumber,
-                    totalPrice: createdOrder.totalPrice,
-                    fulfillmentType: createdOrder.fulfillmentType,
+                    ...orderEmailDetails,
                 });
 
                 const adminRecipients = getAdminRecipients();
@@ -293,8 +320,7 @@ const addOrderItems = async (req, res) => {
                             orderNumber: createdOrder.orderNumber,
                             customerName: customerRecipient?.name || createdOrder.shippingAddress?.name,
                             customerEmail: customerRecipient?.email || req.user?.email || '',
-                            totalPrice: createdOrder.totalPrice,
-                            fulfillmentType: createdOrder.fulfillmentType,
+                            ...orderEmailDetails,
                         },
                     });
                 });
@@ -418,8 +444,9 @@ const updateOrderToDelivered = async (req, res) => {
 
         if (!wasDelivered) {
             const customerRecipient = await getCustomerRecipientForOrder(updatedOrder);
+            const orderEmailDetails = buildOrderEmailDetails(updatedOrder);
             notifyCustomer(customerRecipient, 'orderDelivered', {
-                orderNumber: updatedOrder.orderNumber,
+                ...orderEmailDetails,
             });
         }
 
@@ -528,10 +555,11 @@ const updateOrderStatus = async (req, res) => {
         const updatedOrder = await order.save({ validateBeforeSave: false });
 
         const customerRecipient = await getCustomerRecipientForOrder(updatedOrder);
+        const orderEmailDetails = buildOrderEmailDetails(updatedOrder);
 
         if (!previousFlags.isPaid && updatedOrder.isPaid) {
             notifyCustomer(customerRecipient, 'paymentVerified', {
-                orderNumber: updatedOrder.orderNumber,
+                ...orderEmailDetails,
             });
         }
 
@@ -544,7 +572,7 @@ const updateOrderStatus = async (req, res) => {
 
         if (!previousFlags.isDelivered && updatedOrder.isDelivered) {
             notifyCustomer(customerRecipient, 'orderDelivered', {
-                orderNumber: updatedOrder.orderNumber,
+                ...orderEmailDetails,
             });
         }
 

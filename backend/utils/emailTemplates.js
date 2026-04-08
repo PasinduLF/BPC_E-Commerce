@@ -8,6 +8,30 @@ const escapeHtml = (value = '') =>
 
 const money = (value) => `P${Number(value || 0).toFixed(2)}`;
 
+const formatOrderItems = (items = []) => {
+    if (!Array.isArray(items) || items.length === 0) {
+        return ['Products: N/A'];
+    }
+
+    return [
+        'Products:',
+        ...items.map((item, index) => {
+            const variant = item?.variantName ? ` (${item.variantName})` : '';
+            return `${index + 1}. ${item?.name || 'Product'}${variant} x${Number(item?.qty || 0)} @ ${money(item?.unitPrice)} = ${money(item?.lineTotal)}`;
+        }),
+    ];
+};
+
+const formatShippingAddress = (shippingAddress = {}) => {
+    const parts = [
+        shippingAddress?.address,
+        shippingAddress?.city,
+        shippingAddress?.postalCode,
+        shippingAddress?.country,
+    ].filter(Boolean);
+    return parts.join(', ');
+};
+
 const baseTemplate = ({ title, intro, bodyLines = [], ctaLabel, ctaUrl, footerNote }) => {
     const safeTitle = escapeHtml(title);
     const safeIntro = escapeHtml(intro);
@@ -88,20 +112,48 @@ const templates = {
         }),
     }),
 
-    orderPlaced: ({ name, orderNumber, totalPrice, fulfillmentType }) => ({
+    orderPlaced: ({
+        name,
+        orderNumber,
+        totalPrice,
+        fulfillmentType,
+        paymentMethod,
+        itemsPrice,
+        shippingPrice,
+        shippingAddress,
+        items,
+    }) => ({
         subject: `Order received: ${orderNumber}`,
         ...baseTemplate({
             title: 'Order Placed Successfully',
             intro: `Hi ${name || 'Customer'}, your order ${orderNumber} has been placed.`,
             bodyLines: [
-                `Total: ${money(totalPrice)}`,
                 `Fulfillment: ${fulfillmentType === 'pickup' ? 'Store Pickup' : 'Delivery'}`,
+                `Payment Method: ${paymentMethod || 'N/A'}`,
+                `Customer Name: ${shippingAddress?.name || 'N/A'}`,
+                `Phone: ${shippingAddress?.phone || 'N/A'}`,
+                `Address: ${formatShippingAddress(shippingAddress) || 'N/A'}`,
+                `Items Subtotal: ${money(itemsPrice)}`,
+                `Shipping Fee: ${money(shippingPrice)}`,
+                `Total: ${money(totalPrice)}`,
+                ...formatOrderItems(items),
                 'We will notify you as your order progresses.',
             ],
         }),
     }),
 
-    adminOrderReceived: ({ orderNumber, customerName, customerEmail, totalPrice, fulfillmentType }) => ({
+    adminOrderReceived: ({
+        orderNumber,
+        customerName,
+        customerEmail,
+        totalPrice,
+        fulfillmentType,
+        paymentMethod,
+        itemsPrice,
+        shippingPrice,
+        shippingAddress,
+        items,
+    }) => ({
         subject: `New order received: ${orderNumber}`,
         ...baseTemplate({
             title: 'New Customer Order',
@@ -109,28 +161,76 @@ const templates = {
             bodyLines: [
                 `Customer: ${customerName || 'N/A'}`,
                 `Email: ${customerEmail || 'N/A'}`,
-                `Total: ${money(totalPrice)}`,
                 `Fulfillment: ${fulfillmentType === 'pickup' ? 'Store Pickup' : 'Delivery'}`,
+                `Payment Method: ${paymentMethod || 'N/A'}`,
+                `Phone: ${shippingAddress?.phone || 'N/A'}`,
+                `Address: ${formatShippingAddress(shippingAddress) || 'N/A'}`,
+                `Items Subtotal: ${money(itemsPrice)}`,
+                `Shipping Fee: ${money(shippingPrice)}`,
+                `Total: ${money(totalPrice)}`,
+                ...formatOrderItems(items),
             ],
             footerNote: 'Admin notification from Beauty P&C order system.',
         }),
     }),
 
-    paymentVerified: ({ name, orderNumber }) => ({
+    paymentVerified: ({
+        name,
+        orderNumber,
+        totalPrice,
+        fulfillmentType,
+        paymentMethod,
+        itemsPrice,
+        shippingPrice,
+        shippingAddress,
+        items,
+    }) => ({
         subject: `Payment verified for ${orderNumber}`,
         ...baseTemplate({
             title: 'Payment Verified',
             intro: `Hi ${name || 'Customer'}, we verified your payment for order ${orderNumber}.`,
-            bodyLines: ['Your order is now being prepared for delivery or pickup.'],
+            bodyLines: [
+                `Fulfillment: ${fulfillmentType === 'pickup' ? 'Store Pickup' : 'Delivery'}`,
+                `Payment Method: ${paymentMethod || 'N/A'}`,
+                `Customer Name: ${shippingAddress?.name || 'N/A'}`,
+                `Phone: ${shippingAddress?.phone || 'N/A'}`,
+                `Address: ${formatShippingAddress(shippingAddress) || 'N/A'}`,
+                `Items Subtotal: ${money(itemsPrice)}`,
+                `Shipping Fee: ${money(shippingPrice)}`,
+                `Total: ${money(totalPrice)}`,
+                ...formatOrderItems(items),
+                'Your order is now being prepared for delivery or pickup.',
+            ],
         }),
     }),
 
-    orderDelivered: ({ name, orderNumber }) => ({
+    orderDelivered: ({
+        name,
+        orderNumber,
+        totalPrice,
+        fulfillmentType,
+        paymentMethod,
+        itemsPrice,
+        shippingPrice,
+        shippingAddress,
+        items,
+    }) => ({
         subject: `Order delivered: ${orderNumber}`,
         ...baseTemplate({
             title: 'Order Delivered',
             intro: `Hi ${name || 'Customer'}, your order ${orderNumber} has been delivered.`,
-            bodyLines: ['Thank you for shopping with Beauty P&C.'],
+            bodyLines: [
+                `Fulfillment: ${fulfillmentType === 'pickup' ? 'Store Pickup' : 'Delivery'}`,
+                `Payment Method: ${paymentMethod || 'N/A'}`,
+                `Customer Name: ${shippingAddress?.name || 'N/A'}`,
+                `Phone: ${shippingAddress?.phone || 'N/A'}`,
+                `Address: ${formatShippingAddress(shippingAddress) || 'N/A'}`,
+                `Items Subtotal: ${money(itemsPrice)}`,
+                `Shipping Fee: ${money(shippingPrice)}`,
+                `Total: ${money(totalPrice)}`,
+                ...formatOrderItems(items),
+                'Thank you for shopping with Beauty P&C.',
+            ],
         }),
     }),
 
