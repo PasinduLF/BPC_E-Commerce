@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
 const Home = lazy(() => import('./pages/Home'));
+const Categories = lazy(() => import('./pages/Categories'));
 const Shop = lazy(() => import('./pages/Shop'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
 const ProductScreen = lazy(() => import('./pages/ProductScreen'));
@@ -100,6 +101,7 @@ function AppShell() {
           <Suspense fallback={<div className="py-20 text-center text-secondary">Loading...</div>}>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/categories" element={<Categories />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
