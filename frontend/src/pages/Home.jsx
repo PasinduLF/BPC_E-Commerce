@@ -20,6 +20,15 @@ const Home = () => {
     const { isInWishlist, toggleWishlist } = useWishlistStore();
     const { addToCart } = useCartStore();
 
+    const getBrandImageSrc = (brand) => {
+        if (!brand?.image) return '';
+        if (typeof brand.image === 'string') return brand.image;
+        return brand.image?.url || '';
+    };
+
+    const logoBrands = brands.filter((brand) => getBrandImageSrc(brand));
+    const marqueeBrands = logoBrands.length > 0 ? [...logoBrands, ...logoBrands] : [];
+
     useEffect(() => {
         const fetchHomeData = async () => {
             try {
@@ -344,24 +353,34 @@ const Home = () => {
             </section>
 
             {/* Our Brands Section */}
-            {brands.length > 0 && (
-                <div className="py-16 bg-surface border-b border-default scroll-reveal overflow-hidden">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {logoBrands.length > 0 && (
+                <div className="py-16 bg-surface border-b border-default scroll-reveal overflow-hidden w-full">
+                    <div className="w-full px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Our Trusted Brands</h2>
                             <p className="text-secondary font-medium">Discover the world's most luxurious beauty brands in one place.</p>
                         </div>
                         
-                        <div className="flex flex-wrap justify-center gap-8 lg:gap-16 items-center opacity-70 hover:opacity-100 transition-opacity">
-                            {brands.map(brand => (
-                                <Link key={brand._id} to={`/shop?brand=${brand._id}`} className="group relative block w-32 h-20 sm:w-40 sm:h-24">
-                                    {brand.image?.url ? (
-                                        <img src={brand.image.url} alt={brand.name} className="w-full h-full object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300" />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center font-black text-xl text-tertiary group-hover:text-brand transition-colors uppercase tracking-widest">{brand.name}</div>
-                                    )}
-                                </Link>
-                            ))}
+                        <div className="brands-marquee opacity-75 hover:opacity-100 transition-opacity w-full">
+                            <div className="brands-marquee-track">
+                                {marqueeBrands.map((brand, index) => (
+                                    <Link
+                                        key={`${brand._id}-${index}`}
+                                        to={`/shop?brand=${brand._id}`}
+                                        className="group relative block w-40 h-24 sm:w-48 sm:h-28 flex-shrink-0"
+                                        aria-label={brand.name}
+                                        title={brand.name}
+                                    >
+                                        <div className="w-full h-full rounded-2xl border border-default bg-white flex items-center justify-center p-3 shadow-sm">
+                                            <img
+                                                src={getBrandImageSrc(brand)}
+                                                alt={brand.name}
+                                                className="w-full h-full object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300"
+                                            />
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>

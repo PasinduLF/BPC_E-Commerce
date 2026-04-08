@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Star, ShoppingBag, Filter, Heart, ChevronRight } from 'lucide-react';
@@ -30,6 +30,8 @@ const Shop = () => {
     const [sort, setSort] = useState('newest');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [searchKeyword, setSearchKeyword] = useState('');
+    const [filtersReady, setFiltersReady] = useState(false);
+    const requestSequence = useRef(0);
     const location = useLocation();
 
     // Sync state with URL when navigating from Navbar
@@ -38,6 +40,7 @@ const Shop = () => {
         const category = params.get('category');
         const subcategory = params.get('subcategory');
         const innerSubcategory = params.get('innerSubcategory');
+        const brand = params.get('brand');
         const search = params.get('search');
         
         if (category) setSelectedCategories([category]);
@@ -48,9 +51,14 @@ const Shop = () => {
 
         if (innerSubcategory) setSelectedInnerSubcategories([innerSubcategory]);
         else setSelectedInnerSubcategories([]);
+
+        if (brand) setSelectedBrands([brand]);
+        else setSelectedBrands([]);
         
         if (search) setSearchKeyword(search);
         else setSearchKeyword('');
+
+        setFiltersReady(true);
     }, [location.search]);
 
     useEffect(() => {
@@ -70,7 +78,12 @@ const Shop = () => {
     }, []);
 
     useEffect(() => {
+        if (!filtersReady) {
+            return;
+        }
+
         const fetchProducts = async () => {
+            const currentRequest = ++requestSequence.current;
             try {
                 setLoading(true);
                 let url = `/api/products?sort=${sort}`;
@@ -84,16 +97,22 @@ const Shop = () => {
                 if (inStockOnly) url += `&inStock=true`;
 
                 const { data } = await axios.get(url);
+                if (currentRequest !== requestSequence.current) {
+                    return;
+                }
                 setProducts(data.products);
                 setLoading(false);
             } catch (error) {
+                if (currentRequest !== requestSequence.current) {
+                    return;
+                }
                 console.error('Error fetching products:', error);
                 setLoading(false);
             }
         };
 
         fetchProducts();
-    }, [selectedCategories, selectedSubcategories, selectedInnerSubcategories, selectedBrands, minPrice, maxPrice, inStockOnly, sort, searchKeyword]);
+    }, [selectedCategories, selectedSubcategories, selectedInnerSubcategories, selectedBrands, minPrice, maxPrice, inStockOnly, sort, searchKeyword, filtersReady]);
 
     // Handle Category change
     const handleCategoryChange = (catId) => {

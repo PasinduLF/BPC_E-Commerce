@@ -200,4 +200,33 @@
   .scroll-reveal.delay-300 {
     transition-delay: 300ms;
   }
+
+  .brands-marquee {
+    overflow: hidden;
+    position: relative;
+    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  }
+
+  .brands-marquee-track {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    gap: 2rem;
+    animation: brandsMarquee 28s linear infinite;
+    will-change: transform;
+  }
+
+  .brands-marquee:hover .brands-marquee-track {
+    animation-play-state: paused;
+  }
+
+  @keyframes brandsMarquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
 }
