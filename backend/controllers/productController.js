@@ -1,5 +1,6 @@
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const { sendEmailSafely } = require('../utils/emailService');
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -269,6 +270,18 @@ const createProductReview = async (req, res) => {
     product.rating = product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
 
     await product.save();
+
+    if (req.user?.email) {
+        sendEmailSafely({
+            to: req.user.email,
+            templateName: 'reviewGiven',
+            data: {
+                name: req.user.name,
+                productName: product.name,
+            },
+        });
+    }
+
     res.status(201).json({ message: 'Review added' });
 };
 

@@ -103,6 +103,15 @@ cp .env.example .env
 # MONGO_URI=your_mongodb_connection_string
 # JWT_SECRET=your_secret_key
 # PORT=5000
+# FRONTEND_URL=http://localhost:5173
+# SMTP_HOST=smtp.example.com
+# SMTP_PORT=587
+# SMTP_SECURE=false
+# SMTP_USER=mailer@example.com
+# SMTP_PASS=your_smtp_password
+# SMTP_FROM_EMAIL=mailer@example.com
+# SMTP_FROM_NAME=Beauty P&C
+# ADMIN_NOTIFICATION_EMAIL=admin@example.com
 
 npm start
 ```
@@ -147,7 +156,11 @@ The system uses the following core MongoDB models:
 
 ### Authentication
 - `POST /api/users/auth` - Login
-- `POST /api/users/register` - Register
+- `POST /api/users` - Register (sends verification email)
+- `GET /api/users/verify-email?token=...` - Verify email
+- `POST /api/users/verify-email/resend` - Resend verification email
+- `POST /api/users/forgot-password` - Request password reset
+- `POST /api/users/reset-password` - Reset password from token
 
 ### Products
 - `GET /api/products` - List products

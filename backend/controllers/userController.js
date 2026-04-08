@@ -1,6 +1,18 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const cloudinary = require('cloudinary').v2;
+const crypto = require('crypto');
+const { sendEmailSafely } = require('../utils/emailService');
+
+const buildFrontendUrl = (path) => {
+    const base = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+    return `${base}${path}`;
+};
+
+const hashToken = (token) =>
+    crypto.createHash('sha256').update(String(token)).digest('hex');
+
+const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
 // @desc    Auth user & get token
 // @route   POST /api/users/auth
@@ -9,6 +21,13 @@ const authUser = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email }).select('+password');
+
+    if (user && !user.emailVerified) {
+        return res.status(403).json({
+            message: 'Please verify your email before signing in',
+            needsEmailVerification: true,
+        });
+    }
 
     if (user && (await user.matchPassword(password))) {
         generateToken(res, user._id);
@@ -34,36 +53,269 @@ const authUser = async (req, res) => {
 // @access  Public
 const registerUser = async (req, res) => {
     const { name, email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
         res.status(400).json({ message: 'User already exists' });
         return;
     }
 
+    const verificationTokenRaw = crypto.randomBytes(32).toString('hex');
+    const verificationTokenHashed = hashToken(verificationTokenRaw);
+    const verificationOtpRaw = generateOtp();
+
     const user = await User.create({
         name,
-        email,
+        email: normalizedEmail,
         password,
+        emailVerified: false,
+        emailVerificationToken: verificationTokenHashed,
+        emailVerificationExpires: Date.now() + 1000 * 60 * 60 * 24,
+        emailVerificationOtp: hashToken(verificationOtpRaw),
+        emailVerificationOtpExpires: Date.now() + 1000 * 60 * 15,
     });
 
     if (user) {
-        generateToken(res, user._id);
+        const verifyUrl = buildFrontendUrl(`/verify-email?token=${verificationTokenRaw}`);
+        sendEmailSafely({
+            to: user.email,
+            templateName: 'verifyEmail',
+            data: {
+                name: user.name,
+                verifyUrl,
+                otpCode: verificationOtpRaw,
+            },
+        });
+
         res.status(201).json({
-            _id: user._id,
-            name: user.name,
+            message: 'Registration successful. Please verify your email to activate your account.',
+            needsEmailVerification: true,
             email: user.email,
-            role: user.role,
-            phone: user.phone,
-            dob: user.dob,
-            profileImage: user.profileImage,
-            cart: user.cart,
-            wishlist: user.wishlist,
         });
     } else {
         res.status(400).json({ message: 'Invalid user data' });
     }
+};
+
+// @desc    Verify user email
+// @route   GET /api/users/verify-email
+// @access  Public
+const verifyEmail = async (req, res) => {
+    const token = String(req.query.token || '').trim();
+    if (!token) {
+        return res.status(400).json({ message: 'Verification token is required' });
+    }
+
+    const hashedToken = hashToken(token);
+    const user = await User.findOne({
+        emailVerificationToken: hashedToken,
+        emailVerificationExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired verification link' });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+    user.emailVerificationOtp = null;
+    user.emailVerificationOtpExpires = null;
+    await user.save();
+
+    sendEmailSafely({
+        to: user.email,
+        templateName: 'registrationSuccess',
+        data: { name: user.name },
+    });
+
+    res.json({ message: 'Email verified successfully. You can now sign in.' });
+};
+
+// @desc    Verify user email with OTP
+// @route   POST /api/users/verify-email/otp
+// @access  Public
+const verifyEmailWithOtp = async (req, res) => {
+    const normalizedEmail = String(req.body.email || '').trim().toLowerCase();
+    const otp = String(req.body.otp || '').trim();
+
+    if (!normalizedEmail || !otp) {
+        return res.status(400).json({ message: 'Email and OTP are required' });
+    }
+
+    const user = await User.findOne({
+        email: normalizedEmail,
+        emailVerificationOtp: hashToken(otp),
+        emailVerificationOtpExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired OTP code' });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+    user.emailVerificationOtp = null;
+    user.emailVerificationOtpExpires = null;
+    await user.save();
+
+    sendEmailSafely({
+        to: user.email,
+        templateName: 'registrationSuccess',
+        data: { name: user.name },
+    });
+
+    res.json({ message: 'Email verified successfully. You can now sign in.' });
+};
+
+// @desc    Resend verification email
+// @route   POST /api/users/verify-email/resend
+// @access  Public
+const resendVerificationEmail = async (req, res) => {
+    const normalizedEmail = String(req.body.email || '').trim().toLowerCase();
+    if (!normalizedEmail) {
+        return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+        return res.status(200).json({ message: 'If the account exists, a verification email has been sent.' });
+    }
+
+    if (user.emailVerified) {
+        return res.status(200).json({ message: 'Email is already verified.' });
+    }
+
+    const verificationTokenRaw = crypto.randomBytes(32).toString('hex');
+    const verificationOtpRaw = generateOtp();
+    user.emailVerificationToken = hashToken(verificationTokenRaw);
+    user.emailVerificationExpires = Date.now() + 1000 * 60 * 60 * 24;
+    user.emailVerificationOtp = hashToken(verificationOtpRaw);
+    user.emailVerificationOtpExpires = Date.now() + 1000 * 60 * 15;
+    await user.save();
+
+    const verifyUrl = buildFrontendUrl(`/verify-email?token=${verificationTokenRaw}`);
+    sendEmailSafely({
+        to: user.email,
+        templateName: 'verifyEmail',
+        data: {
+            name: user.name,
+            verifyUrl,
+            otpCode: verificationOtpRaw,
+        },
+    });
+
+    res.status(200).json({ message: 'Verification email sent.' });
+};
+
+// @desc    Request password reset email
+// @route   POST /api/users/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+    const normalizedEmail = String(req.body.email || '').trim().toLowerCase();
+
+    if (!normalizedEmail) {
+        return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+        return res.status(200).json({ message: 'If the account exists, a reset email has been sent.' });
+    }
+
+    const resetTokenRaw = crypto.randomBytes(32).toString('hex');
+    const resetOtpRaw = generateOtp();
+    user.passwordResetToken = hashToken(resetTokenRaw);
+    user.passwordResetExpires = Date.now() + 1000 * 60 * 30;
+    user.passwordResetOtp = hashToken(resetOtpRaw);
+    user.passwordResetOtpExpires = Date.now() + 1000 * 60 * 15;
+    await user.save();
+
+    const resetUrl = buildFrontendUrl(`/reset-password?token=${resetTokenRaw}`);
+    sendEmailSafely({
+        to: user.email,
+        templateName: 'forgotPassword',
+        data: {
+            name: user.name,
+            resetUrl,
+            otpCode: resetOtpRaw,
+        },
+    });
+
+    res.status(200).json({ message: 'If the account exists, a reset email has been sent.' });
+};
+
+// @desc    Reset password from token
+// @route   POST /api/users/reset-password
+// @access  Public
+const resetPassword = async (req, res) => {
+    const token = String(req.body.token || '').trim();
+    const password = String(req.body.password || '');
+
+    if (!token || !password) {
+        return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    if (password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const user = await User.findOne({
+        passwordResetToken: hashToken(token),
+        passwordResetExpires: { $gt: Date.now() },
+    }).select('+password');
+
+    if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    user.password = password;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    user.passwordResetOtp = null;
+    user.passwordResetOtpExpires = null;
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successful. You can now sign in.' });
+};
+
+// @desc    Reset password from OTP
+// @route   POST /api/users/reset-password/otp
+// @access  Public
+const resetPasswordWithOtp = async (req, res) => {
+    const normalizedEmail = String(req.body.email || '').trim().toLowerCase();
+    const otp = String(req.body.otp || '').trim();
+    const password = String(req.body.password || '');
+
+    if (!normalizedEmail || !otp || !password) {
+        return res.status(400).json({ message: 'Email, OTP, and new password are required' });
+    }
+
+    if (password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const user = await User.findOne({
+        email: normalizedEmail,
+        passwordResetOtp: hashToken(otp),
+        passwordResetOtpExpires: { $gt: Date.now() },
+    }).select('+password');
+
+    if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired OTP code' });
+    }
+
+    user.password = password;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    user.passwordResetOtp = null;
+    user.passwordResetOtpExpires = null;
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successful. You can now sign in.' });
 };
 
 // @desc    Logout user / clear cookie
@@ -236,6 +488,12 @@ const deleteUser = async (req, res) => {
 module.exports = {
     authUser,
     registerUser,
+    verifyEmail,
+    verifyEmailWithOtp,
+    resendVerificationEmail,
+    forgotPassword,
+    resetPassword,
+    resetPasswordWithOtp,
     logoutUser,
     getUserProfile,
     updateUserProfile,

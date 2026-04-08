@@ -15,6 +15,42 @@ const userSchema = new mongoose.Schema({
             'Please add a valid email'
         ]
     },
+    emailVerified: {
+        type: Boolean,
+        default: true
+    },
+    emailVerificationToken: {
+        type: String,
+        default: null
+    },
+    emailVerificationExpires: {
+        type: Date,
+        default: null
+    },
+    emailVerificationOtp: {
+        type: String,
+        default: null
+    },
+    emailVerificationOtpExpires: {
+        type: Date,
+        default: null
+    },
+    passwordResetToken: {
+        type: String,
+        default: null
+    },
+    passwordResetExpires: {
+        type: Date,
+        default: null
+    },
+    passwordResetOtp: {
+        type: String,
+        default: null
+    },
+    passwordResetOtpExpires: {
+        type: Date,
+        default: null
+    },
     password: {
         type: String,
         required: [true, 'Please add a password'],

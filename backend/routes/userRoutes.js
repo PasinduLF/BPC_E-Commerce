@@ -3,6 +3,12 @@ const router = express.Router();
 const {
     authUser,
     registerUser,
+    verifyEmail,
+    verifyEmailWithOtp,
+    resendVerificationEmail,
+    forgotPassword,
+    resetPassword,
+    resetPasswordWithOtp,
     logoutUser,
     getUserProfile,
     updateUserProfile,
@@ -16,6 +22,12 @@ const upload = require('../middleware/uploadMiddleware');
 
 router.route('/').post(registerUser).get(protect, admin, getUsers);
 router.post('/auth', authUser);
+router.get('/verify-email', verifyEmail);
+router.post('/verify-email/otp', verifyEmailWithOtp);
+router.post('/verify-email/resend', resendVerificationEmail);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+router.post('/reset-password/otp', resetPasswordWithOtp);
 router.post('/logout', logoutUser);
 router.route('/profile')
     .get(protect, getUserProfile)

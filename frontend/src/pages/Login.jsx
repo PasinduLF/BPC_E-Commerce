@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../context/useAuthStore';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Login = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -10,7 +11,9 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [infoMessage, setInfoMessage] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
 
     const navigate = useNavigate();
     const { search } = useLocation();
@@ -27,6 +30,9 @@ const Login = () => {
     const submitHandler = async (e) => {
         e.preventDefault();
         setSubmitting(true);
+        setError('');
+        setInfoMessage('');
+        setNeedsEmailVerification(false);
         try {
             const config = {
                 headers: {
@@ -42,18 +48,43 @@ const Login = () => {
                     { email, password },
                     config
                 ));
+
+                setCredentials(data);
+                navigate(redirect);
             } else {
                 ({ data } = await axios.post(
                     '/api/users',
                     { name, email, password },
                     config
                 ));
-            }
 
-            setCredentials(data);
-            navigate(redirect);
+                setInfoMessage(data?.message || 'Registration successful. Please verify your email.');
+                toast.success('Registration successful. Check your email for verification.');
+                setIsLogin(true);
+                setPassword('');
+            }
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            const apiMessage = err.response?.data?.message || err.message;
+            setError(apiMessage);
+            setNeedsEmailVerification(Boolean(err.response?.data?.needsEmailVerification));
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const resendVerificationHandler = async () => {
+        const trimmedEmail = String(email || '').trim();
+        if (!trimmedEmail) {
+            setError('Please enter your email first to resend verification.');
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            const { data } = await axios.post('/api/users/verify-email/resend', { email: trimmedEmail });
+            toast.success(data?.message || 'Verification email sent.');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to resend verification email');
         } finally {
             setSubmitting(false);
         }
@@ -81,6 +112,12 @@ const Login = () => {
                     {error && (
                         <div className="mb-6 p-4 rounded-lg bg-error-bg text-error text-sm border border-error-bg text-center">
                             {error}
+                        </div>
+                    )}
+
+                    {infoMessage && (
+                        <div className="mb-6 p-4 rounded-lg bg-brand-subtle text-brand text-sm border border-brand/20 text-center">
+                            {infoMessage}
                         </div>
                     )}
 
@@ -126,9 +163,9 @@ const Login = () => {
                             <div className="flex items-center justify-between">
                                 <label className="block text-sm font-medium text-primary">Password</label>
                                 {isLogin && (
-                                    <a href="#" className="font-medium text-sm text-brand hover:brightness-110">
+                                    <Link to="/forgot-password" className="font-medium text-sm text-brand hover:brightness-110">
                                         Forgot password?
-                                    </a>
+                                    </Link>
                                 )}
                             </div>
                             <div className="mt-1 relative rounded-md shadow-sm">
@@ -155,6 +192,19 @@ const Login = () => {
                         </button>
 
                     </form>
+
+                    {isLogin && needsEmailVerification && (
+                        <div className="mt-4 text-center">
+                            <button
+                                type="button"
+                                disabled={submitting}
+                                onClick={resendVerificationHandler}
+                                className="text-sm font-medium text-brand hover:brightness-110 disabled:opacity-60"
+                            >
+                                Resend verification email
+                            </button>
+                        </div>
+                    )}
 
                     <div className="mt-8 text-center text-sm text-secondary">
                         {isLogin ? (

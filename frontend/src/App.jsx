@@ -11,6 +11,8 @@ const Wishlist = lazy(() => import('./pages/Wishlist'));
 const ProductScreen = lazy(() => import('./pages/ProductScreen'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Login = lazy(() => import('./pages/Login'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const Shipping = lazy(() => import('./pages/Shipping'));
 const Payment = lazy(() => import('./pages/Payment'));
 const PlaceOrder = lazy(() => import('./pages/PlaceOrder'));
@@ -105,6 +107,9 @@ function AppShell() {
               <Route path="/product/:id" element={<ProductScreen />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ForgotPassword />} />
               <Route path="/shipping" element={<Shipping />} />
               <Route path="/payment" element={<Payment />} />
               <Route path="/placeorder" element={<PlaceOrder />} />

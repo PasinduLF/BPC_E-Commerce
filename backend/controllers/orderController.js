@@ -1,6 +1,8 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const SystemConfig = require('../models/SystemConfig');
+const User = require('../models/User');
+const { sendEmailSafely } = require('../utils/emailService');
 
 const ORDER_PAYMENT_METHODS = ['Cash on Delivery', 'Bank Transfer', 'Cash'];
 
@@ -24,6 +26,55 @@ const deriveOrderStatus = (order) => {
     if (order.isPaid) return 'Payment Verified';
     if (order.paymentMethod === 'Bank Transfer' && order.paymentSlip?.url) return 'Processing';
     return 'Pending';
+};
+
+const getAdminRecipients = () => {
+    const configured = String(process.env.ADMIN_NOTIFICATION_EMAIL || '').split(',').map((v) => v.trim()).filter(Boolean);
+    if (configured.length > 0) {
+        return configured;
+    }
+    if (process.env.SMTP_FROM_EMAIL) {
+        return [process.env.SMTP_FROM_EMAIL];
+    }
+    return [];
+};
+
+const getCustomerRecipientForOrder = async (order, fallbackUser = null) => {
+    if (fallbackUser?.email) {
+        return {
+            email: fallbackUser.email,
+            name: fallbackUser.name || order?.shippingAddress?.name || 'Customer',
+        };
+    }
+
+    if (!order?.user) {
+        return null;
+    }
+
+    const user = await User.findById(order.user).select('name email');
+    if (!user?.email) {
+        return null;
+    }
+
+    return {
+        email: user.email,
+        name: user.name || order?.shippingAddress?.name || 'Customer',
+    };
+};
+
+const notifyCustomer = (recipient, templateName, data) => {
+    if (!recipient?.email) {
+        return;
+    }
+
+    sendEmailSafely({
+        to: recipient.email,
+        templateName,
+        data: {
+            name: recipient.name,
+            ...data,
+        },
+    });
 };
 
 // @desc    Create new order
@@ -225,6 +276,29 @@ const addOrderItems = async (req, res) => {
                 });
 
                 const createdOrder = await order.save();
+
+                const customerRecipient = await getCustomerRecipientForOrder(createdOrder, req.user);
+                notifyCustomer(customerRecipient, 'orderPlaced', {
+                    orderNumber: createdOrder.orderNumber,
+                    totalPrice: createdOrder.totalPrice,
+                    fulfillmentType: createdOrder.fulfillmentType,
+                });
+
+                const adminRecipients = getAdminRecipients();
+                adminRecipients.forEach((adminEmail) => {
+                    sendEmailSafely({
+                        to: adminEmail,
+                        templateName: 'adminOrderReceived',
+                        data: {
+                            orderNumber: createdOrder.orderNumber,
+                            customerName: customerRecipient?.name || createdOrder.shippingAddress?.name,
+                            customerEmail: customerRecipient?.email || req.user?.email || '',
+                            totalPrice: createdOrder.totalPrice,
+                            fulfillmentType: createdOrder.fulfillmentType,
+                        },
+                    });
+                });
+
                 return res.status(201).json(createdOrder);
             } catch (error) {
                 if (appliedStockUpdates.length > 0) {
@@ -329,6 +403,7 @@ const updateOrderToDelivered = async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
+        const wasDelivered = Boolean(order.isDelivered);
         if (order.fulfillmentType === 'pickup' && !order.isReadyForPickup) {
             return res.status(400).json({ message: 'Pickup order is not ready yet' });
         }
@@ -340,6 +415,14 @@ const updateOrderToDelivered = async (req, res) => {
         order.status = 'Delivered';
 
         const updatedOrder = await order.save({ validateBeforeSave: false });
+
+        if (!wasDelivered) {
+            const customerRecipient = await getCustomerRecipientForOrder(updatedOrder);
+            notifyCustomer(customerRecipient, 'orderDelivered', {
+                orderNumber: updatedOrder.orderNumber,
+            });
+        }
+
         res.json(updatedOrder);
     } else {
         res.status(404);
@@ -362,6 +445,12 @@ const updateOrderStatus = async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
+        const previousFlags = {
+            isPaid: Boolean(order.isPaid),
+            isDelivered: Boolean(order.isDelivered),
+            isReadyForPickup: Boolean(order.isReadyForPickup),
+        };
+
         const { status, paymentStatus, deliveryStatus } = req.body;
         const { isReadyForPickup } = req.body;
         const isPickupOrder = order.fulfillmentType === 'pickup';
@@ -437,6 +526,28 @@ const updateOrderStatus = async (req, res) => {
         }
 
         const updatedOrder = await order.save({ validateBeforeSave: false });
+
+        const customerRecipient = await getCustomerRecipientForOrder(updatedOrder);
+
+        if (!previousFlags.isPaid && updatedOrder.isPaid) {
+            notifyCustomer(customerRecipient, 'paymentVerified', {
+                orderNumber: updatedOrder.orderNumber,
+            });
+        }
+
+        if (isPickupOrder && !previousFlags.isReadyForPickup && updatedOrder.isReadyForPickup) {
+            notifyCustomer(customerRecipient, 'pickupReady', {
+                orderNumber: updatedOrder.orderNumber,
+                pickupStore: updatedOrder.pickupStore,
+            });
+        }
+
+        if (!previousFlags.isDelivered && updatedOrder.isDelivered) {
+            notifyCustomer(customerRecipient, 'orderDelivered', {
+                orderNumber: updatedOrder.orderNumber,
+            });
+        }
+
         res.json(updatedOrder);
     } else {
         res.status(404);
