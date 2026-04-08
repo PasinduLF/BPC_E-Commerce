@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
 import { Search, TrendingUp, TrendingDown, PhoneOff, User, DollarSign, Eye as EyeIcon, X, Wallet } from 'lucide-react';
+import { toast } from 'sonner';
 
 const CustomerCreditDashboard = () => {
     const { userInfo } = useAuthStore();
@@ -78,7 +79,7 @@ const CustomerCreditDashboard = () => {
 
         const amount = Math.max(Number(paymentAmount) || 0, 0);
         if (amount <= 0) {
-            alert('Enter a payment amount greater than zero.');
+            toast.error('Enter a payment amount greater than zero.');
             return;
         }
 
@@ -97,9 +98,10 @@ const CustomerCreditDashboard = () => {
             setSelectedCustomer(data);
             setPaymentAmount(Number(data.outstandingBalance || 0) > 0 ? Number(data.outstandingBalance || 0).toFixed(2) : '');
             setPaymentMessage('Payment recorded successfully.');
+            toast.success('Payment recorded successfully.');
             await fetchCustomers();
         } catch (error) {
-            alert(error.response?.data?.message || 'Failed to record payment');
+            toast.error(error.response?.data?.message || 'Failed to record payment');
         } finally {
             setSavingPayment(false);
         }

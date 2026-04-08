@@ -367,7 +367,7 @@ const Home = () => {
                                     <Link
                                         key={`${brand._id}-${index}`}
                                         to={`/shop?brand=${brand._id}`}
-                                        className="group relative block w-40 h-24 sm:w-48 sm:h-28 flex-shrink-0"
+                                        className="group relative block w-36 h-20 sm:w-44 sm:h-24 flex-shrink-0"
                                         aria-label={brand.name}
                                         title={brand.name}
                                     >

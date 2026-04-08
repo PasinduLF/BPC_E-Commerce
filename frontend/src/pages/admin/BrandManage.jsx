@@ -3,6 +3,7 @@ import Cropper from 'react-easy-crop';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
 import { Tag, Plus, Trash2, Image as ImageIcon, ZoomIn, X, Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 const createImage = (url) =>
     new Promise((resolve, reject) => {
@@ -192,9 +193,10 @@ const BrandManage = () => {
             setShowAddForm(false);
             fetchBrands();
             setUploading(false);
+            toast.success(editingBrandId ? 'Brand updated successfully.' : 'Brand created successfully.');
         } catch (error) {
             setUploading(false);
-            alert(error.response?.data?.message || 'Failed to save brand');
+            toast.error(error.response?.data?.message || 'Failed to save brand');
         }
     };
 
@@ -204,8 +206,9 @@ const BrandManage = () => {
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
                 await axios.delete(`/api/brands/${id}`, config);
                 fetchBrands();
+                toast.success('Brand deleted successfully.');
             } catch (error) {
-                alert(error.response?.data?.message || 'Failed to delete brand. It might be assigned to products.');
+                toast.error(error.response?.data?.message || 'Failed to delete brand. It might be assigned to products.');
             }
         }
     };

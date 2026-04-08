@@ -118,8 +118,19 @@ const Navbar = () => {
                                         className="relative h-20 flex items-center group"
                                         onMouseEnter={() => setActiveMegaMenu(category._id)}
                                         onMouseLeave={() => setActiveMegaMenu(null)}
+                                        onFocus={() => setActiveMegaMenu(category._id)}
+                                        onBlur={(e) => {
+                                            if (!e.currentTarget.contains(e.relatedTarget)) {
+                                                setActiveMegaMenu(null);
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Escape') {
+                                                setActiveMegaMenu(null);
+                                            }
+                                        }}
                                     >
-                                        <Link to={`/shop?category=${category._id}`} className="nav-link text-sm uppercase tracking-wider">
+                                        <Link to={`/shop?category=${category._id}`} className="nav-link text-sm uppercase tracking-wider" aria-expanded={activeMegaMenu === category._id}>
                                             {category.name}
                                         </Link>
                                         
@@ -196,7 +207,7 @@ const Navbar = () => {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search..."
-                                    className="w-0 opacity-0 group-hover:w-48 group-hover:opacity-100 focus:w-48 focus:opacity-100 transition-all duration-300 ease-out border-b border-default focus:border-brand bg-transparent py-1 px-2 text-sm text-primary placeholder-tertiary outline-none"
+                                    className="w-44 opacity-100 focus:w-52 transition-all duration-300 ease-out border-b border-default focus:border-brand bg-transparent py-1 px-2 text-sm text-primary placeholder-tertiary outline-none"
                                 />
                                 <button type="submit" className="text-secondary hover:text-brand transition-colors z-10 p-1">
                                     <Search size={20} />

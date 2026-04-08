@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
 import { Search, Plus, Minus, Trash2, ShoppingBag, CreditCard, Banknote, UserRound, Phone, Printer, XCircle, FileDown } from 'lucide-react';
 import { useConfigStore } from '../../context/useConfigStore';
+import { toast } from 'sonner';
 
 const POSInterface = () => {
     const { userInfo } = useAuthStore();
@@ -82,11 +83,11 @@ const POSInterface = () => {
         const amount = Math.max(Number(recordPaymentAmount) || 0, 0);
 
         if (!name || !phone) {
-            alert('Customer name and phone are required to record a payment.');
+            toast.error('Customer name and phone are required to record a payment.');
             return;
         }
         if (amount <= 0) {
-            alert('Enter a payment amount greater than zero.');
+            toast.error('Enter a payment amount greater than zero.');
             return;
         }
 
@@ -105,7 +106,7 @@ const POSInterface = () => {
             setRecordPaymentAmount('');
             setAccountMessage('Payment recorded successfully.');
         } catch (error) {
-            alert(error.response?.data?.message || 'Failed to record payment');
+            toast.error(error.response?.data?.message || 'Failed to record payment');
         } finally {
             setRecordingPayment(false);
         }
@@ -126,7 +127,7 @@ const POSInterface = () => {
     const addToCart = (product, variant = null) => {
         const checkStock = variant ? variant.stock : product.stock;
         if (checkStock === 0) {
-            alert("Out of stock!");
+            toast.error('Out of stock!');
             return;
         }
 
@@ -135,7 +136,7 @@ const POSInterface = () => {
 
         if (existItem) {
             if (existItem.qty >= checkStock) {
-                alert("Reached maximum stock limit.");
+                toast.error('Reached maximum stock limit.');
                 return;
             }
             setCartItems(cartItems.map((x) => x.cartId === cartId ? { ...existItem, qty: existItem.qty + 1 } : x));
@@ -172,7 +173,7 @@ const POSInterface = () => {
         if (newQty < 1) return;
         const item = cartItems.find(x => x.cartId === id);
         if (newQty > item.stock) {
-            alert("Cannot exceed available stock.");
+            toast.error('Cannot exceed available stock.');
             return;
         }
         setCartItems(cartItems.map(x => x.cartId === id ? { ...x, qty: newQty } : x));
@@ -204,12 +205,12 @@ const POSInterface = () => {
         const usingCreditFlow = paymentMethod === 'Credit' || appliedCredit > 0 || paidNowAmount !== dueAfterCredit;
 
         if (usingCreditFlow && (!trimmedName || !trimmedPhone)) {
-            alert('Customer name and phone are required for credit and advance-balance operations.');
+            toast.error('Customer name and phone are required for credit and advance-balance operations.');
             return;
         }
 
         if (paymentMethod === 'Cash' && paymentMethod !== 'Credit' && !usingCreditFlow && paidNowAmount < dueAfterCredit) {
-            alert(`Insufficient cash. Due: ${currency}${dueAfterCredit.toFixed(2)}, Given: ${currency}${paidNowAmount.toFixed(2)}`);
+            toast.error(`Insufficient cash. Due: ${currency}${dueAfterCredit.toFixed(2)}, Given: ${currency}${paidNowAmount.toFixed(2)}`);
             return;
         }
 
@@ -258,9 +259,10 @@ const POSInterface = () => {
                 setDiscountValue('');
                 // Refetch products to update stock numbers visually
                 setSearch('');
+                toast.success('POS order processed successfully.');
 
             } catch (error) {
-                alert(error.response?.data?.message || 'Failed to process POS order');
+                toast.error(error.response?.data?.message || 'Failed to process POS order');
             }
         }
     };
@@ -274,7 +276,7 @@ const POSInterface = () => {
 
         const printWindow = window.open('', '_blank', 'width=420,height=760');
         if (!printWindow) {
-            alert('Unable to open print window. Please allow popups for this site.');
+            toast.error('Unable to open print window. Please allow popups for this site.');
             return;
         }
 

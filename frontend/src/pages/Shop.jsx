@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Star, ShoppingBag, Filter, Heart, ChevronRight } from 'lucide-react';
+import { Star, ShoppingBag, Filter, Heart, ChevronRight, XCircle } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { useConfigStore } from '../context/useConfigStore';
 import { useWishlistStore } from '../context/useWishlistStore';
@@ -178,6 +178,47 @@ const Shop = () => {
         ));
     };
 
+    const activeFilterCount = selectedCategories.length
+        + selectedSubcategories.length
+        + selectedInnerSubcategories.length
+        + selectedBrands.length
+        + (minPrice ? 1 : 0)
+        + (maxPrice ? 1 : 0)
+        + (inStockOnly ? 1 : 0);
+
+    const categoryNameById = Object.fromEntries(categories.map((c) => [c._id, c.name]));
+    const subcategoryNameById = Object.fromEntries(
+        categories.flatMap((c) => (c.subcategories || []).map((s) => [s._id, s.name]))
+    );
+    const innerSubcategoryNameById = Object.fromEntries(
+        categories.flatMap((c) =>
+            (c.subcategories || []).flatMap((s) =>
+                (s.nestedSubcategories || []).map((n) => [n._id, n.name])
+            )
+        )
+    );
+    const brandNameById = Object.fromEntries(brands.map((b) => [b._id, b.name]));
+
+    const clearAllFilters = () => {
+        setSelectedCategories([]);
+        setSelectedSubcategories([]);
+        setSelectedInnerSubcategories([]);
+        setSelectedBrands([]);
+        setMinPrice('');
+        setMaxPrice('');
+        setInStockOnly(false);
+    };
+
+    const activeFilterChips = [
+        ...selectedCategories.map((id) => ({ key: `cat-${id}`, label: `Category: ${categoryNameById[id] || 'Unknown'}`, onRemove: () => handleCategoryChange(id) })),
+        ...selectedSubcategories.map((id) => ({ key: `sub-${id}`, label: `Subcategory: ${subcategoryNameById[id] || 'Unknown'}`, onRemove: () => handleSubcategoryChange(id) })),
+        ...selectedInnerSubcategories.map((id) => ({ key: `inner-${id}`, label: `Inner: ${innerSubcategoryNameById[id] || 'Unknown'}`, onRemove: () => handleInnerSubcategoryChange(id) })),
+        ...selectedBrands.map((id) => ({ key: `brand-${id}`, label: `Brand: ${brandNameById[id] || 'Unknown'}`, onRemove: () => handleBrandChange(id) })),
+        ...(minPrice ? [{ key: 'min-price', label: `Min ${currency}${minPrice}`, onRemove: () => setMinPrice('') }] : []),
+        ...(maxPrice ? [{ key: 'max-price', label: `Max ${currency}${maxPrice}`, onRemove: () => setMaxPrice('') }] : []),
+        ...(inStockOnly ? [{ key: 'in-stock', label: 'In Stock Only', onRemove: () => setInStockOnly(false) }] : []),
+    ];
+
     return (
         <div className="bg-page min-h-screen py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
@@ -199,7 +240,7 @@ const Shop = () => {
                             className="lg:hidden flex items-center gap-2 px-4 py-2 border border-default bg-surface rounded-lg text-secondary hover:text-brand hover:border-brand transition-all shadow-sm"
                         >
                             <Filter size={18} />
-                            <span className="font-medium">Filter</span>
+                            <span className="font-medium">Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
                         </button>
 
                         <select
@@ -213,6 +254,29 @@ const Shop = () => {
                         </select>
                     </div>
                 </div>
+
+                {activeFilterChips.length > 0 && (
+                    <div className="mb-6 flex flex-wrap items-center gap-2">
+                        {activeFilterChips.map((chip) => (
+                            <button
+                                key={chip.key}
+                                type="button"
+                                onClick={chip.onRemove}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-full bg-brand-subtle text-brand hover:bg-brand hover:text-on-brand transition-colors"
+                            >
+                                <span>{chip.label}</span>
+                                <XCircle size={14} />
+                            </button>
+                        ))}
+                        <button
+                            type="button"
+                            onClick={clearAllFilters}
+                            className="px-3 py-1.5 text-xs font-semibold rounded-full border border-default text-secondary hover:text-brand hover:border-brand transition-colors"
+                        >
+                            Clear All
+                        </button>
+                    </div>
+                )}
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Filters Sidebar */}
@@ -469,15 +533,7 @@ const Shop = () => {
                                 <p className="text-secondary mt-2">Check back later or try adjusting your filters.</p>
                                 {(selectedCategories.length > 0 || selectedBrands.length > 0 || minPrice || maxPrice || inStockOnly) && (
                                     <button
-                                        onClick={() => {
-                                            setSelectedCategories([]);
-                                            setSelectedSubcategories([]);
-                                            setSelectedInnerSubcategories([]);
-                                            setSelectedBrands([]);
-                                            setMinPrice('');
-                                            setMaxPrice('');
-                                            setInStockOnly(false);
-                                        }}
+                                        onClick={clearAllFilters}
                                         className="mt-6 px-6 py-2 bg-brand-subtle text-brand font-bold rounded-full hover:bg-brand hover:text-on-brand transition-colors"
                                     >
                                         Clear All Filters
