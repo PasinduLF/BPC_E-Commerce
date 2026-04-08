@@ -1,17 +1,20 @@
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // @desc    Fetch all products with filtering, sorting, pagination
 // @route   GET /api/products
 // @access  Public
 const getProducts = async (req, res) => {
     const pageSize = 12;
     const page = Number(req.query.pageNumber) || 1;
+    const isAdminRequest = req.user?.role === 'admin' && req.query.admin === 'true';
 
     const keyword = req.query.keyword
         ? {
             name: {
-                $regex: req.query.keyword,
+                $regex: escapeRegex(String(req.query.keyword).trim()),
                 $options: 'i',
             },
         }
@@ -35,7 +38,7 @@ const getProducts = async (req, res) => {
     // Featured Filter
     const featuredFilter = req.query.isFeatured === 'true' ? { isFeatured: true } : {};
 
-    const activeFilter = req.query.admin === 'true' ? {} : { isActive: { $ne: false } };
+    const activeFilter = isAdminRequest ? {} : { isActive: { $ne: false } };
 
     let sortOption = { createdAt: -1 }; // Default: Newest Arrivals
     if (req.query.sort === 'priceAsc') {
@@ -71,12 +74,16 @@ const getProducts = async (req, res) => {
 // @route   GET /api/products/:id
 // @access  Public
 const getProductById = async (req, res) => {
+    const isAdminRequest = req.user?.role === 'admin' && req.query.admin === 'true';
     const product = await Product.findById(req.params.id)
         .populate('category', 'name subcategories')
         .populate('brand', 'name image') // Add brand population
         .populate('user', 'name');
 
     if (product) {
+        if (product.isActive === false && !isAdminRequest) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
         res.json(product);
     } else {
         res.status(404);

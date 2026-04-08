@@ -1,6 +1,22 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 
+const ORDER_PAYMENT_METHODS = ['Cash on Delivery', 'Bank Transfer', 'Cash'];
+
+const toObjectIdString = (value) => String(value || '');
+
+const getEffectiveUnitPrice = (price, discountPrice) => {
+    const basePrice = Number(price || 0);
+    const discounted = Number(discountPrice || 0);
+    return discounted > 0 && discounted < basePrice ? discounted : basePrice;
+};
+
+const createHttpError = (statusCode, message) => {
+    const error = new Error(message);
+    error.statusCode = statusCode;
+    return error;
+};
+
 const deriveOrderStatus = (order) => {
     if (order.isDelivered) return 'Delivered';
     if (order.isPaid) return 'Payment Verified';
@@ -18,12 +34,10 @@ const addOrderItems = async (req, res) => {
             shippingAddress,
             paymentMethod,
             paymentSlip,
-            itemsPrice,
             shippingPrice,
-            totalPrice,
         } = req.body;
 
-        if (orderItems && orderItems.length === 0) {
+        if (!Array.isArray(orderItems) || orderItems.length === 0) {
             res.status(400);
             return res.json({ message: 'No order items' });
         } else {
@@ -49,51 +63,156 @@ const addOrderItems = async (req, res) => {
                 });
             }
 
-            const order = new Order({
-                orderItems: orderItems.map((x) => ({
-                    name: x.name,
-                    qty: x.qty,
-                    image: x.image || (x.images && x.images.length > 0 ? x.images[0].url : 'placeholder'),
-                    price: x.price,
-                    costPrice: x.costPrice || 0,
-                    product: x._id,
-                    variantId: (x.variant && x.variant._id) ? x.variant._id : undefined,
-                    variantName: x.variant ? `${x.variant.name}: ${x.variant.value}` : undefined,
-                })),
-                user: req.user._id,
-                shippingAddress: normalizedShippingAddress,
-                paymentMethod,
-                paymentSlip,
-                itemsPrice,
-                shippingPrice,
-                totalPrice,
-            });
+            const normalizedPaymentMethod = ORDER_PAYMENT_METHODS.includes(paymentMethod)
+                ? paymentMethod
+                : 'Cash on Delivery';
 
-            const createdOrder = await order.save();
+            const preparedOrderItems = [];
+            const stockUpdates = [];
+            let computedItemsPrice = 0;
 
-            // Deduct stock for each item depending on if it's a variant or base product
-            for (const item of createdOrder.orderItems) {
-                const productRecord = await Product.findById(item.product);
-                if (productRecord) {
-                    if (item.variantId && productRecord.variants && productRecord.variants.length > 0) {
-                        const variant = productRecord.variants.id(item.variantId);
-                        if (variant) {
-                            variant.stock -= item.qty;
-                            if (variant.stock < 0) variant.stock = 0;
-                        }
-                    } else {
-                        productRecord.stock -= item.qty;
-                        if (productRecord.stock < 0) productRecord.stock = 0;
-                    }
-                    await productRecord.save();
+            for (const item of orderItems) {
+                const qty = Number(item.qty);
+                if (!Number.isInteger(qty) || qty <= 0) {
+                    throw createHttpError(400, 'Each order item quantity must be a positive whole number');
                 }
+
+                const productId = item.product || item._id;
+                if (!productId) {
+                    throw createHttpError(400, 'Each order item must include a product reference');
+                }
+
+                const productRecord = await Product.findById(productId);
+                if (!productRecord) {
+                    throw createHttpError(404, 'One or more products are no longer available');
+                }
+
+                const requestedVariantId = item.variantId || item.variant?._id;
+                let resolvedName = item.name || productRecord.name;
+                let resolvedImage = item.image || (productRecord.images && productRecord.images.length > 0 ? productRecord.images[0].url : 'placeholder');
+                let resolvedPrice = getEffectiveUnitPrice(productRecord.price, productRecord.discountPrice);
+                let resolvedCostPrice = Number(productRecord.costPrice || 0);
+                let availableStock = Number(productRecord.stock || 0);
+                let resolvedVariantId;
+                let resolvedVariantName;
+
+                if (requestedVariantId) {
+                    const variant = productRecord.variants.id(requestedVariantId);
+                    if (!variant) {
+                        throw createHttpError(400, `Selected variant is no longer available for ${productRecord.name}`);
+                    }
+
+                    availableStock = Number(variant.stock || 0);
+                    resolvedPrice = getEffectiveUnitPrice(variant.price, variant.discountPrice);
+                    resolvedCostPrice = Number(variant.costPrice ?? productRecord.costPrice ?? 0);
+                    resolvedVariantId = variant._id;
+                    resolvedVariantName = `${variant.name}: ${variant.value}`;
+                    resolvedImage = variant.image || resolvedImage;
+                }
+
+                if (availableStock < qty) {
+                    throw createHttpError(400, `Insufficient stock for ${resolvedName}`);
+                }
+
+                preparedOrderItems.push({
+                    name: resolvedName,
+                    qty,
+                    image: resolvedImage,
+                    price: resolvedPrice,
+                    costPrice: resolvedCostPrice,
+                    product: productRecord._id,
+                    variantId: resolvedVariantId,
+                    variantName: resolvedVariantName,
+                });
+
+                computedItemsPrice += resolvedPrice * qty;
+
+                stockUpdates.push({
+                    productId: productRecord._id,
+                    variantId: resolvedVariantId,
+                    qty,
+                });
             }
 
-            res.status(201).json(createdOrder);
+            const normalizedShippingPrice = Math.max(Number(shippingPrice) || 0, 0);
+            const normalizedItemsPrice = Number(computedItemsPrice.toFixed(2));
+            const normalizedTotalPrice = Number((normalizedItemsPrice + normalizedShippingPrice).toFixed(2));
+
+            const appliedStockUpdates = [];
+            try {
+                for (const update of stockUpdates) {
+                    let result;
+                    if (update.variantId) {
+                        result = await Product.updateOne(
+                            {
+                                _id: update.productId,
+                                'variants._id': update.variantId,
+                                'variants.stock': { $gte: update.qty },
+                            },
+                            {
+                                $inc: { 'variants.$.stock': -update.qty },
+                            }
+                        );
+                    } else {
+                        result = await Product.updateOne(
+                            {
+                                _id: update.productId,
+                                stock: { $gte: update.qty },
+                            },
+                            {
+                                $inc: { stock: -update.qty },
+                            }
+                        );
+                    }
+
+                    if (result.modifiedCount !== 1) {
+                        throw createHttpError(409, 'Inventory changed while placing order. Please review your cart and try again.');
+                    }
+
+                    appliedStockUpdates.push(update);
+                }
+
+                const order = new Order({
+                    orderItems: preparedOrderItems,
+                    user: req.user._id,
+                    shippingAddress: normalizedShippingAddress,
+                    paymentMethod: normalizedPaymentMethod,
+                    paymentSlip,
+                    itemsPrice: normalizedItemsPrice,
+                    shippingPrice: normalizedShippingPrice,
+                    totalPrice: normalizedTotalPrice,
+                });
+
+                const createdOrder = await order.save();
+                return res.status(201).json(createdOrder);
+            } catch (error) {
+                if (appliedStockUpdates.length > 0) {
+                    for (const rollback of appliedStockUpdates) {
+                        if (rollback.variantId) {
+                            await Product.updateOne(
+                                {
+                                    _id: rollback.productId,
+                                    'variants._id': rollback.variantId,
+                                },
+                                {
+                                    $inc: { 'variants.$.stock': rollback.qty },
+                                }
+                            );
+                        } else {
+                            await Product.updateOne(
+                                { _id: rollback.productId },
+                                { $inc: { stock: rollback.qty } }
+                            );
+                        }
+                    }
+                }
+
+                throw error;
+            }
         }
     } catch (error) {
         console.error('Order creation error:', error);
-        res.status(500).json({ message: error.message || 'Error occurred while creating order' });
+        res.status(error.statusCode || 500).json({ message: error.message || 'Error occurred while creating order' });
     }
 };
 
@@ -114,12 +233,19 @@ const getOrderById = async (req, res) => {
         'name email'
     );
 
-    if (order) {
-        res.json(order);
-    } else {
+    if (!order) {
         res.status(404);
         throw new Error('Order not found');
     }
+
+    const isAdmin = req.user?.role === 'admin';
+    const isOwner = order.user && toObjectIdString(order.user._id || order.user) === toObjectIdString(req.user._id);
+
+    if (!isAdmin && !isOwner) {
+        return res.status(403).json({ message: 'Not authorized to view this order' });
+    }
+
+    res.json(order);
 };
 
 // @desc    Update order payment slip
@@ -130,6 +256,17 @@ const updateOrderToPaid = async (req, res) => {
     const { paymentSlipUrl, paymentSlipPublicId } = req.body;
 
     if (order) {
+        const isAdmin = req.user?.role === 'admin';
+        const isOwner = order.user && toObjectIdString(order.user) === toObjectIdString(req.user._id);
+
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({ message: 'Not authorized to update this order payment' });
+        }
+
+        if (!isAdmin && !order.user) {
+            return res.status(403).json({ message: 'Only admin can update payment for POS orders' });
+        }
+
         order.paymentSlip = {
             url: paymentSlipUrl,
             public_id: paymentSlipPublicId

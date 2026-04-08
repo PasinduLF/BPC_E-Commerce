@@ -9,14 +9,14 @@ const {
     createProductReview,
     deleteProductReview,
 } = require('../controllers/productController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect, optionalProtect, admin } = require('../middleware/authMiddleware');
 
-router.route('/').get(getProducts).post(protect, admin, createProduct);
+router.route('/').get(optionalProtect, getProducts).post(protect, admin, createProduct);
 router.route('/:id/reviews').post(protect, createProductReview);
 router.route('/:id/reviews/:reviewId').delete(protect, admin, deleteProductReview);
 router
     .route('/:id')
-    .get(getProductById)
+    .get(optionalProtect, getProductById)
     .put(protect, admin, updateProduct)
     .delete(protect, admin, deleteProduct);
 
