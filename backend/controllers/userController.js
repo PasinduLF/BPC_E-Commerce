@@ -5,14 +5,149 @@ const crypto = require('crypto');
 const { sendEmailSafely } = require('../utils/emailService');
 
 const buildFrontendUrl = (path) => {
-    const base = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const configuredUrls = String(process.env.FRONTEND_URLS || process.env.FRONTEND_URL || '')
+        .split(',')
+        .map((url) => url.trim())
+        .filter(Boolean);
+
+    const publicUrl = configuredUrls.find((url) => !/localhost|127\.0\.0\.1/i.test(url));
+    const base = (process.env.FRONTEND_URL || publicUrl || configuredUrls[0] || 'https://beautypc.vercel.app').replace(/\/$/, '');
     return `${base}${path}`;
 };
+
+const buildPublicFrontendUrl = (path) => buildFrontendUrl(path);
 
 const hashToken = (token) =>
     crypto.createHash('sha256').update(String(token)).digest('hex');
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
+// @desc    Send signup OTP before password setup
+// @route   POST /api/users/signup/send-otp
+// @access  Public
+const sendSignupOtp = async (req, res) => {
+    const name = String(req.body.name || '').trim();
+    const normalizedEmail = String(req.body.email || '').trim().toLowerCase();
+
+    if (!name || !normalizedEmail) {
+        return res.status(400).json({ message: 'Name and email are required' });
+    }
+
+    let user = await User.findOne({ email: normalizedEmail }).select('+password');
+
+    if (user && user.emailVerified) {
+        return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const verificationTokenRaw = crypto.randomBytes(32).toString('hex');
+    const verificationOtpRaw = generateOtp();
+
+    if (!user) {
+        user = new User({
+            name,
+            email: normalizedEmail,
+            password: crypto.randomBytes(16).toString('hex'),
+            emailVerified: false,
+        });
+    }
+
+    user.name = name;
+    user.emailVerificationToken = hashToken(verificationTokenRaw);
+    user.emailVerificationExpires = Date.now() + 1000 * 60 * 60 * 24;
+    user.emailVerificationOtp = hashToken(verificationOtpRaw);
+    user.emailVerificationOtpExpires = Date.now() + 1000 * 60 * 15;
+    user.signupOtpVerifiedAt = null;
+    await user.save();
+
+    const verifyUrl = buildFrontendUrl(`/verify-email?token=${verificationTokenRaw}&email=${encodeURIComponent(normalizedEmail)}`);
+    sendEmailSafely({
+        to: user.email,
+        templateName: 'verifyEmail',
+        data: {
+            name: user.name,
+            verifyUrl,
+            otpCode: verificationOtpRaw,
+        },
+    });
+
+    res.status(200).json({ message: 'OTP sent to your email.', email: user.email });
+};
+
+// @desc    Verify signup OTP before setting password
+// @route   POST /api/users/signup/verify-otp
+// @access  Public
+const verifySignupOtp = async (req, res) => {
+    const normalizedEmail = String(req.body.email || '').trim().toLowerCase();
+    const otp = String(req.body.otp || '').trim();
+
+    if (!normalizedEmail || !otp) {
+        return res.status(400).json({ message: 'Email and OTP are required' });
+    }
+
+    const user = await User.findOne({
+        email: normalizedEmail,
+        emailVerified: false,
+        emailVerificationOtp: hashToken(otp),
+        emailVerificationOtpExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired OTP code' });
+    }
+
+    user.signupOtpVerifiedAt = new Date();
+    user.emailVerificationOtp = null;
+    user.emailVerificationOtpExpires = null;
+    await user.save();
+
+    res.status(200).json({ message: 'OTP verified. You can now set your password.' });
+};
+
+// @desc    Complete signup after OTP verification
+// @route   POST /api/users/signup/complete
+// @access  Public
+const completeSignup = async (req, res) => {
+    const normalizedEmail = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+
+    if (!normalizedEmail || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    if (password.length < 6) {
+        return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail }).select('+password');
+    if (!user) {
+        return res.status(404).json({ message: 'Account setup not found. Please send OTP again.' });
+    }
+
+    if (user.emailVerified) {
+        return res.status(400).json({ message: 'Account is already verified. Please sign in.' });
+    }
+
+    if (!user.signupOtpVerifiedAt) {
+        return res.status(400).json({ message: 'Please verify OTP before setting password.' });
+    }
+
+    user.password = password;
+    user.emailVerified = true;
+    user.signupOtpVerifiedAt = null;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+    user.emailVerificationOtp = null;
+    user.emailVerificationOtpExpires = null;
+    await user.save();
+
+    sendEmailSafely({
+        to: user.email,
+        templateName: 'registrationSuccess',
+        data: { name: user.name },
+    });
+
+    res.status(200).json({ message: 'Account created successfully. You can now sign in.' });
+};
 
 // @desc    Auth user & get token
 // @route   POST /api/users/auth
@@ -234,7 +369,7 @@ const forgotPassword = async (req, res) => {
     user.passwordResetOtpExpires = Date.now() + 1000 * 60 * 15;
     await user.save();
 
-    const resetUrl = buildFrontendUrl(`/reset-password?token=${resetTokenRaw}`);
+    const resetUrl = buildPublicFrontendUrl(`/reset-password?token=${resetTokenRaw}`);
     sendEmailSafely({
         to: user.email,
         templateName: 'forgotPassword',
@@ -487,6 +622,9 @@ const deleteUser = async (req, res) => {
 
 module.exports = {
     authUser,
+    sendSignupOtp,
+    verifySignupOtp,
+    completeSignup,
     registerUser,
     verifyEmail,
     verifyEmailWithOtp,

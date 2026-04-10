@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const {
     authUser,
+    sendSignupOtp,
+    verifySignupOtp,
+    completeSignup,
     registerUser,
     verifyEmail,
     verifyEmailWithOtp,
@@ -22,6 +25,9 @@ const upload = require('../middleware/uploadMiddleware');
 
 router.route('/').post(registerUser).get(protect, admin, getUsers);
 router.post('/auth', authUser);
+router.post('/signup/send-otp', sendSignupOtp);
+router.post('/signup/verify-otp', verifySignupOtp);
+router.post('/signup/complete', completeSignup);
 router.get('/verify-email', verifyEmail);
 router.post('/verify-email/otp', verifyEmailWithOtp);
 router.post('/verify-email/resend', resendVerificationEmail);

@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
+    signupOtpVerifiedAt: {
+        type: Date,
+        default: null
+    },
     passwordResetToken: {
         type: String,
         default: null

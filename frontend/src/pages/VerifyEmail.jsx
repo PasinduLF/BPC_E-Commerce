@@ -6,11 +6,16 @@ import { toast } from 'sonner';
 const VerifyEmail = () => {
     const [searchParams] = useSearchParams();
     const token = useMemo(() => searchParams.get('token') || '', [searchParams]);
-    const [email, setEmail] = useState('');
+    const prefilledEmail = useMemo(() => searchParams.get('email') || '', [searchParams]);
+    const [email, setEmail] = useState(prefilledEmail);
     const [otp, setOtp] = useState('');
     const [status, setStatus] = useState(token ? 'loading' : 'idle');
     const [message, setMessage] = useState(token ? 'Verifying your email...' : 'Enter your email and OTP code to verify.');
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        setEmail(prefilledEmail);
+    }, [prefilledEmail]);
 
     useEffect(() => {
         const verify = async () => {
