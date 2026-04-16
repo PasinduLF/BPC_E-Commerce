@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
+import 'react-easy-crop/react-easy-crop.css';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
 import { Tag, Plus, Trash2, Image as ImageIcon, ZoomIn, X, Check } from 'lucide-react';
@@ -84,7 +85,6 @@ const BrandManage = () => {
 
     const resetLogoCropper = () => {
         setCropperOpen(false);
-        setCropSource('');
         setCrop({ x: 0, y: 0 });
         setZoom(1);
         setCroppedAreaPixels(null);
@@ -123,15 +123,26 @@ const BrandManage = () => {
             return;
         }
 
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+
         const reader = new FileReader();
         reader.onload = () => {
             setCropSource(String(reader.result || ''));
-            setCropperOpen(true);
-            setZoom(1);
-            setCrop({ x: 0, y: 0 });
-            setCroppedAreaPixels(null);
         };
         reader.readAsDataURL(file);
+    };
+
+    const openLogoCropper = () => {
+        if (!cropSource) {
+            toast.error('Choose a logo image first.');
+            return;
+        }
+
+        setCropperOpen(true);
+        setZoom(1);
+        setCrop({ x: 0, y: 0 });
+        setCroppedAreaPixels(null);
     };
 
     const handleCropComplete = (_, areaPixels) => {
@@ -260,7 +271,18 @@ const BrandManage = () => {
                                 onChange={(e) => handleBrandImageSelect(e.target.files[0])}
                                 className="w-full px-3 py-2 border border-default rounded text-sm bg-surface file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-subtle file:text-brand hover:file:brightness-95 text-primary"
                             />
-                            <p className="mt-2 text-xs text-secondary">Crop the logo to a square before saving so it fits the home page brand strip cleanly.</p>
+                            <div className="mt-3 flex items-center gap-3 flex-wrap">
+                                <button
+                                    type="button"
+                                    onClick={openLogoCropper}
+                                    disabled={!cropSource}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand text-white hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <ZoomIn size={16} />
+                                    Crop logo
+                                </button>
+                                <p className="text-xs text-secondary">Select a logo first, then crop it to fit the home page brand strip cleanly.</p>
+                            </div>
                             {imagePreview && (
                                 <div className="mt-4 w-28 h-28 rounded-2xl border border-default bg-page p-2 flex items-center justify-center overflow-hidden">
                                     <img src={imagePreview} alt="Brand logo preview" className="w-full h-full object-contain" />

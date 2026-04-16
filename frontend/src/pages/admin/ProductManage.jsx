@@ -392,7 +392,7 @@ const ProductManage = () => {
                             <label className="block text-sm font-medium text-primary mb-1">Short Description</label>
                             <textarea
                                 required value={description} onChange={(e) => setDescription(e.target.value)}
-                                rows="3"
+                                rows="6"
                                 placeholder="Short summary shown near product title"
                                 className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-page text-primary"
                             ></textarea>
@@ -406,7 +406,7 @@ const ProductManage = () => {
                                     <textarea
                                         value={descriptionSections.details}
                                         onChange={(e) => setDescriptionSections((prev) => ({ ...prev, details: e.target.value }))}
-                                        rows="4"
+                                        rows="6"
                                         className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
                                     />
                                 </div>
@@ -415,7 +415,7 @@ const ProductManage = () => {
                                     <textarea
                                         value={descriptionSections.benefits}
                                         onChange={(e) => setDescriptionSections((prev) => ({ ...prev, benefits: e.target.value }))}
-                                        rows="4"
+                                        rows="6"
                                         className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
                                     />
                                 </div>
@@ -424,7 +424,7 @@ const ProductManage = () => {
                                     <textarea
                                         value={descriptionSections.howToUse}
                                         onChange={(e) => setDescriptionSections((prev) => ({ ...prev, howToUse: e.target.value }))}
-                                        rows="4"
+                                        rows="6"
                                         className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
                                     />
                                 </div>
@@ -433,7 +433,7 @@ const ProductManage = () => {
                                     <textarea
                                         value={descriptionSections.ingredients}
                                         onChange={(e) => setDescriptionSections((prev) => ({ ...prev, ingredients: e.target.value }))}
-                                        rows="4"
+                                        rows="6"
                                         className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
                                     />
                                 </div>
@@ -442,7 +442,7 @@ const ProductManage = () => {
                                     <textarea
                                         value={descriptionSections.specifications}
                                         onChange={(e) => setDescriptionSections((prev) => ({ ...prev, specifications: e.target.value }))}
-                                        rows="4"
+                                        rows="6"
                                         className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
                                     />
                                 </div>
@@ -451,7 +451,7 @@ const ProductManage = () => {
                                     <textarea
                                         value={descriptionSections.shippingInformation}
                                         onChange={(e) => setDescriptionSections((prev) => ({ ...prev, shippingInformation: e.target.value }))}
-                                        rows="4"
+                                        rows="6"
                                         className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-surface text-primary"
                                     />
                                 </div>
