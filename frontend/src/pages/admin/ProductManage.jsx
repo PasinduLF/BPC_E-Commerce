@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
 import { useConfigStore } from '../../context/useConfigStore';
-import { Package, Plus, Edit, Trash2, Tag, UploadCloud, ExternalLink } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Tag, UploadCloud, ExternalLink, Search } from 'lucide-react';
 
 const ProductManage = () => {
     const { userInfo } = useAuthStore();
@@ -13,6 +13,11 @@ const ProductManage = () => {
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [catalogSearch, setCatalogSearch] = useState('');
+    const [filterCategory, setFilterCategory] = useState('all');
+    const [filterBrand, setFilterBrand] = useState('all');
+    const [stockFilter, setStockFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
 
     // Form states
     const [showAddForm, setShowAddForm] = useState(false);
@@ -102,6 +107,34 @@ const ProductManage = () => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    const filteredProducts = useMemo(() => {
+        const searchValue = catalogSearch.trim().toLowerCase();
+
+        return products.filter((product) => {
+            const matchesSearch = !searchValue
+                || String(product.name || '').toLowerCase().includes(searchValue)
+                || String(product._id || '').toLowerCase().includes(searchValue);
+
+            const productCategoryId = String(product.category?._id || product.category || '');
+            const matchesCategory = filterCategory === 'all' || productCategoryId === filterCategory;
+
+            const productBrandId = String(product.brand?._id || product.brand || '');
+            const matchesBrand = filterBrand === 'all' || productBrandId === filterBrand;
+
+            const productStock = Number(product.stock || 0);
+            const matchesStock = stockFilter === 'all'
+                || (stockFilter === 'in' && productStock > 0)
+                || (stockFilter === 'out' && productStock <= 0);
+
+            const active = product.isActive !== false;
+            const matchesStatus = statusFilter === 'all'
+                || (statusFilter === 'active' && active)
+                || (statusFilter === 'inactive' && !active);
+
+            return matchesSearch && matchesCategory && matchesBrand && matchesStock && matchesStatus;
+        });
+    }, [products, catalogSearch, filterCategory, filterBrand, stockFilter, statusFilter]);
 
     const createProductHandler = async (e) => {
         e.preventDefault();
@@ -624,6 +657,66 @@ const ProductManage = () => {
                 </div>
             )}
 
+            {/* Catalog Filters */}
+            <div className="bg-surface rounded-2xl shadow-sm border border-default p-4 md:p-5">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    <div className="md:col-span-2 relative">
+                        <Search size={16} className="absolute left-3 top-2.5 text-tertiary" />
+                        <input
+                            type="text"
+                            value={catalogSearch}
+                            onChange={(e) => setCatalogSearch(e.target.value)}
+                            placeholder="Search by product name or ID..."
+                            className="w-full pl-9 pr-3 py-2 border border-default rounded-lg bg-page text-primary input-focus"
+                        />
+                    </div>
+
+                    <select
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                        className="px-3 py-2 border border-default rounded-lg bg-page text-primary input-focus"
+                    >
+                        <option value="all">All Categories</option>
+                        {categories.map((c) => (
+                            <option key={c._id} value={c._id}>{c.name}</option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={filterBrand}
+                        onChange={(e) => setFilterBrand(e.target.value)}
+                        className="px-3 py-2 border border-default rounded-lg bg-page text-primary input-focus"
+                    >
+                        <option value="all">All Brands</option>
+                        {brands.map((b) => (
+                            <option key={b._id} value={b._id}>{b.name}</option>
+                        ))}
+                    </select>
+
+                    <div className="grid grid-cols-2 gap-2">
+                        <select
+                            value={stockFilter}
+                            onChange={(e) => setStockFilter(e.target.value)}
+                            className="px-3 py-2 border border-default rounded-lg bg-page text-primary input-focus"
+                        >
+                            <option value="all">All Stock</option>
+                            <option value="in">In Stock</option>
+                            <option value="out">Out</option>
+                        </select>
+
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="px-3 py-2 border border-default rounded-lg bg-page text-primary input-focus"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             {/* Product List */}
             <div className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden text-sm">
                 <div className="overflow-x-auto">
@@ -641,11 +734,11 @@ const ProductManage = () => {
                         </thead>
                         <tbody className="bg-surface divide-y divide-default">
                             {loading ? (
-                                <tr><td colSpan="6" className="text-center py-8 text-secondary">Loading catalog...</td></tr>
-                            ) : products.length === 0 ? (
-                                <tr><td colSpan="6" className="text-center py-12 text-secondary">No products available. Add one above!</td></tr>
+                                <tr><td colSpan="7" className="text-center py-8 text-secondary">Loading catalog...</td></tr>
+                            ) : filteredProducts.length === 0 ? (
+                                <tr><td colSpan="7" className="text-center py-12 text-secondary">No products match the selected filters.</td></tr>
                             ) : (
-                                products.map(product => (
+                                filteredProducts.map(product => (
                                     <tr key={product._id} className="hover:bg-page transition-colors">
                                         <td className="px-6 py-4">
                                             <Link to={`/product/${product._id}`} target="_blank" className="flex items-center gap-4 group cursor-pointer inline-flex">

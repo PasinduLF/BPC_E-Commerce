@@ -16,7 +16,12 @@ const wholesalePurchaseSchema = new mongoose.Schema({
             product: {
                 type: mongoose.Schema.ObjectId,
                 ref: 'Product',
-                required: true
+                required: false
+            },
+            customProductName: {
+                type: String,
+                required: false,
+                trim: true
             },
             variantId: {
                 type: mongoose.Schema.ObjectId, // Optional reference to a specific variant

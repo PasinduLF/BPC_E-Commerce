@@ -34,6 +34,8 @@ const WholesaleInventory = () => {
     const [invoiceItems, setInvoiceItems] = useState([]);
     const [productId, setProductId] = useState('');
     const [variantId, setVariantId] = useState('');
+    const [isCustomItem, setIsCustomItem] = useState(false);
+    const [customProductName, setCustomProductName] = useState('');
     const [qty, setQty] = useState('');
     const [unitCost, setUnitCost] = useState('');
 
@@ -64,17 +66,21 @@ const WholesaleInventory = () => {
     }, [userInfo.token]);
 
     const handleAddItem = () => {
-        if (!productId || !qty || !unitCost) return alert('Please fill missing item fields');
+        if ((!isCustomItem && !productId) || (isCustomItem && !customProductName.trim()) || !qty || !unitCost) {
+            return alert('Please fill missing item fields');
+        }
 
         const selectedProduct = products.find(p => p._id === productId);
         const selectedVariant = selectedProduct?.variants?.find(v => v._id === variantId);
+        const resolvedName = isCustomItem ? customProductName.trim() : selectedProduct?.name;
 
         const newItem = {
             id: Date.now().toString(), // temporary UI id
-            product: productId,
-            productName: selectedProduct?.name,
-            variantId: variantId || undefined,
-            variantName: selectedVariant ? `${selectedVariant.name}: ${selectedVariant.value}` : undefined,
+            product: isCustomItem ? undefined : productId,
+            customProductName: isCustomItem ? resolvedName : undefined,
+            productName: resolvedName,
+            variantId: isCustomItem ? undefined : (variantId || undefined),
+            variantName: isCustomItem ? undefined : (selectedVariant ? `${selectedVariant.name}: ${selectedVariant.value}` : undefined),
             quantityReceived: Number(qty),
             unitCost: Number(unitCost),
             itemTotalCost: Number(qty) * Number(unitCost)
@@ -84,6 +90,8 @@ const WholesaleInventory = () => {
         // Reset item fields
         setProductId('');
         setVariantId('');
+        setIsCustomItem(false);
+        setCustomProductName('');
         setQty('');
         setUnitCost('');
     };
@@ -113,6 +121,7 @@ const WholesaleInventory = () => {
                     notes,
                     items: invoiceItems.map(item => ({
                         product: item.product,
+                        customProductName: item.customProductName,
                         variantId: item.variantId,
                         variantName: item.variantName,
                         quantityReceived: item.quantityReceived,
@@ -277,6 +286,35 @@ const WholesaleInventory = () => {
                                 <h3 className="text-sm font-bold text-brand uppercase tracking-wider flex items-center gap-2">
                                     <ShoppingCart size={16} /> 2. Add Line Items
                                 </h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setIsCustomItem(false); setCustomProductName(''); }}
+                                        className={`py-2 px-3 rounded-lg border text-xs font-bold transition-colors ${!isCustomItem ? 'bg-surface border-brand text-brand' : 'bg-page border-default text-secondary hover:bg-surface'}`}
+                                    >
+                                        Catalog Product
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setIsCustomItem(true); setProductId(''); setVariantId(''); }}
+                                        className={`py-2 px-3 rounded-lg border text-xs font-bold transition-colors ${isCustomItem ? 'bg-surface border-brand text-brand' : 'bg-page border-default text-secondary hover:bg-surface'}`}
+                                    >
+                                        Custom Product
+                                    </button>
+                                </div>
+
+                                {isCustomItem ? (
+                                    <div>
+                                        <label className="block text-sm font-medium text-primary mb-1">Custom Product Name</label>
+                                        <input
+                                            type="text"
+                                            value={customProductName}
+                                            onChange={(e) => setCustomProductName(e.target.value)}
+                                            placeholder="e.g. Imported Display Stand"
+                                            className="w-full px-4 py-2 border border-default rounded-lg focus:border-brand focus:ring-1 focus:ring-brand bg-surface text-primary outline-none text-sm"
+                                        />
+                                    </div>
+                                ) : (
                                 <div>
                                     <label className="block text-sm font-medium text-primary mb-1">Select Product</label>
                                     <select
@@ -290,8 +328,9 @@ const WholesaleInventory = () => {
                                         ))}
                                     </select>
                                 </div>
+                                )}
 
-                                {productId && products.find(p => p._id === productId)?.variants?.length > 0 && (
+                                {!isCustomItem && productId && products.find(p => p._id === productId)?.variants?.length > 0 && (
                                     <div>
                                         <label className="block text-sm font-medium text-primary mb-1">Select Variant</label>
                                         <select
@@ -330,7 +369,7 @@ const WholesaleInventory = () => {
                                 <button
                                     type="button"
                                     onClick={handleAddItem}
-                                    disabled={!productId || !qty || !unitCost}
+                                    disabled={(!isCustomItem && !productId) || (isCustomItem && !customProductName.trim()) || !qty || !unitCost}
                                     className="w-full py-2 bg-brand hover:brightness-95 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
                                 >
                                     + Add Item to Invoice
@@ -431,7 +470,7 @@ const WholesaleInventory = () => {
                                             <div className="mt-2 space-y-1">
                                                 {purchase.items?.slice(0, 3).map((item, idx) => (
                                                     <div key={idx} className="text-xs flex items-center gap-1.5 border-l-2 border-brand/30 pl-2">
-                                                        <span className="font-medium text-secondary">{item.product?.name || 'Deleted Product'}</span>
+                                                        <span className="font-medium text-secondary">{item.product?.name || item.customProductName || 'Custom Product'}</span>
                                                         {item.variantName && <span className="text-brand">({item.variantName})</span>}
                                                         <span className="text-tertiary">- qty: {item.quantityReceived}</span>
                                                     </div>
@@ -544,7 +583,7 @@ const WholesaleInventory = () => {
                                         <div className="flex-1">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <p className="font-bold text-primary">{index + 1}. {item.product?.name || 'Deleted Product'}</p>
+                                                    <p className="font-bold text-primary">{index + 1}. {item.product?.name || item.customProductName || 'Custom Product'}</p>
                                                     {item.variantName && <p className="text-xs text-brand font-semibold">{item.variantName}</p>}
                                                 </div>
                                                 <div className="text-right">

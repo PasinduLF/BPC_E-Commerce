@@ -1,5 +1,6 @@
 const WholesalePurchase = require('../models/WholesalePurchase');
 const Product = require('../models/Product');
+const mongoose = require('mongoose');
 
 // @desc    Create a new wholesale purchase record
 // @route   POST /api/wholesale
@@ -13,22 +14,61 @@ const createWholesalePurchase = async (req, res) => {
             notes
         } = req.body;
 
-        if (!items || items.length === 0) {
+        if (!Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ message: 'No items provided in wholesale purchase' });
+        }
+
+        if (!String(supplierName || '').trim()) {
+            return res.status(400).json({ message: 'Supplier name is required' });
         }
 
         // 1. Calculate the grand total cost for this purchase invoice
         const totalCost = items.reduce((acc, item) => acc + (Number(item.quantityReceived) * Number(item.unitCost)), 0);
+        if (!Number.isFinite(totalCost) || totalCost <= 0) {
+            return res.status(400).json({ message: 'Invoice total must be greater than zero' });
+        }
 
         // 2. Map items to include individual total cost per line
-        const processedItems = items.map(item => ({
-            product: item.product,
-            variantId: item.variantId || undefined,
-            variantName: item.variantName || undefined,
-            quantityReceived: Number(item.quantityReceived),
-            unitCost: Number(item.unitCost),
-            itemTotalCost: Number(item.quantityReceived) * Number(item.unitCost)
-        }));
+        const processedItems = items.map((item, index) => {
+            const quantityReceived = Number(item.quantityReceived);
+            const unitCost = Number(item.unitCost);
+            const customProductName = String(item.customProductName || '').trim();
+            const normalizedProductId = String(item.product || '').trim();
+
+            if (!Number.isInteger(quantityReceived) || quantityReceived <= 0) {
+                const error = new Error(`Item ${index + 1}: quantity must be a whole number greater than 0`);
+                error.statusCode = 400;
+                throw error;
+            }
+
+            if (!Number.isFinite(unitCost) || unitCost < 0) {
+                const error = new Error(`Item ${index + 1}: unit cost must be a valid non-negative number`);
+                error.statusCode = 400;
+                throw error;
+            }
+
+            if (!normalizedProductId && !customProductName) {
+                const error = new Error(`Item ${index + 1}: include either a catalog product or a custom product name`);
+                error.statusCode = 400;
+                throw error;
+            }
+
+            if (normalizedProductId && !mongoose.Types.ObjectId.isValid(normalizedProductId)) {
+                const error = new Error(`Item ${index + 1}: invalid product reference`);
+                error.statusCode = 400;
+                throw error;
+            }
+
+            return {
+                product: normalizedProductId || undefined,
+                customProductName: customProductName || undefined,
+                variantId: item.variantId || undefined,
+                variantName: item.variantName || undefined,
+                quantityReceived,
+                unitCost,
+                itemTotalCost: quantityReceived * unitCost
+            };
+        });
 
         // 3. Create the purchase record
         const purchase = await WholesalePurchase.create({
@@ -42,6 +82,10 @@ const createWholesalePurchase = async (req, res) => {
 
         // 4. Update the Product's stock and cost price for EVERY incoming item
         for (const item of processedItems) {
+            if (!item.product) {
+                continue;
+            }
+
             const productRecord = await Product.findById(item.product);
             if (!productRecord) continue; // Skip if product somehow got deleted
 
@@ -70,6 +114,15 @@ const createWholesalePurchase = async (req, res) => {
         res.status(201).json(purchase);
 
     } catch (error) {
+        console.error('Wholesale create error:', error);
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({ message: error.message });
+        }
+
+        if (error.name === 'ValidationError' || error.name === 'CastError') {
+            return res.status(400).json({ message: error.message });
+        }
+
         res.status(500).json({ message: error.message || 'Server Error updating wholesale stock' });
     }
 };
@@ -122,6 +175,10 @@ const deleteWholesalePurchase = async (req, res) => {
 
         // Revert the stock additions
         for (const item of purchase.items) {
+            if (!item.product) {
+                continue;
+            }
+
             const productRecord = await Product.findById(item.product);
             if (!productRecord) continue;
 

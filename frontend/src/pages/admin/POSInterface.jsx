@@ -10,6 +10,9 @@ const POSInterface = () => {
     const [products, setProducts] = useState([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [customItemName, setCustomItemName] = useState('');
+    const [customItemPrice, setCustomItemPrice] = useState('');
+    const [customItemCost, setCustomItemCost] = useState('');
 
     // Cart State
     const [cartItems, setCartItems] = useState([]);
@@ -147,6 +150,7 @@ const POSInterface = () => {
                 name: product.name,
                 image: product.images[0]?.url || '',
                 price: getEffectivePrice(product, variant),
+                costPrice: Number(variant ? (variant.costPrice ?? product.costPrice ?? 0) : (product.costPrice ?? 0)),
                 qty: 1,
                 stock: checkStock,
                 variantId: variant ? variant._id : undefined,
@@ -155,6 +159,43 @@ const POSInterface = () => {
         }
 
         setSelectedProductForVariant(null);
+    };
+
+    const addCustomItemToCart = () => {
+        const name = String(customItemName || '').trim();
+        const price = Number(customItemPrice);
+        const costPrice = Number(customItemCost || customItemPrice || 0);
+
+        if (!name) {
+            toast.error('Custom product name is required');
+            return;
+        }
+
+        if (!Number.isFinite(price) || price < 0) {
+            toast.error('Enter a valid custom product price');
+            return;
+        }
+
+        const cartId = `custom-${Date.now()}`;
+        setCartItems([
+            ...cartItems,
+            {
+                cartId,
+                product: undefined,
+                name,
+                image: '',
+                price,
+                costPrice: Number.isFinite(costPrice) && costPrice >= 0 ? costPrice : price,
+                qty: 1,
+                stock: 99999,
+                variantId: undefined,
+                variantName: undefined,
+            },
+        ]);
+
+        setCustomItemName('');
+        setCustomItemPrice('');
+        setCustomItemCost('');
     };
 
     const handleProductClick = (product) => {
@@ -225,6 +266,7 @@ const POSInterface = () => {
                         image: x.image,
                         price: x.price,
                         product: x.product,
+                        costPrice: x.costPrice,
                         variantId: x.variantId,
                         variantName: x.variantName
                     })),
@@ -347,6 +389,43 @@ const POSInterface = () => {
                     </div>
                 </div>
 
+                <div className="px-4 py-3 border-b border-default bg-surface">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <input
+                            type="text"
+                            value={customItemName}
+                            onChange={(e) => setCustomItemName(e.target.value)}
+                            placeholder="Custom product name"
+                            className="px-3 py-2 border border-default rounded-lg text-sm bg-page text-primary input-focus"
+                        />
+                        <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={customItemPrice}
+                            onChange={(e) => setCustomItemPrice(e.target.value)}
+                            placeholder={`Sell price (${currency})`}
+                            className="px-3 py-2 border border-default rounded-lg text-sm bg-page text-primary input-focus"
+                        />
+                        <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={customItemCost}
+                            onChange={(e) => setCustomItemCost(e.target.value)}
+                            placeholder={`Cost (${currency}) optional`}
+                            className="px-3 py-2 border border-default rounded-lg text-sm bg-page text-primary input-focus"
+                        />
+                        <button
+                            type="button"
+                            onClick={addCustomItemToCart}
+                            className="btn-primary py-2 rounded-lg text-sm font-semibold"
+                        >
+                            Add Custom Product
+                        </button>
+                    </div>
+                </div>
+
                 <div className="flex-1 p-4 overflow-y-auto bg-page">
                     {loading ? (
                         <div className="text-center py-10 text-secondary">Loading products...</div>
@@ -408,7 +487,11 @@ const POSInterface = () => {
                             {cartItems.map((item) => (
                                 <div key={item.cartId} className="flex gap-3 pb-4 border-b border-default last:border-0">
                                     <div className="w-16 h-16 rounded-md bg-page flex-shrink-0 overflow-hidden">
-                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                        {item.image ? (
+                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-[10px] text-tertiary">Custom</div>
+                                        )}
                                     </div>
                                     <div className="flex-1">
                                         <h4 className="font-bold text-primary text-sm line-clamp-1">{item.name}</h4>

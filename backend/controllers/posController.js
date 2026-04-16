@@ -44,13 +44,37 @@ const createPOSOrder = async (req, res) => {
         const stockUpdates = [];
 
         for (const item of orderItems) {
-            if (!item.product) {
-                throw createHttpError(400, `Invalid POS item: missing product reference for ${item.name || 'item'}`);
-            }
-
             const qty = Number(item.qty);
             if (!Number.isInteger(qty) || qty <= 0) {
                 throw createHttpError(400, `Invalid quantity for ${item.name || 'item'}`);
+            }
+
+            // Custom item path (no product reference) for manual walk-in sales.
+            if (!item.product) {
+                const customName = String(item.name || '').trim();
+                const customPrice = Number(item.price);
+                const customCostPrice = Math.max(Number(item.costPrice ?? item.price ?? 0), 0);
+
+                if (!customName) {
+                    throw createHttpError(400, 'Custom POS item name is required');
+                }
+
+                if (!Number.isFinite(customPrice) || customPrice < 0) {
+                    throw createHttpError(400, `Invalid custom POS price for ${customName}`);
+                }
+
+                attachedItems.push({
+                    name: customName,
+                    qty,
+                    image: String(item.image || ''),
+                    price: customPrice,
+                    product: undefined,
+                    variantId: undefined,
+                    variantName: undefined,
+                    costPrice: customCostPrice,
+                });
+
+                continue;
             }
 
             const product = await Product.findById(item.product);

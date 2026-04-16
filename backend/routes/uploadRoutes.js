@@ -56,14 +56,15 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
 
         let uploadPath = req.file.path;
 
-        // Convert PNG transparency to solid white background for product image consistency.
-        if (req.file.mimetype === 'image/png') {
+        // Flatten any transparent image onto white to keep product backgrounds consistent.
+        const metadata = await sharp(req.file.path).metadata();
+        if (metadata.hasAlpha) {
             const parsed = path.parse(req.file.path);
-            processedPath = path.join(parsed.dir, `${parsed.name}-whitebg.png`);
+            processedPath = path.join(parsed.dir, `${parsed.name}-whitebg.jpg`);
 
             await sharp(req.file.path)
                 .flatten({ background: '#ffffff' })
-                .png()
+                .jpeg({ quality: 92 })
                 .toFile(processedPath);
 
             uploadPath = processedPath;
