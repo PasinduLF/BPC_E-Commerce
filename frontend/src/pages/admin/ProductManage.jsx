@@ -85,6 +85,16 @@ const ProductManage = () => {
         }
     };
 
+    const removeSelectedFile = (indexToRemove) => {
+        const newFiles = new DataTransfer();
+        Array.from(selectedFiles).forEach((file, idx) => {
+            if (idx !== indexToRemove) {
+                newFiles.items.add(file);
+            }
+        });
+        setSelectedFiles(newFiles.files);
+    };
+
     const fetchData = async () => {
         try {
             setLoading(true);
@@ -632,13 +642,24 @@ const ProductManage = () => {
                                 </div>
                                 <p className="text-xs text-brand mt-2">Select new files to append to the product gallery.</p>
                                 {selectedFiles.length > 0 && (
-                                    <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
-                                        {Array.from(selectedFiles).map((file, idx) => (
-                                            <div key={idx} className="w-16 h-16 flex-shrink-0 border border-success/30 rounded overflow-hidden relative">
-                                                <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
-                                                <div className="absolute top-0 right-0 bg-success text-white text-[9px] px-1 font-bold">NEW</div>
-                                            </div>
-                                        ))}
+                                    <div className="mt-3">
+                                        <div className="flex gap-2 overflow-x-auto pb-2">
+                                            {Array.from(selectedFiles).map((file, idx) => (
+                                                <div key={idx} className="w-16 h-16 flex-shrink-0 border border-success/30 rounded overflow-hidden relative group">
+                                                    <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                    <div className="absolute top-0 right-0 bg-success text-white text-[9px] px-1 font-bold">NEW</div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeSelectedFile(idx)}
+                                                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xl font-bold hover:bg-black/70"
+                                                        title="Remove this image"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-success mt-2">{selectedFiles.length} new image{selectedFiles.length !== 1 ? 's' : ''} selected</p>
                                     </div>
                                 )}
                             </div>
