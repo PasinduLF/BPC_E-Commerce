@@ -2,6 +2,8 @@ const express = require('express');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+const path = require('path');
+const sharp = require('sharp');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -46,17 +48,38 @@ const upload = multer({
 
 // Upload route
 router.post('/', protect, upload.single('image'), async (req, res) => {
+    let processedPath = null;
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded' });
         }
 
-        const result = await cloudinary.uploader.upload(req.file.path, {
+        let uploadPath = req.file.path;
+
+        // Convert PNG transparency to solid white background for product image consistency.
+        if (req.file.mimetype === 'image/png') {
+            const parsed = path.parse(req.file.path);
+            processedPath = path.join(parsed.dir, `${parsed.name}-whitebg.png`);
+
+            await sharp(req.file.path)
+                .flatten({ background: '#ffffff' })
+                .png()
+                .toFile(processedPath);
+
+            uploadPath = processedPath;
+        }
+
+        const result = await cloudinary.uploader.upload(uploadPath, {
             folder: 'bpc-ecommerce', // Cloudinary folder name
         });
 
         // Remove file from local uploads folder
-        fs.unlinkSync(req.file.path);
+        if (fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
+        if (processedPath && fs.existsSync(processedPath)) {
+            fs.unlinkSync(processedPath);
+        }
 
         res.json({
             message: 'Image uploaded successfully',
@@ -70,6 +93,9 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
         // Clean up local file even on error
         if (req.file && fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
+        }
+        if (processedPath && fs.existsSync(processedPath)) {
+            fs.unlinkSync(processedPath);
         }
     }
 });
