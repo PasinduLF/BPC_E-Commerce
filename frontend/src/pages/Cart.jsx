@@ -4,6 +4,8 @@ import { useCartStore } from '../context/useCartStore';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
 import { useAuthStore } from '../context/useAuthStore';
+import StepIndicator from '../components/StepIndicator';
+import ProductRecommendations from '../components/ProductRecommendations';
 
 const Cart = () => {
     const { config } = useConfigStore();
@@ -44,18 +46,26 @@ const Cart = () => {
         <div className="bg-page min-h-screen py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in">
                 
-            <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight mb-8">Shopping Bag</h1>
+                {/* Step Indicator */}
+                <StepIndicator currentStep={1} steps={['Shopping Bag', 'Shipping', 'Payment']} />
+                
+                <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight mb-8">Shopping Bag</h1>
 
                 {cartItems.length === 0 ? (
-                    <div className="bg-surface rounded-2xl shadow-sm border border-default p-12 text-center">
-                        <div className="w-20 h-20 bg-brand-subtle rounded-full flex items-center justify-center mx-auto mb-6">
-                            <ShoppingBag size={32} className="text-brand" />
+                    <div className="space-y-16">
+                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-12 text-center">
+                            <div className="w-20 h-20 bg-brand-subtle rounded-full flex items-center justify-center mx-auto mb-6">
+                                <ShoppingBag size={32} className="text-brand" />
+                            </div>
+                            <h2 className="text-2xl font-semibold text-primary mb-2">Your cart is empty</h2>
+                            <p className="text-secondary mb-8 max-w-md mx-auto">Looks like you haven't added any premium cosmetics to your cart yet. Discover your true radiance today!</p>
+                            <Link to="/shop" className="btn-primary inline-flex items-center gap-2">
+                                Explore Products <ArrowRight size={18} />
+                            </Link>
                         </div>
-                        <h2 className="text-2xl font-semibold text-primary mb-2">Your cart is empty</h2>
-                        <p className="text-secondary mb-8 max-w-md mx-auto">Looks like you haven't added any premium cosmetics to your cart yet. Discover your true radiance today!</p>
-                        <Link to="/" className="btn-primary inline-flex items-center gap-2">
-                            Explore Products <ArrowRight size={18} />
-                        </Link>
+                        
+                        {/* Recommendations for empty cart */}
+                        <ProductRecommendations title="Recommended Products" limit={8} />
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start animate-slide-up">

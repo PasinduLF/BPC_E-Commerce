@@ -1,17 +1,30 @@
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingBag, Star, Trash2, ArrowRight } from 'lucide-react';
+import { Heart, ShoppingBag, Star, Trash2, ArrowRight, Trash } from 'lucide-react';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useCartStore } from '../context/useCartStore';
 import { useConfigStore } from '../context/useConfigStore';
+import { useState } from 'react';
 
 const Wishlist = () => {
-    const { wishlistItems, removeFromWishlist } = useWishlistStore();
+    const { wishlistItems, removeFromWishlist, clearWishlist } = useWishlistStore();
     const { addToCart } = useCartStore();
     const { config } = useConfigStore();
     const currency = config?.currencySymbol || '$';
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
 
     const handleAddToCart = (product) => {
         addToCart({ ...product, qty: 1 });
+    };
+
+    const handleAddAllToCart = () => {
+        wishlistItems.forEach(product => {
+            addToCart({ ...product, qty: 1 });
+        });
+    };
+
+    const handleClearWishlist = () => {
+        clearWishlist();
+        setShowClearConfirm(false);
     };
 
     return (
@@ -32,7 +45,57 @@ const Wishlist = () => {
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 animate-slide-up">
+                    <div className="space-y-8 animate-slide-up">
+                        {/* Bulk Actions */}
+                        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between bg-surface rounded-2xl border border-default p-4 sm:p-6">
+                            <div className="flex items-center gap-3">
+                                <Heart size={20} className="text-brand" />
+                                <span className="font-semibold text-primary">{wishlistItems.length} item{wishlistItems.length !== 1 ? 's' : ''} in wishlist</span>
+                            </div>
+                            <div className="flex gap-3 w-full sm:w-auto">
+                                <button
+                                    onClick={handleAddAllToCart}
+                                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-brand text-on-brand rounded-lg font-semibold hover:shadow-lg transition-all"
+                                >
+                                    <ShoppingBag size={18} />
+                                    Add All to Cart
+                                </button>
+                                <button
+                                    onClick={() => setShowClearConfirm(true)}
+                                    className="flex-1 sm:flex-none px-4 py-2 border border-error text-error rounded-lg font-semibold hover:bg-error-bg transition-all"
+                                >
+                                    <Trash size={18} className="inline mr-2" />
+                                    Clear
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Clear Confirmation Dialog */}
+                        {showClearConfirm && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                                <div className="bg-surface rounded-2xl border border-default p-6 max-w-sm">
+                                    <h3 className="text-lg font-bold text-primary mb-2">Clear Wishlist?</h3>
+                                    <p className="text-secondary mb-6">This action cannot be undone. Are you sure you want to remove all items from your wishlist?</p>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setShowClearConfirm(false)}
+                                            className="flex-1 px-4 py-2 border border-default rounded-lg font-semibold hover:bg-subtle transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleClearWishlist}
+                                            className="flex-1 px-4 py-2 bg-error text-on-brand rounded-lg font-semibold hover:shadow-lg transition-all"
+                                        >
+                                            Clear All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Product Grid */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                         {wishlistItems.map((product) => (
                             <div key={product._id} className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
                                 <Link to={`/product/${product._id}`} className="block relative">
@@ -95,6 +158,7 @@ const Wishlist = () => {
                                 </div>
                             </div>
                         ))}
+                        </div>
                     </div>
                 )}
             </div>

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Star, ShoppingBag, Filter, Heart, ChevronRight, ChevronLeft, XCircle } from 'lucide-react';
+import { Star, ShoppingBag, Filter, Heart, ChevronRight, ChevronLeft, XCircle, Eye } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
+import QuickViewModal from '../components/QuickViewModal';
 import { useConfigStore } from '../context/useConfigStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useCartStore } from '../context/useCartStore';
@@ -18,6 +19,8 @@ const Shop = () => {
     const [page, setPage] = useState(1);
     const [pages, setPages] = useState(1);
     const [pageSize, setPageSize] = useState(12);
+    const [quickViewProduct, setQuickViewProduct] = useState(null);
+    const [showQuickView, setShowQuickView] = useState(false);
 
     const { isInWishlist, toggleWishlist } = useWishlistStore();
     const { addToCart } = useCartStore();
@@ -559,6 +562,14 @@ const Shop = () => {
                                             <Heart size={16} className={isInWishlist(product._id) ? "fill-brand text-brand" : "text-tertiary hover:text-brand"} />
                                         </button>
 
+                                        <button
+                                            onClick={() => { setQuickViewProduct(product); setShowQuickView(true); }}
+                                            className="absolute top-4 right-4 bg-surface/90 backdrop-blur-sm p-2 rounded-full shadow-sm z-10 hover:bg-brand hover:text-on-brand transition-colors"
+                                            title="Quick View"
+                                        >
+                                            <Eye size={16} />
+                                        </button>
+
                                         <div className="p-5 flex flex-col flex-1">
                                             <div className="flex items-center gap-1 text-gold mb-2">
                                                 {renderStars(product.rating, 16)}
@@ -661,6 +672,13 @@ const Shop = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Quick View Modal */}
+                <QuickViewModal 
+                    product={quickViewProduct} 
+                    onClose={() => setShowQuickView(false)} 
+                    isOpen={showQuickView}
+                />
 
             </div>
         </div>

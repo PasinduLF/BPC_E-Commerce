@@ -4,6 +4,7 @@ import { useCartStore } from '../context/useCartStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useConfigStore } from '../context/useConfigStore';
 import { MapPin, Plus } from 'lucide-react';
+import StepIndicator from '../components/StepIndicator';
 
 const Shipping = () => {
     const { shippingAddress, saveShippingAddress } = useCartStore();
@@ -55,16 +56,8 @@ const Shipping = () => {
         <div className="bg-page min-h-screen py-12 animate-fade-in">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                {/* Checkout Steps - Simplified visual */}
-                <div className="flex justify-center mb-10 sm:mb-12 animate-slide-up">
-                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm font-medium">
-                        <span className="text-brand bg-brand-subtle px-3 py-1 rounded-full border border-brand-subtle">1. Shipping</span>
-                        <div className="hidden sm:block w-8 h-px bg-default"></div>
-                        <span className="text-tertiary">2. Payment</span>
-                        <div className="hidden sm:block w-8 h-px bg-default"></div>
-                        <span className="text-tertiary">3. Order placed</span>
-                    </div>
-                </div>
+                {/* Step Indicator */}
+                <StepIndicator currentStep={2} steps={['Shopping Bag', 'Shipping', 'Payment']} />
 
                 <div className="bg-surface rounded-3xl shadow-sm border border-default p-5 sm:p-8 lg:p-12 animate-slide-up-delayed-1">
                     <h1 className="text-3xl font-extrabold text-primary tracking-tight mb-8">Shipping Information</h1>

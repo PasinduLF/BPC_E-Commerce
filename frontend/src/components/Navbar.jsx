@@ -14,6 +14,8 @@ const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false); // Mobile Drawer
     const [dropdownOpen, setDropdownOpen] = useState(false); // User Profile
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchSuggestions, setSearchSuggestions] = useState([]);
+    const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     
     // Mega Menu State
@@ -41,6 +43,23 @@ const Navbar = () => {
         };
         fetchCategories();
     }, []);
+
+    // Fetch Search Suggestions
+    useEffect(() => {
+        if (searchQuery.trim().length > 1) {
+            const fetchSuggestions = async () => {
+                try {
+                    const { data } = await axios.get(`/api/products?keyword=${encodeURIComponent(searchQuery)}&pageSize=5`);
+                    setSearchSuggestions(data.products.slice(0, 5).map(p => p.name));
+                } catch (error) {
+                    console.error('Failed to fetch suggestions', error);
+                }
+            };
+            fetchSuggestions();
+        } else {
+            setSearchSuggestions([]);
+        }
+    }, [searchQuery]);
 
     // Scroll listener for sticky state formatting
     useEffect(() => {
@@ -205,13 +224,39 @@ const Navbar = () => {
                                 <input 
                                     type="text"
                                     value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        setShowSearchSuggestions(true);
+                                    }}
+                                    onFocus={() => setShowSearchSuggestions(true)}
+                                    onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
                                     placeholder="Search..."
                                     className="w-44 opacity-100 focus:w-52 transition-all duration-300 ease-out border-b border-default focus:border-brand bg-transparent py-1 px-2 text-sm text-primary placeholder-tertiary outline-none"
                                 />
                                 <button type="submit" className="text-secondary hover:text-brand transition-colors z-10 p-1">
                                     <Search size={20} />
                                 </button>
+
+                                {/* Search Suggestions Dropdown */}
+                                {showSearchSuggestions && searchSuggestions.length > 0 && (
+                                    <div className="absolute top-full left-0 w-full mt-2 bg-surface border border-default rounded-lg shadow-lg z-50 py-2">
+                                        {searchSuggestions.map((suggestion, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSearchQuery(suggestion);
+                                                    setShowSearchSuggestions(false);
+                                                    navigate(`/shop?search=${encodeURIComponent(suggestion)}`);
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-sm text-secondary hover:bg-subtle hover:text-brand transition-colors"
+                                            >
+                                                <Search size={14} className="inline mr-2" />
+                                                {suggestion}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </form>
 
                             <button 
