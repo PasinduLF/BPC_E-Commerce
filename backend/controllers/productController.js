@@ -8,7 +8,8 @@ const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // @route   GET /api/products
 // @access  Public
 const getProducts = async (req, res) => {
-    const pageSize = 12;
+    const requestedPageSize = Number(req.query.pageSize) || 12;
+    const pageSize = Math.min(Math.max(requestedPageSize, 1), 48);
     const page = Number(req.query.pageNumber) || 1;
     const isAdminRequest = req.user?.role === 'admin' && req.query.admin === 'true';
 

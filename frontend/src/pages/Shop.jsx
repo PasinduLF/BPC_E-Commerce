@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Star, ShoppingBag, Filter, Heart, ChevronRight, XCircle } from 'lucide-react';
+import { Star, ShoppingBag, Filter, Heart, ChevronRight, ChevronLeft, XCircle } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { useConfigStore } from '../context/useConfigStore';
 import { useWishlistStore } from '../context/useWishlistStore';
@@ -15,6 +15,9 @@ const Shop = () => {
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [pages, setPages] = useState(1);
+    const [pageSize, setPageSize] = useState(12);
 
     const { isInWishlist, toggleWishlist } = useWishlistStore();
     const { addToCart } = useCartStore();
@@ -33,6 +36,7 @@ const Shop = () => {
     const [filtersReady, setFiltersReady] = useState(false);
     const requestSequence = useRef(0);
     const location = useLocation();
+    const navigate = useNavigate();
 
     // Sync state with URL when navigating from Navbar
     useEffect(() => {
@@ -42,6 +46,8 @@ const Shop = () => {
         const innerSubcategory = params.get('innerSubcategory');
         const brand = params.get('brand');
         const search = params.get('search');
+        const pageFromUrl = Number(params.get('page'));
+        const pageSizeFromUrl = Number(params.get('pageSize'));
         
         if (category) setSelectedCategories([category]);
         else setSelectedCategories([]);
@@ -58,8 +64,33 @@ const Shop = () => {
         if (search) setSearchKeyword(search);
         else setSearchKeyword('');
 
+        if (pageFromUrl > 0) setPage(pageFromUrl);
+        else setPage(1);
+
+        if ([12, 24, 48].includes(pageSizeFromUrl)) {
+            setPageSize(pageSizeFromUrl);
+        } else {
+            setPageSize(12);
+        }
+
         setFiltersReady(true);
     }, [location.search]);
+
+    useEffect(() => {
+        if (!filtersReady) {
+            return;
+        }
+
+        const params = new URLSearchParams(location.search);
+        params.set('page', String(page));
+        params.set('pageSize', String(pageSize));
+        const nextSearch = params.toString();
+        const currentSearch = location.search.replace(/^\?/, '');
+
+        if (nextSearch !== currentSearch) {
+            navigate(`/shop?${nextSearch}`, { replace: true });
+        }
+    }, [page, pageSize, filtersReady, location.search, navigate]);
 
     useEffect(() => {
         const fetchFilters = async () => {
@@ -86,7 +117,7 @@ const Shop = () => {
             const currentRequest = ++requestSequence.current;
             try {
                 setLoading(true);
-                let url = `/api/products?sort=${sort}`;
+                let url = `/api/products?sort=${sort}&pageNumber=${page}&pageSize=${pageSize}`;
                 if (searchKeyword) url += `&keyword=${encodeURIComponent(searchKeyword)}`;
                 if (selectedCategories.length > 0) url += `&category=${selectedCategories.join(',')}`;
                 if (selectedSubcategories.length > 0) url += `&subcategory=${selectedSubcategories.join(',')}`;
@@ -101,18 +132,20 @@ const Shop = () => {
                     return;
                 }
                 setProducts(data.products);
+                setPages(data.pages || 1);
                 setLoading(false);
             } catch (error) {
                 if (currentRequest !== requestSequence.current) {
                     return;
                 }
                 console.error('Error fetching products:', error);
+                setPages(1);
                 setLoading(false);
             }
         };
 
         fetchProducts();
-    }, [selectedCategories, selectedSubcategories, selectedInnerSubcategories, selectedBrands, minPrice, maxPrice, inStockOnly, sort, searchKeyword, filtersReady]);
+    }, [selectedCategories, selectedSubcategories, selectedInnerSubcategories, selectedBrands, minPrice, maxPrice, inStockOnly, sort, searchKeyword, filtersReady, page, pageSize]);
 
     // Handle Category change
     const handleCategoryChange = (catId) => {
@@ -209,6 +242,32 @@ const Shop = () => {
         setInStockOnly(false);
     };
 
+    useEffect(() => {
+        setPage(1);
+    }, [selectedCategories, selectedSubcategories, selectedInnerSubcategories, selectedBrands, minPrice, maxPrice, inStockOnly, sort, searchKeyword]);
+
+    useEffect(() => {
+        if (page > pages) {
+            setPage(Math.max(1, pages));
+        }
+    }, [page, pages]);
+
+    const getPageItems = () => {
+        if (pages <= 7) {
+            return Array.from({ length: pages }, (_, i) => i + 1);
+        }
+
+        if (page <= 4) {
+            return [1, 2, 3, 4, 5, 'ellipsis-end', pages];
+        }
+
+        if (page >= pages - 3) {
+            return [1, 'ellipsis-start', pages - 4, pages - 3, pages - 2, pages - 1, pages];
+        }
+
+        return [1, 'ellipsis-start', page - 1, page, page + 1, 'ellipsis-end', pages];
+    };
+
     const activeFilterChips = [
         ...selectedCategories.map((id) => ({ key: `cat-${id}`, label: `Category: ${categoryNameById[id] || 'Unknown'}`, onRemove: () => handleCategoryChange(id) })),
         ...selectedSubcategories.map((id) => ({ key: `sub-${id}`, label: `Subcategory: ${subcategoryNameById[id] || 'Unknown'}`, onRemove: () => handleSubcategoryChange(id) })),
@@ -252,6 +311,19 @@ const Shop = () => {
                             <option value="priceAsc">Price: Low to High</option>
                             <option value="priceDesc">Price: High to Low</option>
                         </select>
+
+                        <select
+                            value={pageSize}
+                            onChange={(e) => {
+                                setPage(1);
+                                setPageSize(Number(e.target.value));
+                            }}
+                            className="border border-default bg-surface rounded-lg px-4 py-2 text-secondary focus:ring-2 focus:ring-brand focus:border-brand outline-none shadow-sm cursor-pointer hover:border-brand transition-all"
+                        >
+                            <option value={12}>12 / page</option>
+                            <option value={24}>24 / page</option>
+                            <option value={48}>48 / page</option>
+                        </select>
                     </div>
                 </div>
 
@@ -280,7 +352,7 @@ const Shop = () => {
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Filters Sidebar */}
-                    <div className={`lg:w-72 flex-shrink-0 space-y-8 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
+                    <div className={`lg:w-72 flex-shrink-0 space-y-8 sticky top-8 max-h-[calc(100vh-5rem)] overflow-y-auto ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
                         {/* Categories & Subcategories */}
                         <div className="bg-surface p-5 rounded-2xl border border-default shadow-sm">
                             <h3 className="font-bold text-primary tracking-wide mb-4 flex items-center justify-between pb-3 border-b border-default">
@@ -539,6 +611,52 @@ const Shop = () => {
                                         Clear All Filters
                                     </button>
                                 )}
+                            </div>
+                        )}
+
+                        {!loading && products.length > 0 && pages > 1 && (
+                            <div className="mt-10 flex items-center justify-center gap-2 flex-wrap">
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                    disabled={page === 1}
+                                    className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-default bg-surface text-secondary hover:text-brand hover:border-brand transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <ChevronLeft size={16} />
+                                    Prev
+                                </button>
+
+                                {getPageItems().map((item, idx) => {
+                                    if (typeof item !== 'number') {
+                                        return (
+                                            <span key={`ellipsis-${idx}`} className="px-2 text-tertiary">...</span>
+                                        );
+                                    }
+
+                                    return (
+                                        <button
+                                            key={item}
+                                            type="button"
+                                            onClick={() => setPage(item)}
+                                            className={`min-w-10 px-3 py-2 rounded-lg border transition-colors ${page === item
+                                                ? 'bg-brand text-on-brand border-brand'
+                                                : 'bg-surface text-secondary border-default hover:text-brand hover:border-brand'
+                                                }`}
+                                        >
+                                            {item}
+                                        </button>
+                                    );
+                                })}
+
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((prev) => Math.min(prev + 1, pages))}
+                                    disabled={page === pages}
+                                    className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-default bg-surface text-secondary hover:text-brand hover:border-brand transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Next
+                                    <ChevronRight size={16} />
+                                </button>
                             </div>
                         )}
                     </div>
