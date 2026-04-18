@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { Fragment, useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
-import { ShoppingCart, CheckCircle, Clock, XCircle, TrendingUp, Edit, Trash2, Printer, FileDown, ReceiptText } from 'lucide-react';
+import { ShoppingCart, CheckCircle, Clock, XCircle, TrendingUp, Edit, Trash2, Printer, FileDown, ReceiptText, Search, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { useConfigStore } from '../../context/useConfigStore';
 
 const OrderManage = () => {
@@ -13,6 +13,22 @@ const OrderManage = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoadingKey, setActionLoadingKey] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [selectedOrderIds, setSelectedOrderIds] = useState([]);
+    const [expandedOrderIds, setExpandedOrderIds] = useState([]);
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [visibleColumns, setVisibleColumns] = useState({
+        id: true,
+        customer: true,
+        contact: true,
+        date: true,
+        total: true,
+        profit: true,
+        payment: true,
+        delivery: true,
+        actions: true,
+    });
 
     // Edit Modal State
     const [editModalOpen, setEditModalOpen] = useState(false);
@@ -187,6 +203,106 @@ const OrderManage = () => {
         }
     };
 
+    const filteredOrders = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase();
+        return orders.filter((order) => {
+            const orderId = (order.orderNumber || `ORD-${order._id.substring(order._id.length - 6).toUpperCase()}`).toLowerCase();
+            const customerName = (order.isPOS ? (order.customerName || 'Walk-in') : (order.user?.name || 'Unknown')).toLowerCase();
+            const contactEmail = String(order.user?.email || '').toLowerCase();
+            const contactPhone = String(order.customerPhone || order.shippingAddress?.phone || '').toLowerCase();
+
+            const matchesSearch = !query
+                || orderId.includes(query)
+                || customerName.includes(query)
+                || contactEmail.includes(query)
+                || contactPhone.includes(query);
+
+            if (!matchesSearch) return false;
+
+            if (statusFilter === 'all') return true;
+            if (statusFilter === 'pending') return !order.isDelivered && !order.isPaid;
+            if (statusFilter === 'processing') return !order.isDelivered && order.isPaid;
+            if (statusFilter === 'delivered') return Boolean(order.isDelivered);
+            return true;
+        });
+    }, [orders, searchTerm, statusFilter]);
+
+    const allFilteredSelected = filteredOrders.length > 0 && filteredOrders.every((order) => selectedOrderIds.includes(order._id));
+
+    const toggleSelectAllFiltered = () => {
+        if (allFilteredSelected) {
+            setSelectedOrderIds((prev) => prev.filter((id) => !filteredOrders.some((order) => order._id === id)));
+        } else {
+            setSelectedOrderIds((prev) => Array.from(new Set([...prev, ...filteredOrders.map((order) => order._id)])));
+        }
+    };
+
+    const toggleOrderSelection = (orderId) => {
+        setSelectedOrderIds((prev) => (prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]));
+    };
+
+    const toggleOrderExpansion = (orderId) => {
+        setExpandedOrderIds((prev) => (prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]));
+    };
+
+    const bulkUpdateDelivery = async (markDelivered) => {
+        if (selectedOrderIds.length === 0) {
+            alert('Select at least one order first.');
+            return;
+        }
+
+        try {
+            setActionLoadingKey('bulk-delivery');
+            const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+            await Promise.all(
+                selectedOrderIds.map((orderId) =>
+                    axios.put(
+                        `/api/orders/${orderId}/status`,
+                        { deliveryStatus: markDelivered ? 'delivered' : 'processing' },
+                        configHeader
+                    )
+                )
+            );
+            setSelectedOrderIds([]);
+            await fetchOrders();
+        } catch (error) {
+            alert(error.response?.data?.message || 'Failed to apply bulk delivery update');
+        } finally {
+            setActionLoadingKey('');
+        }
+    };
+
+    const exportOrdersCsv = () => {
+        if (filteredOrders.length === 0) return;
+
+        const headers = ['Order ID', 'Customer', 'Email', 'Phone', 'Created', 'Total', 'Payment Status', 'Delivery Status'];
+        const rows = filteredOrders.map((order) => {
+            const id = order.orderNumber || `ORD-${order._id.substring(order._id.length - 6).toUpperCase()}`;
+            const customer = order.isPOS ? (order.customerName || 'Walk-in') : (order.user?.name || 'Unknown');
+            const email = order.user?.email || '';
+            const phone = order.customerPhone || order.shippingAddress?.phone || '';
+            const created = new Date(order.createdAt).toLocaleDateString();
+            const total = `${currency}${Number(order.totalPrice || 0).toFixed(2)}`;
+            const paymentStatus = order.isPaid ? 'Paid' : 'Unpaid';
+            const deliveryStatus = order.isDelivered ? 'Delivered' : 'Processing';
+            return [id, customer, email, phone, created, total, paymentStatus, deliveryStatus];
+        });
+
+        const csv = [headers, ...rows]
+            .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `orders-export-${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <>
             <div className="space-y-6">
@@ -198,60 +314,180 @@ const OrderManage = () => {
                     </div>
                 </div>
 
+                <div className="bg-surface rounded-2xl border border-default p-4 space-y-4">
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            { key: 'all', label: 'All' },
+                            { key: 'pending', label: 'Pending' },
+                            { key: 'processing', label: 'Processing' },
+                            { key: 'delivered', label: 'Delivered' },
+                        ].map((item) => (
+                            <button
+                                key={item.key}
+                                type="button"
+                                onClick={() => setStatusFilter(item.key)}
+                                className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${statusFilter === item.key ? 'bg-brand-subtle border-brand text-brand' : 'bg-page border-default text-secondary hover:border-brand hover:text-brand'}`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative flex-1 min-w-[220px]">
+                            <Search size={16} className="absolute left-3 top-2.5 text-tertiary" />
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Search by order ID, customer, email or phone"
+                                className="w-full pl-9 pr-3 py-2 border border-default rounded-lg bg-page text-primary input-focus"
+                            />
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={exportOrdersCsv}
+                            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-default bg-page text-secondary hover:text-brand hover:border-brand transition-colors"
+                        >
+                            <Download size={16} />
+                            Export CSV
+                        </button>
+
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setShowColumnMenu((prev) => !prev)}
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-default bg-page text-secondary hover:text-brand hover:border-brand transition-colors"
+                            >
+                                Columns
+                                {showColumnMenu ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </button>
+                            {showColumnMenu && (
+                                <div className="absolute right-0 mt-2 w-56 bg-surface border border-default rounded-xl shadow-lg z-20 p-3 space-y-2">
+                                    {Object.entries(visibleColumns).map(([key, value]) => (
+                                        <label key={key} className="flex items-center gap-2 text-sm text-primary cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={value}
+                                                onChange={(e) => setVisibleColumns((prev) => ({ ...prev, [key]: e.target.checked }))}
+                                                className="w-4 h-4"
+                                            />
+                                            <span className="capitalize">{key}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => bulkUpdateDelivery(true)}
+                            disabled={selectedOrderIds.length === 0 || actionLoadingKey === 'bulk-delivery'}
+                            className="px-3 py-1.5 rounded-lg border border-success-bg text-success hover:bg-success-bg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Mark Selected Delivered
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => bulkUpdateDelivery(false)}
+                            disabled={selectedOrderIds.length === 0 || actionLoadingKey === 'bulk-delivery'}
+                            className="px-3 py-1.5 rounded-lg border border-warning-bg text-warning hover:bg-warning-bg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Mark Selected Processing
+                        </button>
+                        <span className="text-xs text-tertiary">{selectedOrderIds.length} selected</span>
+                    </div>
+                </div>
+
                 <div className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden text-sm">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-default">
                             <thead className="bg-page">
                                 <tr>
-                                    <th className="px-6 py-4 text-left font-semibold text-secondary uppercase tracking-wider">ID</th>
-                                    <th className="px-6 py-4 text-left font-semibold text-secondary uppercase tracking-wider">Customer</th>
-                                    <th className="px-6 py-4 text-left font-semibold text-secondary uppercase tracking-wider">Date</th>
-                                    <th className="px-6 py-4 text-right font-semibold text-secondary uppercase tracking-wider">Total Sales</th>
-                                    <th className="px-6 py-4 text-right font-semibold text-secondary uppercase tracking-wider">Est. Profit</th>
-                                    <th className="px-6 py-4 text-center font-semibold text-secondary uppercase tracking-wider">Payment</th>
-                                    <th className="px-6 py-4 text-center font-semibold text-secondary uppercase tracking-wider">Delivery</th>
-                                    <th className="px-6 py-4 text-center font-semibold text-secondary uppercase tracking-wider">Actions</th>
+                                    <th className="px-3 py-4 text-center font-semibold text-secondary uppercase tracking-wider">
+                                        <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAllFiltered} />
+                                    </th>
+                                    {visibleColumns.id && <th className="px-6 py-4 text-left font-semibold text-secondary uppercase tracking-wider">ID</th>}
+                                    {visibleColumns.customer && <th className="px-6 py-4 text-left font-semibold text-secondary uppercase tracking-wider">Customer</th>}
+                                    {visibleColumns.contact && <th className="px-6 py-4 text-left font-semibold text-secondary uppercase tracking-wider">Contact</th>}
+                                    {visibleColumns.date && <th className="px-6 py-4 text-left font-semibold text-secondary uppercase tracking-wider">Date</th>}
+                                    {visibleColumns.total && <th className="px-6 py-4 text-right font-semibold text-secondary uppercase tracking-wider">Total Sales</th>}
+                                    {visibleColumns.profit && <th className="px-6 py-4 text-right font-semibold text-secondary uppercase tracking-wider">Est. Profit</th>}
+                                    {visibleColumns.payment && <th className="px-6 py-4 text-center font-semibold text-secondary uppercase tracking-wider">Payment</th>}
+                                    {visibleColumns.delivery && <th className="px-6 py-4 text-center font-semibold text-secondary uppercase tracking-wider">Delivery</th>}
+                                    {visibleColumns.actions && <th className="px-6 py-4 text-center font-semibold text-secondary uppercase tracking-wider">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="bg-surface divide-y divide-default">
                                 {loading ? (
-                                    <tr><td colSpan="8" className="text-center py-8 text-secondary">Loading orders...</td></tr>
-                                ) : orders.length === 0 ? (
-                                    <tr><td colSpan="8" className="text-center py-12 text-secondary">No orders found.</td></tr>
+                                    <tr><td colSpan="10" className="text-center py-8 text-secondary">Loading orders...</td></tr>
+                                ) : filteredOrders.length === 0 ? (
+                                    <tr><td colSpan="10" className="text-center py-12 text-secondary">No orders found.</td></tr>
                                 ) : (
-                                    orders.map(order => {
+                                    filteredOrders.map(order => {
                                         const isPickupOrder = order.fulfillmentType === 'pickup';
                                         // Calculate profit
                                         const totalCost = order.orderItems.reduce((acc, item) => acc + (item.costPrice * item.qty), 0);
                                         const grossProfit = order.itemsPrice - totalCost;
 
                                         return (
-                                            <tr key={order._id} className="hover:bg-page transition-colors">
+                                            <Fragment key={order._id}>
+                                            <tr className="hover:bg-page transition-colors">
+                                                <td className="px-3 py-4 text-center align-top">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedOrderIds.includes(order._id)}
+                                                        onChange={() => toggleOrderSelection(order._id)}
+                                                    />
+                                                </td>
+                                                {visibleColumns.id && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-secondary font-mono text-xs">
                                                     {order.orderNumber || `ORD-${order._id.substring(order._id.length - 6).toUpperCase()}`}
                                                     {order.isPOS && <span className="ml-2 bg-brand-subtle text-brand font-bold px-2 py-0.5 rounded text-[10px]">POS</span>}
                                                 </td>
+                                                )}
+                                                {visibleColumns.customer && (
                                                 <td className="px-6 py-4">
                                                     <span className="font-medium text-primary">
                                                         {order.isPOS ? (order.customerName || 'Walk-in') : (order.user?.name || 'Unknown')}
                                                     </span>
                                                 </td>
+                                                )}
+                                                {visibleColumns.contact && (
+                                                <td className="px-6 py-4 text-xs text-secondary">
+                                                    <div>{order.user?.email || '-'}</div>
+                                                    <div>{order.customerPhone || order.shippingAddress?.phone || '-'}</div>
+                                                </td>
+                                                )}
+                                                {visibleColumns.date && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-secondary">
                                                     {new Date(order.createdAt).toLocaleDateString()}
                                                 </td>
+                                                )}
+                                                {visibleColumns.total && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-primary">
                                                     {currency}{order.totalPrice.toFixed(2)}
                                                 </td>
+                                                )}
+                                                {visibleColumns.profit && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
                                                     <span className={`inline-flex items-center gap-1 font-medium ${grossProfit > 0 ? 'text-success' : 'text-tertiary'}`}>
                                                         {grossProfit > 0 && <TrendingUp size={14} />}
                                                         {currency}{grossProfit.toFixed(2)}
                                                     </span>
                                                 </td>
+                                                )}
+                                                {visibleColumns.payment && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                                     <div className="flex flex-col items-center gap-2">
                                                         <span className="text-[11px] font-semibold text-secondary">
                                                             {order.paymentMethod}{isPickupOrder ? ' • Pickup' : ''}
+                                                        </span>
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${order.isPaid ? 'bg-success-bg text-success' : 'bg-error-bg text-error'}`}>
+                                                            {order.isPaid ? 'Paid' : 'Unpaid'}
                                                         </span>
                                                         {order.isPaid ? (
                                                             <span className="inline-flex items-center justify-center p-1.5 bg-success-bg text-success rounded-lg" title={order.paidAt ? `Paid on ${new Date(order.paidAt).toLocaleDateString()}` : 'Paid'}>
@@ -287,8 +523,13 @@ const OrderManage = () => {
                                                         )}
                                                     </div>
                                                 </td>
+                                                )}
+                                                {visibleColumns.delivery && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-center">
                                                     <div className="flex flex-col items-center gap-2">
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${order.isDelivered ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning'}`}>
+                                                            {order.isDelivered ? 'Delivered' : 'Processing'}
+                                                        </span>
                                                         {isPickupOrder ? (
                                                             order.isDelivered ? (
                                                                 <span className="inline-flex items-center justify-center p-1.5 bg-success-bg text-success rounded-lg" title="Picked up">
@@ -349,8 +590,18 @@ const OrderManage = () => {
                                                         )}
                                                     </div>
                                                 </td>
+                                                )}
+                                                {visibleColumns.actions && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                                     <div className="flex items-center justify-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleOrderExpansion(order._id)}
+                                                            className="text-tertiary hover:bg-page p-1.5 rounded-lg transition-colors border border-transparent"
+                                                            title="Expand"
+                                                        >
+                                                            {expandedOrderIds.includes(order._id) ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                        </button>
                                                         <Link to={`/order/${order._id}`} className="text-brand hover:bg-brand-subtle px-2 py-1.5 rounded-lg transition-colors border border-transparent">
                                                             Details
                                                         </Link>
@@ -385,7 +636,37 @@ const OrderManage = () => {
                                                         </button>
                                                     </div>
                                                 </td>
+                                                )}
                                             </tr>
+                                            {expandedOrderIds.includes(order._id) && (
+                                                <tr className="bg-page/40">
+                                                    <td colSpan="10" className="px-6 py-4 text-xs text-secondary">
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                            <div>
+                                                                <p className="font-semibold text-primary mb-1">Customer Contact</p>
+                                                                <p>Email: {order.user?.email || '-'}</p>
+                                                                <p>Phone: {order.customerPhone || order.shippingAddress?.phone || '-'}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-semibold text-primary mb-1">Order Status</p>
+                                                                <p>Payment: {order.isPaid ? 'Paid' : 'Unpaid'}</p>
+                                                                <p>Delivery: {order.isDelivered ? 'Delivered' : 'Processing'}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-semibold text-primary mb-1">Items</p>
+                                                                <p>{(order.orderItems || []).length} line items</p>
+                                                                <p>{(order.orderItems || []).reduce((acc, item) => acc + Number(item.qty || 0), 0)} units total</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-semibold text-primary mb-1">Financials</p>
+                                                                <p>Subtotal: {currency}{Number(order.itemsPrice || 0).toFixed(2)}</p>
+                                                                <p>Total: {currency}{Number(order.totalPrice || 0).toFixed(2)}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                            </Fragment>
                                         );
                                     })
                                 )}

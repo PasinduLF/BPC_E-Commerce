@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
 import { useConfigStore } from '../../context/useConfigStore';
-import { Package, Plus, Edit, Trash2, Tag, UploadCloud, ExternalLink, Search } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Tag, UploadCloud, ExternalLink, Search, Copy, Download, GripVertical } from 'lucide-react';
+
+const PRODUCT_DRAFT_KEY = 'admin-product-draft-v1';
 
 const ProductManage = () => {
     const { userInfo } = useAuthStore();
@@ -18,6 +20,12 @@ const ProductManage = () => {
     const [filterBrand, setFilterBrand] = useState('all');
     const [stockFilter, setStockFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [activeFormTab, setActiveFormTab] = useState('basic');
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [sku, setSku] = useState('');
+    const [lastTemplate, setLastTemplate] = useState(null);
+    const [draggedExistingImageIndex, setDraggedExistingImageIndex] = useState(null);
 
     // Form states
     const [showAddForm, setShowAddForm] = useState(false);
@@ -118,6 +126,129 @@ const ProductManage = () => {
         fetchData();
     }, []);
 
+    useEffect(() => {
+        const savedDraft = localStorage.getItem(PRODUCT_DRAFT_KEY);
+        if (!savedDraft || showAddForm) return;
+
+        try {
+            const draft = JSON.parse(savedDraft);
+            if (!draft || typeof draft !== 'object') return;
+            setName(draft.name || '');
+            setDescription(draft.description || '');
+            setDescriptionSections(draft.descriptionSections || {
+                details: '', benefits: '', howToUse: '', ingredients: '', specifications: '', shippingInformation: ''
+            });
+            setPrice(draft.price || '');
+            setDiscountPrice(draft.discountPrice || '0');
+            setCostPrice(draft.costPrice || '0');
+            setCategoryId(draft.categoryId || '');
+            setSubcategoryId(draft.subcategoryId || '');
+            setInnerSubcategoryId(draft.innerSubcategoryId || '');
+            setBrandId(draft.brandId || '');
+            setStock(draft.stock || '0');
+            setSku(draft.sku || '');
+        } catch (error) {
+            console.error('Failed to parse product draft', error);
+        }
+    }, [showAddForm]);
+
+    useEffect(() => {
+        if (!showAddForm || editingId) return;
+
+        const draftData = {
+            name,
+            description,
+            descriptionSections,
+            price,
+            discountPrice,
+            costPrice,
+            categoryId,
+            subcategoryId,
+            innerSubcategoryId,
+            brandId,
+            stock,
+            sku,
+        };
+        localStorage.setItem(PRODUCT_DRAFT_KEY, JSON.stringify(draftData));
+    }, [showAddForm, editingId, name, description, descriptionSections, price, discountPrice, costPrice, categoryId, subcategoryId, innerSubcategoryId, brandId, stock, sku]);
+
+    const validateField = (fieldName, value) => {
+        if (fieldName === 'name' && !String(value || '').trim()) return 'Product title is required.';
+        if (fieldName === 'description' && String(value || '').trim().length < 20) return 'Description should be at least 20 characters.';
+        if (fieldName === 'price' && Number(value || 0) <= 0 && variants.length === 0) return 'Retail price must be greater than 0.';
+        if (fieldName === 'stock' && Number(value || 0) < 0 && variants.length === 0) return 'Stock cannot be negative.';
+        return '';
+    };
+
+    const handleValidatedInput = (fieldName, value, setter) => {
+        setter(value);
+        const error = validateField(fieldName, value);
+        setFieldErrors((prev) => ({ ...prev, [fieldName]: error }));
+    };
+
+    const generateSku = () => {
+        const titlePart = String(name || 'ITEM').toUpperCase().replace(/[^A-Z0-9]+/g, '').slice(0, 6) || 'ITEM';
+        const categoryPart = String(categories.find((c) => c._id === categoryId)?.name || 'GEN').toUpperCase().replace(/[^A-Z0-9]+/g, '').slice(0, 3) || 'GEN';
+        const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
+        setSku(`${categoryPart}-${titlePart}-${randomPart}`);
+    };
+
+    const cloneProduct = (product) => {
+        setEditingId(null);
+        setName(`${product.name} (Copy)`);
+        setDescription(product.description || '');
+        setDescriptionSections({
+            details: product.descriptionSections?.details || '',
+            benefits: product.descriptionSections?.benefits || '',
+            howToUse: product.descriptionSections?.howToUse || '',
+            ingredients: product.descriptionSections?.ingredients || '',
+            specifications: product.descriptionSections?.specifications || '',
+            shippingInformation: product.descriptionSections?.shippingInformation || ''
+        });
+        setPrice(product.price || '');
+        setDiscountPrice(product.discountPrice || '0');
+        setCostPrice(product.costPrice || '0');
+        setCategoryId(product.category?._id || product.category || '');
+        setSubcategoryId(product.subcategory?._id || product.subcategory || '');
+        setInnerSubcategoryId(product.innerSubcategory?._id || product.innerSubcategory || '');
+        setBrandId(product.brand?._id || product.brand || '');
+        setStock(product.stock || '0');
+        setVariants(product.variants || []);
+        setExistingImages(product.images || []);
+        setSelectedFiles([]);
+        setSku('');
+        setActiveFormTab('basic');
+        setShowAddForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const exportProductsCsv = () => {
+        const headers = ['ID', 'Name', 'Category', 'Brand', 'Price', 'Cost', 'Stock', 'Status'];
+        const rows = filteredProducts.map((product) => [
+            product._id,
+            product.name,
+            product.category?.name || 'Unknown',
+            product.brand?.name || 'Unbranded',
+            Number(product.price || 0).toFixed(2),
+            Number(product.costPrice || 0).toFixed(2),
+            Number(product.stock || 0),
+            product.isActive === false ? 'Inactive' : 'Active',
+        ]);
+        const csv = [headers, ...rows]
+            .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `products-export-${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     const filteredProducts = useMemo(() => {
         const searchValue = catalogSearch.trim().toLowerCase();
 
@@ -148,8 +279,20 @@ const ProductManage = () => {
 
     const createProductHandler = async (e) => {
         e.preventDefault();
+        const nameError = validateField('name', name);
+        const descriptionError = validateField('description', description);
+        const priceError = validateField('price', price);
+        const stockError = validateField('stock', stock);
+
+        if (nameError || descriptionError || priceError || stockError) {
+            setFieldErrors({ name: nameError, description: descriptionError, price: priceError, stock: stockError });
+            setActiveFormTab('basic');
+            return;
+        }
+
         try {
             setUploading(true);
+            setUploadProgress(0);
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
             let uploadedImages = [];
@@ -162,6 +305,7 @@ const ProductManage = () => {
                         headers: { 'Content-Type': 'multipart/form-data' }
                     });
                     uploadedImages.push({ public_id: data.public_id, url: data.url });
+                    setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
                 }
             }
 
@@ -189,6 +333,7 @@ const ProductManage = () => {
 
             const productData = {
                 name,
+                sku: sku || undefined,
                 description,
                 descriptionSections,
                 price: variants.length > 0 ? (finalVariants[0]?.price || 0) : Number(price),
@@ -240,11 +385,16 @@ const ProductManage = () => {
             setExistingImages([]);
             setEditingId(null);
             setShowAddForm(false);
+            setSku('');
+            setUploadProgress(0);
+            localStorage.removeItem(PRODUCT_DRAFT_KEY);
+            setLastTemplate(productData);
             fetchData();
             setUploading(false);
 
         } catch (error) {
             setUploading(false);
+            setUploadProgress(0);
             alert(error.response?.data?.message || 'Failed to save product');
         }
     };
@@ -273,6 +423,7 @@ const ProductManage = () => {
         setIsActive(product.isActive !== false); // Defaults to true if missing
         setSelectedFiles([]);
         setExistingImages(product.images || []);
+        setSku(product.sku || '');
         setShowAddForm(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -297,39 +448,50 @@ const ProductManage = () => {
                     <h1 className="text-2xl font-bold text-primary">Product Catalog</h1>
                     <p className="text-secondary text-sm mt-1">Manage listings, set retail prices, and view stock.</p>
                 </div>
-                <button
-                    onClick={() => {
-                        if (showAddForm) {
-                            setShowAddForm(false);
-                            setEditingId(null);
-                            setName('');
-                            setDescription('');
-                            setDescriptionSections({
-                                details: '',
-                                benefits: '',
-                                howToUse: '',
-                                ingredients: '',
-                                specifications: '',
-                                shippingInformation: ''
-                            });
-                            setPrice('');
-                            setDiscountPrice('0');
-                            setCostPrice('0');
-                            setCategoryId('');
-                            setSubcategoryId('');
-                            setBrandId('');
-                            setStock('0');
-                            setVariants([]);
-                            setIsActive(true);
-                            setExistingImages([]);
-                        } else {
-                            setShowAddForm(true);
-                        }
-                    }}
-                    className="btn-primary flex items-center gap-2"
-                >
-                    {showAddForm ? 'Cancel' : <><Plus size={18} /> Add Product</>}
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={exportProductsCsv}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-default bg-surface text-secondary hover:text-brand hover:border-brand transition-colors"
+                    >
+                        <Download size={16} />
+                        Export CSV
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (showAddForm) {
+                                setShowAddForm(false);
+                                setEditingId(null);
+                                setName('');
+                                setDescription('');
+                                setDescriptionSections({
+                                    details: '',
+                                    benefits: '',
+                                    howToUse: '',
+                                    ingredients: '',
+                                    specifications: '',
+                                    shippingInformation: ''
+                                });
+                                setPrice('');
+                                setDiscountPrice('0');
+                                setCostPrice('0');
+                                setCategoryId('');
+                                setSubcategoryId('');
+                                setBrandId('');
+                                setStock('0');
+                                setVariants([]);
+                                setIsActive(true);
+                                setExistingImages([]);
+                                setSku('');
+                            } else {
+                                setShowAddForm(true);
+                            }
+                        }}
+                        className="btn-primary flex items-center gap-2"
+                    >
+                        {showAddForm ? 'Cancel' : <><Plus size={18} /> Add Product</>}
+                    </button>
+                </div>
             </div>
 
             {showAddForm && (
@@ -340,13 +502,50 @@ const ProductManage = () => {
 
                     <form onSubmit={createProductHandler} className="space-y-6">
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex flex-wrap gap-2 border-b border-default pb-4">
+                            {[
+                                { key: 'basic', label: 'Basic Info', target: 'tab-basic' },
+                                { key: 'pricing', label: 'Pricing', target: 'tab-pricing' },
+                                { key: 'images', label: 'Images', target: 'tab-images' },
+                                { key: 'variants', label: 'Variants', target: 'tab-variants' },
+                                { key: 'meta', label: 'Meta', target: 'tab-meta' },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.key}
+                                    type="button"
+                                    onClick={() => {
+                                        setActiveFormTab(tab.key);
+                                        document.getElementById(tab.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }}
+                                    className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${activeFormTab === tab.key ? 'bg-brand-subtle border-brand text-brand' : 'bg-page border-default text-secondary hover:text-brand hover:border-brand'}`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (!lastTemplate) return;
+                                    setBrandId(lastTemplate.brand || '');
+                                    setCategoryId(lastTemplate.category || '');
+                                    setCostPrice(lastTemplate.costPrice || '0');
+                                    setDiscountPrice(lastTemplate.discountPrice || '0');
+                                }}
+                                className="ml-auto inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-default bg-page text-secondary hover:text-brand hover:border-brand transition-colors"
+                            >
+                                <Copy size={14} />
+                                Copy from previous
+                            </button>
+                        </div>
+
+                        <div id="tab-basic" className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-primary mb-1">Product Title</label>
+                                <label className="block text-sm font-medium text-primary mb-1">Product Title <span className="text-error">*</span></label>
                                 <input
-                                    type="text" required value={name} onChange={(e) => setName(e.target.value)}
+                                    type="text" required value={name} onChange={(e) => handleValidatedInput('name', e.target.value, setName)}
                                     className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-page text-primary"
                                 />
+                                {fieldErrors.name && <p className="text-xs text-error mt-1">{fieldErrors.name}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-primary mb-1">Brand (Optional)</label>
@@ -396,16 +595,32 @@ const ProductManage = () => {
                                     </select>
                                 </div>
                             </div>
+                            <div>
+                                <label className="block text-sm font-medium text-primary mb-1">SKU</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={sku}
+                                        onChange={(e) => setSku(e.target.value.toUpperCase())}
+                                        placeholder="Auto or manual SKU"
+                                        className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-page text-primary"
+                                    />
+                                    <button type="button" onClick={generateSku} className="px-3 py-2 rounded-lg border border-default text-secondary hover:text-brand hover:border-brand">
+                                        Generate
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-primary mb-1">Short Description</label>
+                            <label className="block text-sm font-medium text-primary mb-1">Short Description <span className="text-error">*</span></label>
                             <textarea
-                                required value={description} onChange={(e) => setDescription(e.target.value)}
+                                required value={description} onChange={(e) => handleValidatedInput('description', e.target.value, setDescription)}
                                 rows="6"
                                 placeholder="Short summary shown near product title"
                                 className="w-full px-4 py-2 border border-default rounded-lg input-focus bg-page text-primary"
                             ></textarea>
+                            {fieldErrors.description && <p className="text-xs text-error mt-1">{fieldErrors.description}</p>}
                         </div>
 
                         <div className="bg-page p-5 rounded-xl border border-default space-y-4">
@@ -469,15 +684,16 @@ const ProductManage = () => {
                         </div>
 
                         {variants.length === 0 && (
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-page p-4 rounded-xl border border-default">
+                            <div id="tab-pricing" className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-page p-4 rounded-xl border border-default">
                                 <div>
                                     <label className="block text-sm font-medium text-success mb-1 flex items-center gap-1">
-                                        <Tag size={16} /> Retail Price ($)
+                                        <Tag size={16} /> Retail Price ({currency}) <span className="text-error">*</span>
                                     </label>
                                     <input
-                                        type="number" required step="0.01" min="0" value={price} onChange={(e) => setPrice(e.target.value)}
+                                        type="number" required step="0.01" min="0" value={price} onChange={(e) => handleValidatedInput('price', e.target.value, setPrice)}
                                         className="w-full px-4 py-2 border border-default focus:border-success focus:ring-success rounded-lg outline-none bg-surface text-primary"
                                     />
+                                    {fieldErrors.price && <p className="text-xs text-error mt-1">{fieldErrors.price}</p>}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-brand mb-1 flex items-center gap-1">
@@ -501,12 +717,13 @@ const ProductManage = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-primary mb-1 flex items-center gap-1">
-                                        <Package size={16} /> Current Stock Qty
+                                        <Package size={16} /> Current Stock Qty <span className="text-error">*</span>
                                     </label>
                                     <input
-                                        type="number" required min="0" value={stock} onChange={(e) => setStock(e.target.value)}
+                                        type="number" required min="0" value={stock} onChange={(e) => handleValidatedInput('stock', e.target.value, setStock)}
                                         className="w-full px-4 py-2 border border-default focus:border-primary focus:ring-primary rounded-lg outline-none bg-surface text-primary"
                                     />
+                                    {fieldErrors.stock && <p className="text-xs text-error mt-1">{fieldErrors.stock}</p>}
                                     <p className="text-xs text-secondary mt-1">Initial stock level.</p>
                                 </div>
                             </div>
@@ -522,7 +739,7 @@ const ProductManage = () => {
                             </label>
                         </div>
 
-                        <div className="bg-page p-6 rounded-xl border border-default">
+                        <div id="tab-variants" className="bg-page p-6 rounded-xl border border-default">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-sm font-bold text-primary flex items-center gap-2">
                                     <Tag size={18} /> Product Variants (Optional)
@@ -584,7 +801,7 @@ const ProductManage = () => {
                             )}
                         </div>
 
-                        <div className="bg-brand-subtle p-6 rounded-xl border border-brand/20 border-dashed" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}>
+                        <div id="tab-images" className="bg-brand-subtle p-6 rounded-xl border border-brand/20 border-dashed" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}>
                             <h3 className="text-sm font-bold text-brand mb-3 flex items-center gap-2">
                                 <UploadCloud size={18} /> Upload Product Images
                             </h3>
@@ -594,8 +811,25 @@ const ProductManage = () => {
                                         <h4 className="text-xs font-bold text-secondary mb-2 uppercase tracking-wide">Currently Saved Images (Drag left/right implicitly via buttons)</h4>
                                         <div className="flex gap-2 overflow-x-auto pb-2">
                                             {existingImages.map((img, idx) => (
-                                                <div key={idx} className="relative w-24 h-24 flex-shrink-0 border border-default rounded-md overflow-hidden group">
+                                                <div
+                                                    key={idx}
+                                                    className="relative w-24 h-24 flex-shrink-0 border border-default rounded-md overflow-hidden group"
+                                                    draggable
+                                                    onDragStart={() => setDraggedExistingImageIndex(idx)}
+                                                    onDragOver={(e) => e.preventDefault()}
+                                                    onDrop={() => {
+                                                        if (draggedExistingImageIndex === null || draggedExistingImageIndex === idx) return;
+                                                        const reordered = [...existingImages];
+                                                        const [dragged] = reordered.splice(draggedExistingImageIndex, 1);
+                                                        reordered.splice(idx, 0, dragged);
+                                                        setExistingImages(reordered);
+                                                        setDraggedExistingImageIndex(null);
+                                                    }}
+                                                >
                                                     <img src={img.url} alt="existing" className="w-full h-full object-cover" />
+                                                    <div className="absolute left-1 top-1 bg-black/50 text-white rounded p-0.5">
+                                                        <GripVertical size={12} />
+                                                    </div>
                                                     <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center items-center gap-1">
                                                         <div className="flex gap-1">
                                                             <button type="button" onClick={() => {
@@ -641,8 +875,21 @@ const ProductManage = () => {
                                     />
                                 </div>
                                 <p className="text-xs text-brand mt-2">Select new files to append to the product gallery.</p>
+                                {uploading && (
+                                    <div className="mt-3">
+                                        <div className="w-full h-2 bg-surface rounded-full overflow-hidden">
+                                            <div className="h-full bg-brand transition-all" style={{ width: `${uploadProgress}%` }} />
+                                        </div>
+                                        <p className="text-xs text-secondary mt-1">Uploading {uploadProgress}%</p>
+                                    </div>
+                                )}
                                 {selectedFiles.length > 0 && (
                                     <div className="mt-3">
+                                        <div className="mb-2 text-xs text-secondary">
+                                            {Array.from(selectedFiles).some((file) => file.size > 2 * 1024 * 1024) && (
+                                                <p className="text-warning">Some images are larger than 2MB. Consider compressing for faster loading.</p>
+                                            )}
+                                        </div>
                                         <div className="flex gap-2 overflow-x-auto pb-2">
                                             {Array.from(selectedFiles).map((file, idx) => (
                                                 <div key={idx} className="w-16 h-16 flex-shrink-0 border border-success/30 rounded overflow-hidden relative group">
@@ -665,7 +912,7 @@ const ProductManage = () => {
                             </div>
                         </div>
 
-                        <div className="pt-4 flex justify-end gap-3">
+                        <div id="tab-meta" className="pt-4 flex justify-end gap-3">
                             <button type="button" disabled={uploading} onClick={() => setShowAddForm(false)} className="px-5 py-2.5 text-secondary bg-surface hover:brightness-95 border border-default font-medium rounded-lg transition-colors">
                                 Cancel
                             </button>
@@ -802,14 +1049,23 @@ const ProductManage = () => {
                                             {currency}{product.costPrice?.toFixed(2) || '0.00'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            {product.stock > 0 ? (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-info-bg text-info">
-                                                    {product.stock} in stock
-                                                </span>
-                                            ) : (
+                                            {Number(product.stock || 0) <= 0 ? (
                                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-error-bg text-error">
                                                     Out of stock
                                                 </span>
+                                            ) : Number(product.stock || 0) <= 10 ? (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning-bg text-warning">
+                                                    Low ({product.stock})
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success-bg text-success">
+                                                    Healthy ({product.stock})
+                                                </span>
+                                            )}
+                                            {Number(product.stock || 0) <= 5 && (
+                                                <div className="text-[10px] text-error mt-1 uppercase font-bold tracking-wider">
+                                                    Reorder alert
+                                                </div>
                                             )}
                                             {product.variants && product.variants.length > 0 && (
                                                 <div className="text-[10px] text-tertiary mt-1 uppercase font-bold tracking-wider">
@@ -835,6 +1091,13 @@ const ProductManage = () => {
                                                 title="Edit Product"
                                             >
                                                 <Edit size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => cloneProduct(product)}
+                                                className="text-tertiary hover:text-info p-2 rounded-lg transition-colors"
+                                                title="Clone Product"
+                                            >
+                                                <Copy size={18} />
                                             </button>
                                             <button
                                                 onClick={() => deleteProductHandler(product._id, product.name)}

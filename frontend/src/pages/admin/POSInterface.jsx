@@ -13,6 +13,8 @@ const POSInterface = () => {
     const [customItemName, setCustomItemName] = useState('');
     const [customItemPrice, setCustomItemPrice] = useState('');
     const [customItemCost, setCustomItemCost] = useState('');
+    const [quickAddQty, setQuickAddQty] = useState(1);
+    const [previewModalOpen, setPreviewModalOpen] = useState(false);
 
     // Cart State
     const [cartItems, setCartItems] = useState([]);
@@ -127,7 +129,8 @@ const POSInterface = () => {
         return baseDiscount > 0 && baseDiscount < basePrice ? baseDiscount : basePrice;
     };
 
-    const addToCart = (product, variant = null) => {
+    const addToCart = (product, variant = null, qtyToAdd = 1) => {
+        const safeQtyToAdd = Math.max(Number(qtyToAdd) || 1, 1);
         const checkStock = variant ? variant.stock : product.stock;
         if (checkStock === 0) {
             toast.error('Out of stock!');
@@ -138,11 +141,11 @@ const POSInterface = () => {
         const existItem = cartItems.find((x) => x.cartId === cartId);
 
         if (existItem) {
-            if (existItem.qty >= checkStock) {
+            if (existItem.qty + safeQtyToAdd > checkStock) {
                 toast.error('Reached maximum stock limit.');
                 return;
             }
-            setCartItems(cartItems.map((x) => x.cartId === cartId ? { ...existItem, qty: existItem.qty + 1 } : x));
+            setCartItems(cartItems.map((x) => x.cartId === cartId ? { ...existItem, qty: existItem.qty + safeQtyToAdd } : x));
         } else {
             setCartItems([...cartItems, {
                 cartId,
@@ -151,7 +154,7 @@ const POSInterface = () => {
                 image: product.images[0]?.url || '',
                 price: getEffectivePrice(product, variant),
                 costPrice: Number(variant ? (variant.costPrice ?? product.costPrice ?? 0) : (product.costPrice ?? 0)),
-                qty: 1,
+                qty: Math.min(safeQtyToAdd, checkStock),
                 stock: checkStock,
                 variantId: variant ? variant._id : undefined,
                 variantName: variant ? `${variant.name}: ${variant.value}` : undefined
@@ -202,7 +205,7 @@ const POSInterface = () => {
         if (product.variants && product.variants.length > 0) {
             setSelectedProductForVariant(product);
         } else {
-            addToCart(product);
+            addToCart(product, null, quickAddQty);
         }
     };
 
@@ -255,57 +258,56 @@ const POSInterface = () => {
             return;
         }
 
-        if (window.confirm(`Process ${paymentMethod} transaction for ${currency}${totalDue.toFixed(2)}?`)) {
-            try {
-                const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+        try {
+            const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
-                const { data } = await axios.post('/api/pos', {
-                    orderItems: cartItems.map(x => ({
-                        name: x.name,
-                        qty: x.qty,
-                        image: x.image,
-                        price: x.price,
-                        product: x.product,
-                        costPrice: x.costPrice,
-                        variantId: x.variantId,
-                        variantName: x.variantName
-                    })),
-                    paymentMethod,
-                    itemsPrice,
-                    totalPrice: totalDue,
-                    discountType,
-                    discountValue: parsedDiscountValue,
-                    customerName: trimmedName,
-                    customerPhone: trimmedPhone,
-                    cashGiven: paidNowAmount,
-                    applyCreditAmount: appliedCredit,
-                }, configHeader);
+            const { data } = await axios.post('/api/pos', {
+                orderItems: cartItems.map(x => ({
+                    name: x.name,
+                    qty: x.qty,
+                    image: x.image,
+                    price: x.price,
+                    product: x.product,
+                    costPrice: x.costPrice,
+                    variantId: x.variantId,
+                    variantName: x.variantName
+                })),
+                paymentMethod,
+                itemsPrice,
+                totalPrice: totalDue,
+                discountType,
+                discountValue: parsedDiscountValue,
+                customerName: trimmedName,
+                customerPhone: trimmedPhone,
+                cashGiven: paidNowAmount,
+                applyCreditAmount: appliedCredit,
+            }, configHeader);
 
-                // Set receipt data from response
-                setReceiptData({
-                    ...data,
-                    businessName: config?.businessName || 'Beauty P&C',
-                    contactPhone: config?.contactPhone || '',
-                    contactEmail: config?.contactEmail || '',
-                    currency
-                });
+            // Set receipt data from response
+            setReceiptData({
+                ...data,
+                businessName: config?.businessName || 'Beauty P&C',
+                contactPhone: config?.contactPhone || '',
+                contactEmail: config?.contactEmail || '',
+                currency
+            });
 
-                setCartItems([]);
-                setCustomerName('');
-                setCustomerPhone('');
-                setCashGiven('');
-                setApplyCreditAmount('0');
-                setCustomerAccount(null);
-                setRecordPaymentAmount('');
-                setDiscountType('none');
-                setDiscountValue('');
-                // Refetch products to update stock numbers visually
-                setSearch('');
-                toast.success('POS order processed successfully.');
+            setCartItems([]);
+            setCustomerName('');
+            setCustomerPhone('');
+            setCashGiven('');
+            setApplyCreditAmount('0');
+            setCustomerAccount(null);
+            setRecordPaymentAmount('');
+            setDiscountType('none');
+            setDiscountValue('');
+            setPreviewModalOpen(false);
+            // Refetch products to update stock numbers visually
+            setSearch('');
+            toast.success('POS order processed successfully.');
 
-            } catch (error) {
-                toast.error(error.response?.data?.message || 'Failed to process POS order');
-            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to process POS order');
         }
     };
 
@@ -423,6 +425,19 @@ const POSInterface = () => {
                         >
                             Add Custom Product
                         </button>
+                    </div>
+                    <div className="mt-3 flex items-center flex-wrap gap-2">
+                        <span className="text-xs text-secondary font-bold uppercase tracking-wide">Quick Qty</span>
+                        {[1, 2, 3, 4, 5, 10].map((qtyValue) => (
+                            <button
+                                key={qtyValue}
+                                type="button"
+                                onClick={() => setQuickAddQty(qtyValue)}
+                                className={`px-2.5 py-1 text-xs rounded-lg border ${quickAddQty === qtyValue ? 'bg-brand-subtle border-brand text-brand' : 'bg-page border-default text-secondary hover:border-brand hover:text-brand'}`}
+                            >
+                                {qtyValue}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -739,11 +754,11 @@ const POSInterface = () => {
                     </div>
 
                     <button
-                        onClick={placeOrderHandler}
+                        onClick={() => setPreviewModalOpen(true)}
                         disabled={cartItems.length === 0}
                         className="btn-primary w-full py-4 mt-2 text-white rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md font-bold text-lg tracking-wide"
                     >
-                        {paymentMethod === 'Credit' ? `Save Credit Sale (${currency}${totalDue.toFixed(2)})` : `Charge ${currency}${totalDue.toFixed(2)}`}
+                        Preview Receipt ({currency}{totalDue.toFixed(2)})
                     </button>
                 </div>
 
@@ -760,7 +775,7 @@ const POSInterface = () => {
                             {selectedProductForVariant.variants.map(variant => (
                                 <button
                                     key={variant._id}
-                                    onClick={() => addToCart(selectedProductForVariant, variant)}
+                                    onClick={() => addToCart(selectedProductForVariant, variant, quickAddQty)}
                                     disabled={variant.stock === 0}
                                     className={`w-full flex items-center justify-between p-4 border rounded-xl text-left transition-colors ${variant.stock > 0 ? 'border-default hover:border-brand hover:bg-brand-subtle text-primary' : 'border-error-bg bg-error-bg opacity-60 cursor-not-allowed'}`}
                                 >
@@ -775,6 +790,34 @@ const POSInterface = () => {
                             ))}
                         </div>
                         <button onClick={() => setSelectedProductForVariant(null)} className="w-full mt-6 py-3 border border-default text-secondary rounded-xl hover:bg-page font-bold transition-all">Cancel</button>
+                    </div>
+                </div>
+            )}
+
+            {previewModalOpen && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-surface rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+                        <div className="px-5 py-4 border-b border-default bg-page flex items-center justify-between">
+                            <h3 className="font-bold text-primary">Receipt Preview</h3>
+                            <button onClick={() => setPreviewModalOpen(false)} className="text-tertiary hover:text-secondary">
+                                <XCircle size={20} />
+                            </button>
+                        </div>
+                        <div className="p-5 space-y-3 text-sm">
+                            <div className="flex justify-between"><span className="text-secondary">Customer</span><span className="font-semibold text-primary">{customerName || 'Walk-in'}</span></div>
+                            <div className="flex justify-between"><span className="text-secondary">Payment Method</span><span className="font-semibold text-primary">{paymentMethod}</span></div>
+                            <div className="flex justify-between"><span className="text-secondary">Items</span><span className="font-semibold text-primary">{cartItems.reduce((a, c) => a + c.qty, 0)}</span></div>
+                            <div className="border-t border-default pt-3 space-y-2">
+                                <div className="flex justify-between"><span className="text-secondary">Subtotal</span><span>{currency}{itemsPrice.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span className="text-secondary">Discount</span><span>-{currency}{discountAmount.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span className="text-secondary">Applied Credit</span><span>-{currency}{appliedCredit.toFixed(2)}</span></div>
+                                <div className="flex justify-between text-base font-bold text-primary"><span>Total</span><span>{currency}{totalDue.toFixed(2)}</span></div>
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-default bg-page flex gap-2 justify-end">
+                            <button onClick={() => setPreviewModalOpen(false)} className="px-4 py-2 rounded-lg border border-default text-secondary hover:text-primary">Cancel</button>
+                            <button onClick={placeOrderHandler} className="btn-primary px-4 py-2 rounded-lg">Confirm & Charge</button>
+                        </div>
                     </div>
                 </div>
             )}

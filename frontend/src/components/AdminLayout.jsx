@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useAuthStore } from '../context/useAuthStore';
 import { useTheme } from '../context/ThemeContext';
 import logoImage from '../assets/logo-no-background.png';
@@ -24,8 +25,34 @@ const AdminLayout = () => {
     const { userInfo } = useAuthStore();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
     const navigate = useNavigate();
     const { isDark, toggleMode } = useTheme();
+
+    useEffect(() => {
+        const fetchPendingOrders = async () => {
+            try {
+                if (!userInfo?.token || userInfo?.role !== 'admin') {
+                    setPendingOrdersCount(0);
+                    return;
+                }
+
+                const reqConfig = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+                const { data } = await axios.get('/api/orders', reqConfig);
+                const pendingCount = (data || []).filter((order) => {
+                    if (order.isDelivered) return false;
+                    const status = String(order.status || '').toLowerCase();
+                    return status === 'pending' || status === 'processing' || status === '';
+                }).length;
+                setPendingOrdersCount(pendingCount);
+            } catch (error) {
+                console.error('Failed to fetch pending orders count', error);
+                setPendingOrdersCount(0);
+            }
+        };
+
+        fetchPendingOrders();
+    }, [location.pathname, userInfo?.role, userInfo?.token]);
 
     if (!userInfo || userInfo.role !== 'admin') {
         return (
@@ -86,6 +113,7 @@ const AdminLayout = () => {
                 <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto">
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+                        const showPendingBadge = item.path === '/admin/orders' && pendingOrdersCount > 0;
                         return (
                             <Link
                                 key={item.name}
@@ -94,7 +122,12 @@ const AdminLayout = () => {
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
                                 {item.icon}
-                                {item.name}
+                                <span className="flex-1">{item.name}</span>
+                                {showPendingBadge && (
+                                    <span className="inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-warning-bg text-warning text-xs font-bold px-1.5">
+                                        {pendingOrdersCount}
+                                    </span>
+                                )}
                             </Link>
                         );
                     })}
@@ -116,6 +149,11 @@ const AdminLayout = () => {
                             <Menu size={24} />
                         </button>
                         <img src={logoImage} alt="Beauty P&C Logo" className="h-6 w-auto object-contain dark:brightness-0 dark:invert" />
+                        {pendingOrdersCount > 0 && (
+                            <span className="inline-flex items-center rounded-full bg-warning-bg text-warning text-[11px] font-bold px-2.5 py-1">
+                                {pendingOrdersCount} pending
+                            </span>
+                        )}
                     </div>
                     {/* Simple mobile menu (could be expanded) */}
                     <select

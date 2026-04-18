@@ -100,6 +100,7 @@ const createProduct = async (req, res) => {
     try {
         const {
             name,
+            sku,
             price,
             discountPrice,
             costPrice,
@@ -118,6 +119,7 @@ const createProduct = async (req, res) => {
         const product = new Product({
             user: req.user._id,
             name: name || 'Sample name',
+            sku: sku || undefined,
             price: price || 0,
             discountPrice: discountPrice || 0,
             costPrice: costPrice || 0,
@@ -153,6 +155,7 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
     const {
         name,
+        sku,
         price,
         discountPrice,
         costPrice,
@@ -173,6 +176,7 @@ const updateProduct = async (req, res) => {
 
     if (product) {
         product.name = name || product.name;
+        product.sku = sku !== undefined ? sku : product.sku;
         product.price = price !== undefined ? price : product.price;
         product.discountPrice = discountPrice !== undefined ? discountPrice : product.discountPrice;
         product.costPrice = costPrice !== undefined ? costPrice : product.costPrice;
