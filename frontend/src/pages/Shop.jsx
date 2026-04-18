@@ -41,6 +41,11 @@ const Shop = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
+    const arraysEqual = (a = [], b = []) => {
+        if (a.length !== b.length) return false;
+        return a.every((value, index) => value === b[index]);
+    };
+
     // Sync state with URL when navigating from Navbar
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -51,30 +56,22 @@ const Shop = () => {
         const search = params.get('search');
         const pageFromUrl = Number(params.get('page'));
         const pageSizeFromUrl = Number(params.get('pageSize'));
-        
-        if (category) setSelectedCategories([category]);
-        else setSelectedCategories([]);
 
-        if (subcategory) setSelectedSubcategories([subcategory]);
-        else setSelectedSubcategories([]);
+        const nextCategories = category ? [category] : [];
+        const nextSubcategories = subcategory ? [subcategory] : [];
+        const nextInnerSubcategories = innerSubcategory ? [innerSubcategory] : [];
+        const nextBrands = brand ? [brand] : [];
+        const nextSearch = search || '';
+        const nextPage = pageFromUrl > 0 ? pageFromUrl : 1;
+        const nextPageSize = [12, 24, 48].includes(pageSizeFromUrl) ? pageSizeFromUrl : 12;
 
-        if (innerSubcategory) setSelectedInnerSubcategories([innerSubcategory]);
-        else setSelectedInnerSubcategories([]);
-
-        if (brand) setSelectedBrands([brand]);
-        else setSelectedBrands([]);
-        
-        if (search) setSearchKeyword(search);
-        else setSearchKeyword('');
-
-        if (pageFromUrl > 0) setPage(pageFromUrl);
-        else setPage(1);
-
-        if ([12, 24, 48].includes(pageSizeFromUrl)) {
-            setPageSize(pageSizeFromUrl);
-        } else {
-            setPageSize(12);
-        }
+        setSelectedCategories((prev) => (arraysEqual(prev, nextCategories) ? prev : nextCategories));
+        setSelectedSubcategories((prev) => (arraysEqual(prev, nextSubcategories) ? prev : nextSubcategories));
+        setSelectedInnerSubcategories((prev) => (arraysEqual(prev, nextInnerSubcategories) ? prev : nextInnerSubcategories));
+        setSelectedBrands((prev) => (arraysEqual(prev, nextBrands) ? prev : nextBrands));
+        setSearchKeyword((prev) => (prev === nextSearch ? prev : nextSearch));
+        setPage((prev) => (prev === nextPage ? prev : nextPage));
+        setPageSize((prev) => (prev === nextPageSize ? prev : nextPageSize));
 
         setFiltersReady(true);
     }, [location.search]);
