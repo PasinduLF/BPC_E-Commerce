@@ -7,6 +7,13 @@ import { toast } from 'sonner';
 import StatusLegend from '../../components/admin/StatusLegend';
 
 const POSInterface = () => {
+    const FALLBACK_PRODUCT_IMAGE = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23f5f5f4%22/%3E%3Cpath%20d%3D%22M0%20140h200v60H0z%22%20fill%3D%22%23e7e5e4%22/%3E%3Ccircle%20cx%3D%2268%22%20cy%3D%2275%22%20r%3D%2214%22%20fill%3D%22%23d6d3d1%22/%3E%3Cpath%20d%3D%22M44%20150l30-34%2022%2026%2020-22%2036%2034H44z%22%20fill%3D%22%23d6d3d1%22/%3E%3C/svg%3E';
+
+    const getProductImageUrl = (product) => {
+        const imageUrl = product?.images?.[0]?.url;
+        return !imageUrl || imageUrl.includes('via.placeholder.com') ? FALLBACK_PRODUCT_IMAGE : imageUrl;
+    };
+
     const { userInfo } = useAuthStore();
     const [products, setProducts] = useState([]);
     const [search, setSearch] = useState('');
@@ -41,12 +48,34 @@ const POSInterface = () => {
 
     useEffect(() => {
         const fetchProducts = async () => {
+            setLoading(true);
             try {
-                const { data } = await axios.get('/api/products?keyword=' + search);
-                setProducts(data.products || data);
-                setLoading(false);
+                const pageSize = 48;
+                const keyword = encodeURIComponent(search || '');
+
+                const firstResponse = await axios.get(`/api/products?keyword=${keyword}&pageSize=${pageSize}&pageNumber=1`);
+                const firstPageProducts = firstResponse.data?.products || [];
+                const totalPages = Number(firstResponse.data?.pages || 1);
+
+                if (totalPages <= 1) {
+                    setProducts(firstPageProducts);
+                    return;
+                }
+
+                const pageRequests = [];
+                for (let currentPage = 2; currentPage <= totalPages; currentPage += 1) {
+                    pageRequests.push(
+                        axios.get(`/api/products?keyword=${keyword}&pageSize=${pageSize}&pageNumber=${currentPage}`)
+                    );
+                }
+
+                const remainingResponses = await Promise.all(pageRequests);
+                const remainingProducts = remainingResponses.flatMap((response) => response.data?.products || []);
+
+                setProducts([...firstPageProducts, ...remainingProducts]);
             } catch (error) {
                 console.error('Failed to load products', error);
+            } finally {
                 setLoading(false);
             }
         };
@@ -152,7 +181,7 @@ const POSInterface = () => {
                 cartId,
                 product: product._id,
                 name: product.name,
-                image: product.images[0]?.url || '',
+                image: getProductImageUrl(product),
                 price: getEffectivePrice(product, variant),
                 costPrice: Number(variant ? (variant.costPrice ?? product.costPrice ?? 0) : (product.costPrice ?? 0)),
                 qty: Math.min(safeQtyToAdd, checkStock),
@@ -474,7 +503,7 @@ const POSInterface = () => {
                                     >
                                         <div className="aspect-square bg-page rounded-lg mb-3 overflow-hidden">
                                             {product.images[0] ? (
-                                                <img src={product.images[0].url} alt={product.name || 'Product image'} className="w-full h-full object-cover" />
+                                                <img src={getProductImageUrl(product)} alt={product.name || 'Product image'} className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">No Img</div>
                                             )}

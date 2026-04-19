@@ -16,6 +16,7 @@ const Navbar = () => {
     const [searchSuggestions, setSearchSuggestions] = useState([]);
     const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
     
     // Mega Menu State
     const [categories, setCategories] = useState([]);

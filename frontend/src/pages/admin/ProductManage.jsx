@@ -8,6 +8,12 @@ import { notify } from '../../utils/notify';
 import StatusLegend from '../../components/admin/StatusLegend';
 
 const PRODUCT_DRAFT_KEY = 'admin-product-draft-v1';
+const FALLBACK_PRODUCT_IMAGE = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20300%20300%22%3E%3Crect%20width%3D%22300%22%20height%3D%22300%22%20fill%3D%22%23f5f5f4%22/%3E%3Cpath%20d%3D%22M0%20210h300v90H0z%22%20fill%3D%22%23e7e5e4%22/%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%22115%22%20r%3D%2222%22%20fill%3D%22%23d6d3d1%22/%3E%3Cpath%20d%3D%22M70%20235l44-52%2034%2038%2030-32%2052%2050H70z%22%20fill%3D%22%23d6d3d1%22/%3E%3Ctext%20x%3D%22150%22%20y%3D%22258%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2224%22%20fill%3D%22%239ca3af%22%3EProduct%3C/text%3E%3C/svg%3E';
+
+const getProductImageUrl = (product) => {
+    const imageUrl = product?.images?.[0]?.url;
+    return !imageUrl || imageUrl.includes('via.placeholder.com') ? FALLBACK_PRODUCT_IMAGE : imageUrl;
+};
 
 const ProductManage = () => {
     const { userInfo } = useAuthStore();
@@ -108,18 +114,36 @@ const ProductManage = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [prodRes, catRes, brandRes] = await Promise.all([
-                axios.get('/api/products?admin=true'),
+            const pageSize = 48;
+            const [firstProductRes, catRes, brandRes] = await Promise.all([
+                axios.get(`/api/products?admin=true&pageNumber=1&pageSize=${pageSize}`),
                 axios.get('/api/categories'),
                 axios.get('/api/brands')
             ]);
 
-            setProducts(prodRes.data.products || prodRes.data);
+            const firstPageProducts = firstProductRes.data?.products || [];
+            const totalPages = Number(firstProductRes.data?.pages || 1);
+
+            if (totalPages > 1) {
+                const remainingRequests = [];
+                for (let page = 2; page <= totalPages; page += 1) {
+                    remainingRequests.push(
+                        axios.get(`/api/products?admin=true&pageNumber=${page}&pageSize=${pageSize}`)
+                    );
+                }
+
+                const remainingResponses = await Promise.all(remainingRequests);
+                const remainingProducts = remainingResponses.flatMap((response) => response.data?.products || []);
+                setProducts([...firstPageProducts, ...remainingProducts]);
+            } else {
+                setProducts(firstPageProducts);
+            }
+
             setCategories(catRes.data);
             setBrands(brandRes.data);
-            setLoading(false);
         } catch (error) {
             console.error(error);
+        } finally {
             setLoading(false);
         }
     };
@@ -358,7 +382,7 @@ const ProductManage = () => {
                 }
                 await axios.put(`/api/products/${editingId}`, productData, config);
             } else {
-                productData.images = finalImages.length > 0 ? finalImages : [{ public_id: 'placeholder', url: 'https://via.placeholder.com/300' }];
+                productData.images = finalImages.length > 0 ? finalImages : [{ public_id: 'placeholder', url: FALLBACK_PRODUCT_IMAGE }];
                 await axios.post('/api/products', productData, config);
             }
 
@@ -1021,7 +1045,7 @@ const ProductManage = () => {
                                             <Link to={`/product/${product._id}`} target="_blank" className="flex items-center gap-4 group cursor-pointer inline-flex">
                                                 <div className="w-12 h-12 rounded-lg bg-brand-subtle border border-brand/20 overflow-hidden group-hover:ring-2 ring-brand/50 transition-all">
                                                     {product.images?.[0] ? (
-                                                        <img src={product.images[0].url} alt={product.name} className="w-full h-full object-cover" />
+                                                        <img src={getProductImageUrl(product)} alt={product.name} className="w-full h-full object-cover" />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center text-xs text-brand/50">Img</div>
                                                     )}
@@ -1145,7 +1169,7 @@ const ProductManage = () => {
                             <div className="flex items-start gap-3">
                                 <div className="w-20 h-20 rounded-lg overflow-hidden bg-page border border-default">
                                     {product.images?.[0] ? (
-                                        <img src={product.images[0].url} alt={product.name || 'Product image'} className="w-full h-full object-cover" />
+                                        <img src={getProductImageUrl(product)} alt={product.name || 'Product image'} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">No Image</div>
                                     )}
