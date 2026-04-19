@@ -125,7 +125,7 @@ const OrderScreen = () => {
 
     return loading ? (
         <div className="bg-page min-h-screen py-12 animate-fade-in">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
                     <div className="skeleton h-9 w-72" />
                     <div className="skeleton h-7 w-24 rounded-full" />
@@ -163,7 +163,7 @@ const OrderScreen = () => {
         <div className="min-h-screen flex justify-center items-center text-error bg-page">{error}</div>
     ) : (
         <div className="bg-page min-h-screen py-12 animate-fade-in">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
                     <h1 className="text-2xl sm:text-3xl font-black text-primary break-all">
                         Order <span className="text-brand">#{displayOrderId}</span>

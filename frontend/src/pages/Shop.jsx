@@ -279,8 +279,8 @@ const Shop = () => {
     ];
 
     return (
-        <div className="bg-page min-h-screen py-12">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+        <div className="bg-page min-h-screen py-6">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-8 animate-fade-in">
 
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">

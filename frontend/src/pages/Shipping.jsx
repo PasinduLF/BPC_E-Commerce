@@ -54,7 +54,7 @@ const Shipping = () => {
 
     return (
         <div className="bg-page min-h-screen py-12 animate-fade-in">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
 
                 {/* Step Indicator */}
                 <StepIndicator currentStep={2} steps={['Shopping Bag', 'Shipping', 'Payment']} />

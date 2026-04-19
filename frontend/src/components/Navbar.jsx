@@ -88,7 +88,7 @@ const Navbar = () => {
         <header className="relative w-full z-50">
             {/* Tier 1: Announcement Bar (Desktop Only) */}
             <div className="hidden md:block bg-primary text-surface text-xs font-medium py-1.5 px-4 z-50 relative">
-                <div className="max-w-7xl mx-auto flex justify-between items-center">
+                <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 flex justify-between items-center">
                     <div className="flex items-center gap-2">
                         <Sparkles size={12} className="text-brand" />
                         <span>Free delivery on orders over {config?.currencySymbol || '$'}5,000</span>
@@ -102,7 +102,7 @@ const Navbar = () => {
 
             {/* Tier 2: Main Navigation Bar */}
             <nav className={`sticky top-0 w-full transition-all duration-300 ${isScrolled ? 'desktop-nav-scrolled' : 'bg-surface/80 backdrop-blur-md border-b border-default shadow-sm'}`}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                     <div className="flex justify-between items-center h-16 sm:h-20">
 
                         {/* Mobile left side (Hamburger) */}
@@ -155,7 +155,7 @@ const Navbar = () => {
                                         
                                         {/* Dropdown Panel */}
                                         {activeMegaMenu === category._id && category.subcategories?.length > 0 && (
-                                            <div className="absolute left-1/2 -translate-x-1/2 top-20 w-max min-w-[700px] max-w-5xl bg-surface border border-default shadow-2xl mega-menu-animate rounded-2xl overflow-hidden cursor-default pointer-events-auto flex">
+                                            <div className="absolute left-1/2 -translate-x-1/2 top-20 w-max min-w-[700px] max-w-6xl bg-surface border border-default shadow-2xl mega-menu-animate rounded-2xl overflow-hidden cursor-default pointer-events-auto flex">
                                                 
                                                 {/* Left Sidebar: Subcategories */}
                                                 <div className="w-1/3 bg-subtle border-r border-default p-4 space-y-1">

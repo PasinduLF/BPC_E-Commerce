@@ -130,7 +130,7 @@ const Profile = () => {
     if (pageLoading) {
         return (
             <div className="bg-page min-h-screen py-12 animate-fade-in">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                     <div className="mb-8">
                         <div className="skeleton h-10 w-44" />
                     </div>
@@ -174,7 +174,7 @@ const Profile = () => {
 
     return (
         <div className="bg-page min-h-screen py-12 animate-fade-in">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                 
                 <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight">My Profile</h1>

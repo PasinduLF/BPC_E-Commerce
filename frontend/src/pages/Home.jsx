@@ -166,7 +166,7 @@ const Home = () => {
                     <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-brand to-brand-subtle opacity-20 blur-3xl mix-blend-multiply"></div>
                 </div>
 
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:text-left z-10">
+                <div className="relative max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 text-center sm:text-left z-10">
                     <div className="lg:grid lg:grid-cols-2 lg:gap-12 items-center">
                         <div className="mb-12 lg:mb-0">
                             {config?.storefrontAppearance?.heroHighlight && (
@@ -236,7 +236,7 @@ const Home = () => {
             {/* Shop by Category */}
             {categories.length > 0 && (
                 <div className="py-16 bg-page border-b border-default scroll-reveal">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                         <div className="flex items-end justify-between mb-12">
                             <div>
                                 <h2 className="text-3xl md:text-4xl font-black text-primary mb-3">Shop by Category</h2>
@@ -271,7 +271,7 @@ const Home = () => {
             {/* Featured / Best Sellers */}
             {featuredProducts.length > 0 && (
                 <section className="py-24 bg-page border-y border-default scroll-reveal delay-100">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Best Sellers</h2>
                             <div className="w-16 h-1.5 bg-brand mx-auto rounded-full mb-4"></div>
@@ -291,7 +291,7 @@ const Home = () => {
             {trendingProducts.length > 0 && (
                 <section className="py-24 bg-surface relative overflow-hidden scroll-reveal">
                     <div className="absolute -left-40 top-40 w-96 h-96 bg-brand-subtle rounded-full blur-3xl opacity-50 z-0"></div>
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 relative z-10">
                         <div className="flex items-end justify-between mb-12">
                             <div>
                                 <h2 className="text-3xl md:text-4xl font-black text-primary mb-3">New Arrivals</h2>
@@ -314,7 +314,7 @@ const Home = () => {
             {/* Value Proposition (Brand Values) */}
             <section className="bg-primary py-20 lg:py-24 text-surface relative scroll-reveal delay-100">
                 <div className="absolute inset-0 opacity-5 pattern-dots text-surface"></div>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 relative z-10">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-black mb-4 text-surface">Why Choose Beauty P&C</h2>
                         <p className="text-surface/70 font-medium max-w-2xl mx-auto">We are committed to providing you with the best experience and highest quality products.</p>

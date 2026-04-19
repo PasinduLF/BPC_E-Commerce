@@ -39,7 +39,7 @@ const Wishlist = () => {
     if (pageLoading) {
         return (
             <div className="bg-page min-h-screen py-12 animate-fade-in">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 space-y-8">
                     <div className="skeleton h-10 w-56" />
                     <div className="bg-surface rounded-2xl border border-default p-4 sm:p-6 flex flex-col sm:flex-row gap-3 justify-between">
                         <div className="skeleton h-6 w-48" />
@@ -68,7 +68,7 @@ const Wishlist = () => {
 
     return (
         <div className="bg-page min-h-screen py-12 animate-fade-in">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
 
                 <div className="flex items-center justify-between mb-8">
                     <h1 className="text-3xl font-black text-primary tracking-tight">Your Wishlist</h1>

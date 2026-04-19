@@ -34,7 +34,7 @@ const About = () => {
                 <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[600px] h-[600px] rounded-full bg-brand opacity-10 blur-3xl mix-blend-multiply pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[400px] h-[400px] rounded-full bg-brand opacity-10 blur-3xl mix-blend-multiply pointer-events-none"></div>
                 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 relative z-10 text-center">
                     <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-primary tracking-tight mb-6">
                         About <span className="bg-gradient-to-r from-brand to-brand-hover bg-clip-text text-transparent">{config?.businessName || 'Beauty P&C'}</span>
                     </h1>
@@ -45,7 +45,7 @@ const About = () => {
             </div>
 
             {/* Our Story Section */}
-            <div className="py-16 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-slide-up">
+            <div className="py-16 sm:py-20 max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 animate-slide-up">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16 items-center">
                     <div>
                         <div className="w-full aspect-square md:aspect-auto md:h-[500px] bg-gradient-to-tr from-brand-subtle to-surface border border-default rounded-3xl overflow-hidden relative shadow-lg">
@@ -77,7 +77,7 @@ const About = () => {
 
             {/* Why Choose Us */}
             <div className="bg-surface border-y border-default py-16 sm:py-20 animate-slide-up-delayed-1">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-black text-primary mb-4">The Beauty P&C Difference</h2>
                         <p className="text-secondary max-w-2xl mx-auto">

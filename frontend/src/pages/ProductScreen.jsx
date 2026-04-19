@@ -187,7 +187,7 @@ const ProductScreen = () => {
     if (loading) {
         return (
             <div className="bg-page min-h-screen py-8 animate-fade-in">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                     <div className="skeleton h-4 w-64 mb-6" />
                     <div className="bg-surface rounded-[2rem] shadow-sm border border-default overflow-hidden lg:grid lg:grid-cols-2 lg:gap-8 p-6 lg:p-12">
                         <div className="mb-8 lg:mb-0">
@@ -226,7 +226,7 @@ const ProductScreen = () => {
 
     return (
         <div className="bg-page min-h-screen py-8 animate-fade-in">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                 <Breadcrumbs 
                     category={product.category}
                     subcategory={product.subcategory}
