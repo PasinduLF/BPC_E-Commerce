@@ -12,7 +12,6 @@ import BottomMobileNav from './BottomMobileNav';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false); // Mobile Drawer
-    const [dropdownOpen, setDropdownOpen] = useState(false); // User Profile
     const [searchQuery, setSearchQuery] = useState('');
     const [searchSuggestions, setSearchSuggestions] = useState([]);
     const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);

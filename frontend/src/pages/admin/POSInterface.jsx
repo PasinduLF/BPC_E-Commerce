@@ -378,11 +378,11 @@ const POSInterface = () => {
 
             {/* Product Catalog Side */}
             <div className="flex-1 flex flex-col bg-surface rounded-2xl shadow-sm border border-default overflow-hidden">
-                <div className="p-4 border-b border-default flex items-center justify-between bg-page relative">
+                <div className="p-4 border-b border-default flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-page relative">
                     <h2 className="text-lg font-bold text-primary flex items-center gap-2">
                         <ShoppingBag size={20} className="text-brand" /> Walk-in Catalog
                     </h2>
-                    <div className="relative w-64">
+                    <div className="relative w-full sm:w-64">
                         <input
                             type="text" placeholder="Search physical stock..."
                             value={search} onChange={(e) => setSearch(e.target.value)}

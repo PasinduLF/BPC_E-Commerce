@@ -73,12 +73,12 @@ const Contact = () => {
     };
 
     return (
-        <div className="bg-page min-h-screen py-16 animate-fade-in">
+        <div className="bg-page min-h-screen py-12 sm:py-16 animate-fade-in">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 {/* Header */}
-                <div className="text-center max-w-3xl mx-auto mb-16 animate-slide-up">
-                    <h1 className="text-4xl md:text-5xl font-black text-primary tracking-tight mb-6">
+                <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 animate-slide-up">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-primary tracking-tight mb-6">
                         Get in Touch
                     </h1>
                     <p className="text-lg text-secondary">
@@ -87,11 +87,11 @@ const Contact = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-slide-up-delayed-1">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-12 animate-slide-up-delayed-1">
                     
                     {/* Contact Information */}
                     <div className="lg:col-span-4 space-y-6">
-                        <div className="bg-surface rounded-3xl p-8 border border-default shadow-sm hover:shadow-lg transition-all">
+                        <div className="bg-surface rounded-3xl p-6 sm:p-8 border border-default shadow-sm hover:shadow-lg transition-all">
                             <h3 className="text-xl font-bold text-primary mb-6">Contact Information</h3>
                             
                             <div className="space-y-6">
@@ -147,7 +147,7 @@ const Contact = () => {
                             </div>
                         </div>
 
-                        <div className="bg-surface rounded-3xl p-8 border border-default shadow-sm hover:shadow-lg transition-all">
+                        <div className="bg-surface rounded-3xl p-6 sm:p-8 border border-default shadow-sm hover:shadow-lg transition-all">
                             <h3 className="text-xl font-bold text-primary mb-4">Follow & Chat With Us</h3>
                             <ul className="space-y-3">
                                 {socialLinks.map((link) => (
@@ -177,7 +177,7 @@ const Contact = () => {
 
                     {/* Contact Form */}
                     <div className="lg:col-span-8">
-                        <div className="bg-surface rounded-3xl p-8 md:p-12 border border-default shadow-sm">
+                        <div className="bg-surface rounded-3xl p-6 sm:p-8 md:p-12 border border-default shadow-sm">
                             <h2 className="text-2xl font-bold text-primary mb-8">Send us a Message</h2>
                             
                             {status === 'success' ? (

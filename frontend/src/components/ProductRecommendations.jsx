@@ -34,7 +34,7 @@ const ProductRecommendations = ({ title = 'Recommended For You', excludeProductI
         return (
             <div className="space-y-4">
                 <h3 className="text-2xl font-bold text-primary">{title}</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-pulse">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
                     {[...Array(4)].map((_, i) => (
                         <div key={i} className="bg-page rounded-2xl h-80"></div>
                     ))}
@@ -54,14 +54,14 @@ const ProductRecommendations = ({ title = 'Recommended For You', excludeProductI
                 <p className="text-secondary">Discover products you might love</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                 {products.map((product) => (
                     <div
                         key={product._id}
                         className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col"
                     >
                         <Link to={`/product/${product._id}`} className="block relative">
-                            <div className="aspect-square bg-page relative p-6 flex flex-col items-center justify-center overflow-hidden">
+                            <div className="aspect-square bg-page relative p-4 sm:p-6 flex flex-col items-center justify-center overflow-hidden">
                                 {product.images && product.images[0] ? (
                                     <img
                                         src={product.images[0].url}
@@ -69,7 +69,7 @@ const ProductRecommendations = ({ title = 'Recommended For You', excludeProductI
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                     />
                                 ) : (
-                                    <div className="w-32 h-32 rounded-full bg-brand-subtle opacity-50"></div>
+                                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-brand-subtle opacity-50"></div>
                                 )}
                                 {product.stock === 0 && (
                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">

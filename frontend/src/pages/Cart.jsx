@@ -135,7 +135,7 @@ const Cart = () => {
 
                         {/* Order Summary */}
                         <div className="lg:col-span-4">
-                            <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 sticky top-24">
+                            <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 lg:sticky lg:top-24">
                                 <h2 className="text-xl font-bold text-primary mb-6 pb-4 border-b border-default">Order Summary</h2>
                                 
                                 <div className="space-y-4 mb-8">

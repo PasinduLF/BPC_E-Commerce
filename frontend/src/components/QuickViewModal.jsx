@@ -34,10 +34,10 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
             
-            <div className="relative bg-surface rounded-3xl shadow-2xl border border-default max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-up">
+            <div className="relative bg-surface rounded-t-3xl sm:rounded-3xl shadow-2xl border border-default max-w-2xl w-full max-h-[92vh] sm:max-h-[90vh] overflow-y-auto animate-scale-up">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
@@ -46,7 +46,7 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                     <X size={24} />
                 </button>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 md:p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 p-4 sm:p-6 md:p-8">
                     {/* Image Section */}
                     <div className="flex flex-col gap-4">
                         <div className="aspect-square bg-page rounded-2xl border border-default overflow-hidden flex items-center justify-center">
@@ -57,18 +57,18 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <div className="w-32 h-32 rounded-full bg-brand-subtle opacity-50"></div>
+                                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-brand-subtle opacity-50"></div>
                             )}
                         </div>
                         
                         {/* Image Thumbnails */}
                         {product.images && product.images.length > 1 && (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 overflow-x-auto pb-1">
                                 {product.images.slice(0, 4).map((img, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setActiveImage(idx)}
-                                        className={`w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${
+                                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-lg border-2 overflow-hidden transition-all flex-shrink-0 ${
                                             activeImage === idx ? 'border-brand' : 'border-default'
                                         }`}
                                     >
@@ -88,7 +88,7 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                                     {product.brand.name || product.brand}
                                 </span>
                             )}
-                            <h2 className="text-xl md:text-2xl font-bold text-primary mb-2">{product.name}</h2>
+                            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-primary mb-2 break-words">{product.name}</h2>
                             
                             {/* Rating */}
                             {product.rating && (
@@ -142,8 +142,8 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                         )}
 
                         {/* Quantity & Actions */}
-                        <div className="flex gap-3">
-                            <div className="flex items-center border border-default rounded-lg bg-page">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="flex items-center border border-default rounded-lg bg-page w-full sm:w-auto justify-between sm:justify-start">
                                 <button
                                     onClick={() => setQty(Math.max(1, qty - 1))}
                                     disabled={qty <= 1}
@@ -164,7 +164,7 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                             <button
                                 onClick={handleAddToCart}
                                 disabled={displayStock <= 0}
-                                className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 min-h-11"
                             >
                                 <ShoppingBag size={18} />
                                 Add to Cart
@@ -172,7 +172,7 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
 
                             <button
                                 onClick={() => toggleWishlist(product._id)}
-                                className={`p-3 rounded-lg border-2 transition-colors ${
+                                className={`p-3 rounded-lg border-2 transition-colors self-center sm:self-auto ${
                                     isInWishlist(product._id)
                                         ? 'bg-brand-subtle border-brand text-brand'
                                         : 'border-default text-secondary hover:border-brand hover:text-brand'

@@ -175,7 +175,7 @@ const Home = () => {
                                     {config.storefrontAppearance.heroHighlight}
                                 </span>
                             )}
-                            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-primary tracking-tight leading-[1.1] mb-6 whitespace-pre-line">
+                            <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black text-primary tracking-tight leading-[1.05] mb-6 whitespace-pre-line">
                                 {config?.storefrontAppearance?.heroTitle ? (
                                     config.storefrontAppearance.heroTitle.split('\n').map((line, i, arr) => (
                                         <span key={i}>
@@ -197,7 +197,7 @@ const Home = () => {
                                     </>
                                 )}
                             </h1>
-                            <p className="mt-4 text-lg sm:text-xl text-secondary max-w-2xl mx-auto sm:mx-0 mb-10 leading-relaxed font-medium">
+                            <p className="mt-4 text-base sm:text-lg lg:text-xl text-secondary max-w-2xl mx-auto sm:mx-0 mb-10 leading-relaxed font-medium">
                                 {config?.storefrontAppearance?.heroSubtitle || 'Premium cosmetics curated for your skin. Experience the perfect blend of natural ingredients and modern beauty science.'}
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start">
@@ -247,7 +247,7 @@ const Home = () => {
                             </Link>
                         </div>
                         
-                        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 sm:gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
                             {categories.map((cat) => (
                                 <Link key={cat._id} to={`/shop?category=${cat._id}`} className="group relative rounded-3xl overflow-hidden aspect-[4/5] bg-muted flex flex-col justify-end">
                                     {cat.image && (
@@ -278,7 +278,7 @@ const Home = () => {
                             <p className="text-secondary font-medium max-w-2xl mx-auto">Our most loved and highly rated products by customers like you.</p>
                         </div>
 
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                             {featuredProducts.map((product) => (
                                 <ProductCard key={`featured-${product._id}`} product={product} badgeName="Best Seller" badgeColor="text-error" />
                             ))}
@@ -302,7 +302,7 @@ const Home = () => {
                             </Link>
                         </div>
 
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                             {trendingProducts.map((product) => (
                                 <ProductCard key={`new-${product._id}`} product={product} badgeName="New" badgeColor="text-brand" />
                             ))}
@@ -319,7 +319,7 @@ const Home = () => {
                         <h2 className="text-3xl md:text-4xl font-black mb-4 text-surface">Why Choose Beauty P&C</h2>
                         <p className="text-surface/70 font-medium max-w-2xl mx-auto">We are committed to providing you with the best experience and highest quality products.</p>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-8">
                         <div className="text-center group">
                             <div className="w-16 h-16 bg-surface/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-brand group-hover:bg-brand group-hover:text-on-brand transition-all transform group-hover:-translate-y-2">
                                 <Award size={32} />
@@ -367,7 +367,7 @@ const Home = () => {
                                     <Link
                                         key={`${brand._id}-${index}`}
                                         to={`/shop?brand=${brand._id}`}
-                                        className="group relative block w-36 h-20 sm:w-44 sm:h-24 flex-shrink-0"
+                                        className="group relative block w-28 h-16 sm:w-36 sm:h-20 lg:w-44 lg:h-24 flex-shrink-0"
                                         aria-label={brand.name}
                                         title={brand.name}
                                     >
@@ -390,7 +390,7 @@ const Home = () => {
             <div className="bg-brand text-on-brand py-20 relative overflow-hidden scroll-reveal">
                 <div className="absolute right-0 top-0 w-64 h-64 bg-brand-subtle rounded-full blur-[100px] opacity-40"></div>
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-                    <div className="w-20 h-20 bg-surface rounded-3xl shadow-xl shadow-brand-subtle/50 flex items-center justify-center mx-auto mb-8 border border-brand-subtle rotate-3">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-surface rounded-3xl shadow-xl shadow-brand-subtle/50 flex items-center justify-center mx-auto mb-8 border border-brand-subtle rotate-3">
                         <Mail size={32} className="text-brand -rotate-3" />
                     </div>
                     <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Join Our Beauty Club</h2>

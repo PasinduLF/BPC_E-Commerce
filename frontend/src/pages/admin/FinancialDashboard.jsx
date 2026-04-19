@@ -33,7 +33,7 @@ const FinancialDashboard = () => {
     if (loading) {
         return (
             <div className="space-y-6 max-w-5xl mx-auto">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                     <div className="space-y-2">
                         <div className="skeleton h-8 w-56" />
                         <div className="skeleton h-4 w-80" />
@@ -125,7 +125,7 @@ const FinancialDashboard = () => {
                         <h3 className="text-secondary font-medium flex items-center gap-2 mb-2">
                             <Wallet size={20} className="text-success" /> Actual Cash in Hand
                         </h3>
-                        <div className="text-5xl font-extrabold tracking-tight mb-8">
+                        <div className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-8 break-words">
                             {money(metrics.cashBalance)}
                         </div>
 
@@ -151,7 +151,7 @@ const FinancialDashboard = () => {
                         <h3 className="text-secondary font-medium flex items-center gap-2 mb-2">
                             <Landmark size={20} className="text-brand" /> Total Bank Balance
                         </h3>
-                        <div className="text-5xl font-extrabold tracking-tight mb-8">
+                        <div className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-8 break-words">
                             {money(metrics.bankBalance)}
                         </div>
 

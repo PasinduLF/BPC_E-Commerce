@@ -93,8 +93,8 @@ const AdminLayout = () => {
             )}
 
             {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-default flex flex-col flex-shrink-0 overflow-y-auto transition-transform duration-300 ease-in-out xl:sticky xl:top-0 xl:h-screen xl:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="p-6 flex items-start justify-between">
+            <aside className={`fixed inset-y-0 left-0 z-50 w-[85vw] max-w-xs sm:max-w-sm bg-surface border-r border-default flex flex-col flex-shrink-0 overflow-y-auto transition-transform duration-300 ease-in-out xl:sticky xl:top-0 xl:h-screen xl:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-4 sm:p-6 flex items-start justify-between gap-3">
                     <div className="flex flex-col mb-1">
                         <img src={logoImage} alt="Beauty P&C Logo" className="h-8 w-auto object-contain mb-2 dark:brightness-0 dark:invert" />
                         <h2 className="text-sm font-bold text-secondary tracking-tight">
@@ -111,7 +111,7 @@ const AdminLayout = () => {
                     </div>
                 </div>
 
-                <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto">
+                <nav className="flex-1 px-3 sm:px-4 space-y-1 mt-4 overflow-y-auto">
                     {navItems.map((item) => {
                         const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
                         const showPendingBadge = item.path === '/admin/orders' && pendingOrdersCount > 0;
@@ -119,7 +119,7 @@ const AdminLayout = () => {
                             <Link
                                 key={item.name}
                                 to={item.path}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${isActive ? 'bg-brand-subtle text-brand border border-brand/20 shadow-sm' : 'text-secondary hover:bg-subtle hover:text-primary border border-transparent'}`}
+                                className={`flex items-center gap-3 px-3 sm:px-4 py-3 rounded-xl transition-all font-medium text-sm ${isActive ? 'bg-brand-subtle text-brand border border-brand/20 shadow-sm' : 'text-secondary hover:bg-subtle hover:text-primary border border-transparent'}`}
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
                                 {item.icon}
@@ -144,7 +144,7 @@ const AdminLayout = () => {
             {/* Main Content Area */}
             <main className="flex-1 min-w-0 flex flex-col">
                 {/* Mobile Header */}
-                <div className="xl:hidden bg-surface border-b border-default px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+                <div className="xl:hidden bg-surface border-b border-default px-3 sm:px-4 py-3 flex items-center justify-between sticky top-0 z-10 gap-3">
                     <div className="flex items-center gap-3">
                         <button aria-label="Open admin menu" className="text-secondary hover:text-primary p-1 rounded-full hover:bg-page" onClick={() => setIsMobileMenuOpen(true)}>
                             <Menu size={24} />
@@ -156,11 +156,11 @@ const AdminLayout = () => {
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                         <NotificationCenter />
                         {/* Simple mobile menu (could be expanded) */}
                         <select
-                            className="bg-page border border-default text-primary rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand"
+                            className="bg-page border border-default text-primary rounded-lg px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand max-w-[48vw] truncate"
                             value={location.pathname}
                             onChange={(e) => {
                                 setIsMobileMenuOpen(false);
@@ -175,7 +175,7 @@ const AdminLayout = () => {
                 </div>
 
                 {/* Render nested routes */}
-                <div className="p-4 sm:p-6 lg:p-8 flex-1 overflow-y-auto animate-fade-in animate-slide-up">
+                <div className="p-3 sm:p-4 lg:p-8 flex-1 overflow-y-auto animate-fade-in animate-slide-up">
                     <div className="mb-4 hidden xl:flex justify-end">
                         <NotificationCenter />
                     </div>

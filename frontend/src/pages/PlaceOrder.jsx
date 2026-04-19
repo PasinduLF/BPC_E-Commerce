@@ -132,12 +132,12 @@ const PlaceOrder = () => {
     };
 
     return (
-        <div className="bg-page min-h-screen py-12 animate-fade-in">
+        <div className="bg-page min-h-screen py-10 sm:py-12 animate-fade-in">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
                 {/* Checkout Steps - Simplified visual */}
-                <div className="flex justify-center mb-10 sm:mb-12 animate-slide-up">
-                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs sm:text-sm font-medium">
+                <div className="flex justify-center mb-8 sm:mb-12 animate-slide-up">
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-[11px] sm:text-sm font-medium">
                         <span className="text-brand bg-brand-subtle px-3 py-1 rounded-full border border-brand-subtle line-through decoration-brand-subtle">1. Shipping</span>
                         <div className="hidden sm:block w-8 h-px bg-brand-subtle"></div>
                         <span className="text-brand bg-brand-subtle px-3 py-1 rounded-full border border-brand-subtle line-through decoration-brand-subtle">2. Payment</span>
@@ -146,15 +146,15 @@ const PlaceOrder = () => {
                     </div>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight mb-8 animate-slide-up-delayed-1">Review Your Order</h1>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-primary tracking-tight mb-6 sm:mb-8 animate-slide-up-delayed-1">Review Your Order</h1>
 
                 <div className="lg:grid lg:grid-cols-12 lg:gap-8">
 
                     <div className="lg:col-span-8 space-y-6 animate-slide-up">
 
                         {/* Shipping / Pickup Summary */}
-                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 md:p-8">
-                            <div className="flex items-start gap-4 mb-4">
+                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-4 sm:p-6 md:p-8">
+                            <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
                                 <div className="p-3 bg-brand-subtle rounded-xl text-brand">
                                     <Truck size={24} />
                                 </div>
@@ -201,8 +201,8 @@ const PlaceOrder = () => {
                         </div>
 
                         {/* Payment Summary */}
-                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 md:p-8">
-                            <div className="flex items-start gap-4 mb-4">
+                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-4 sm:p-6 md:p-8">
+                            <div className="flex flex-col sm:flex-row items-start gap-4 mb-4">
                                 <div className="p-3 bg-brand-subtle rounded-xl text-brand">
                                     <Wallet size={24} />
                                 </div>
@@ -244,7 +244,7 @@ const PlaceOrder = () => {
                                         )}
                                     </div>
 
-                                    <div className="bg-page p-6 rounded-xl border border-default border-dashed text-center">
+                                    <div className="bg-page p-4 sm:p-6 rounded-xl border border-default border-dashed text-center">
                                         {!paymentSlip ? (
                                             <>
                                                 <Upload className="mx-auto text-tertiary mb-3" size={32} />
@@ -289,7 +289,7 @@ const PlaceOrder = () => {
                         </div>
 
                         {/* Order Items */}
-                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 md:p-8 overflow-hidden">
+                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-4 sm:p-6 md:p-8 overflow-hidden">
                             <h2 className="text-xl font-bold text-primary mb-6">Order Items</h2>
                             {checkoutItems.length === 0 ? (
                                 <div className="text-center py-8">
@@ -329,7 +329,7 @@ const PlaceOrder = () => {
                     </div>
 
                     <div className="lg:col-span-4 mt-8 lg:mt-0 animate-slide-up-delayed-1">
-                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 sticky top-24">
+                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-4 sm:p-6 sticky top-24">
                             <h2 className="text-xl font-bold text-primary mb-6 pb-4 border-b border-default">Order Summary</h2>
 
                             <div className="space-y-4 mb-6 text-sm">
@@ -349,7 +349,7 @@ const PlaceOrder = () => {
 
                             <div className="border-t border-default pt-4 mb-8 flex justify-between items-center">
                                 <span className="text-lg font-bold text-primary">Total</span>
-                                <span className="text-3xl font-bold text-brand">{currency}{totalPrice}</span>
+                                <span className="text-2xl sm:text-3xl font-bold text-brand">{currency}{totalPrice}</span>
                             </div>
 
                             <button

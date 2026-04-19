@@ -177,7 +177,7 @@ const Profile = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <h1 className="text-3xl font-black text-primary tracking-tight">My Profile</h1>
+                    <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight">My Profile</h1>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -194,7 +194,7 @@ const Profile = () => {
                         <span className="font-medium text-sm">{error}</span>
                     </div>
                 )}
-                        <div className="bg-surface rounded-3xl shadow-sm border border-default p-6 sm:p-8 sticky top-24">
+                        <div className="bg-surface rounded-3xl shadow-sm border border-default p-6 sm:p-8 lg:sticky lg:top-24">
                             <div className="flex flex-col items-center text-center mb-6 relative group">
                                 <div className="w-28 h-28 bg-brand-subtle rounded-full flex items-center justify-center mb-4 border-4 border-surface shadow-md overflow-hidden relative">
                                     {userInfo?.profileImage?.url ? (

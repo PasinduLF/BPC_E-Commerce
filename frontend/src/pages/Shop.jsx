@@ -352,7 +352,7 @@ const Shop = () => {
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Filters Sidebar */}
-                    <div className={`lg:w-72 flex-shrink-0 space-y-8 sticky top-8 max-h-[calc(100vh-5rem)] overflow-y-auto ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
+                    <div className={`lg:w-72 flex-shrink-0 space-y-8 lg:sticky lg:top-8 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
                         {/* Categories & Subcategories */}
                         <div className="bg-surface p-5 rounded-2xl border border-default shadow-sm">
                             <h3 className="font-bold text-primary tracking-wide mb-4 flex items-center justify-between pb-3 border-b border-default">

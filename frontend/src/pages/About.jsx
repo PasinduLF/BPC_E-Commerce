@@ -30,12 +30,12 @@ const About = () => {
     return (
         <div className="bg-page min-h-screen">
             {/* Hero Section */}
-            <div className="relative py-24 sm:py-32 overflow-hidden bg-brand-subtle animate-fade-in">
+            <div className="relative py-16 sm:py-24 lg:py-32 overflow-hidden bg-brand-subtle animate-fade-in">
                 <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[600px] h-[600px] rounded-full bg-brand opacity-10 blur-3xl mix-blend-multiply pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[400px] h-[400px] rounded-full bg-brand opacity-10 blur-3xl mix-blend-multiply pointer-events-none"></div>
                 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-                    <h1 className="text-4xl md:text-6xl font-black text-primary tracking-tight mb-6">
+                    <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-primary tracking-tight mb-6">
                         About <span className="bg-gradient-to-r from-brand to-brand-hover bg-clip-text text-transparent">{config?.businessName || 'Beauty P&C'}</span>
                     </h1>
                     <p className="text-xl text-secondary max-w-2xl mx-auto leading-relaxed">
@@ -45,8 +45,8 @@ const About = () => {
             </div>
 
             {/* Our Story Section */}
-            <div className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-slide-up">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+            <div className="py-16 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-slide-up">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16 items-center">
                     <div>
                         <div className="w-full aspect-square md:aspect-auto md:h-[500px] bg-gradient-to-tr from-brand-subtle to-surface border border-default rounded-3xl overflow-hidden relative shadow-lg">
                             {/* Placeholder for a beautiful brand image */}
@@ -76,7 +76,7 @@ const About = () => {
             </div>
 
             {/* Why Choose Us */}
-            <div className="bg-surface border-y border-default py-20 animate-slide-up-delayed-1">
+            <div className="bg-surface border-y border-default py-16 sm:py-20 animate-slide-up-delayed-1">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-black text-primary mb-4">The Beauty P&C Difference</h2>
@@ -85,7 +85,7 @@ const About = () => {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
                         {features.map((feature, index) => (
                             <div key={index} className="bg-page border border-default rounded-3xl p-8 hover:-translate-y-2 transition-transform duration-300 hover:shadow-xl hover:shadow-brand-subtle">
                                 <div className="w-14 h-14 bg-brand-subtle text-brand rounded-2xl flex items-center justify-center mb-6">

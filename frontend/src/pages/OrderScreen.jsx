@@ -360,7 +360,7 @@ const OrderScreen = () => {
                     </div>
 
                     <div className="lg:col-span-4 animate-slide-up-delayed-1">
-                        <div className="bg-surface rounded-3xl p-8 border border-default shadow-sm sticky top-24">
+                        <div className="bg-surface rounded-3xl p-5 sm:p-8 border border-default shadow-sm lg:sticky lg:top-24">
                             <h2 className="text-xl font-bold text-primary mb-6 pb-4 border-b border-default">Order Summary</h2>
 
                             <div className="space-y-4 mb-6 text-sm">

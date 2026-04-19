@@ -2,7 +2,7 @@ import { CheckCircle2, Circle } from 'lucide-react';
 
 const StepIndicator = ({ currentStep, steps }) => {
     return (
-        <div className="flex items-center justify-center gap-4 md:gap-8 mb-8 py-6 px-4 bg-surface rounded-2xl border border-default">
+        <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-8 mb-8 py-4 sm:py-6 px-3 sm:px-4 bg-surface rounded-2xl border border-default overflow-x-auto">
             {steps.map((step, index) => {
                 const stepNumber = index + 1;
                 const isActive = stepNumber === currentStep;
@@ -12,7 +12,7 @@ const StepIndicator = ({ currentStep, steps }) => {
                     <div key={step} className="flex items-center gap-2">
                         {/* Step Circle */}
                         <div
-                            className={`flex items-center justify-center w-10 h-10 rounded-full border-2 font-bold transition-all ${
+                            className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 font-bold transition-all flex-shrink-0 ${
                                 isCompleted
                                     ? 'bg-success border-success text-on-brand'
                                     : isActive
@@ -24,7 +24,7 @@ const StepIndicator = ({ currentStep, steps }) => {
                         </div>
 
                         {/* Step Label */}
-                        <div className="hidden md:flex flex-col gap-0.5">
+                        <div className="hidden md:flex flex-col gap-0.5 min-w-0">
                             <span className={`text-xs font-bold uppercase tracking-wider ${
                                 isActive ? 'text-brand' : isCompleted ? 'text-success' : 'text-tertiary'
                             }`}>
@@ -39,7 +39,7 @@ const StepIndicator = ({ currentStep, steps }) => {
 
                         {/* Connector Line */}
                         {index < steps.length - 1 && (
-                            <div className={`hidden md:block h-1 transition-all ${
+                            <div className={`hidden md:block h-1 transition-all flex-shrink-0 ${
                                 isCompleted ? 'bg-success' : isActive ? 'bg-brand' : 'bg-default'
                             }`} style={{ width: stepNumber < currentStep ? '60px' : '40px' }}></div>
                         )}
