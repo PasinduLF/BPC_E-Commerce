@@ -10,15 +10,12 @@ const CategoryManage = () => {
 
     const [showAddForm, setShowAddForm] = useState(false);
     const [editingCategoryId, setEditingCategoryId] = useState(null); // ID of Category/Sub/Nested currently edited
-    const [editLevel, setEditLevel] = useState(0); // 0: Category, 1: Subcategory, 2: Nested
     
     // Taxonomy Path (Drill Down)
     // [] -> Root categories
     // [{ id, name, type: 'category' }] -> Subcategories of specific Category
     // [{ id, name, type: 'category' }, { id, name, type: 'subcategory' }] -> Nested subcategories of specific Subcategory
     const [navStack, setNavStack] = useState([]);
-    const [subId, setSubId] = useState(null); // ID of current selected subcategory if at level 2
-
     const [newCategoryName, setNewCategoryName] = useState('');
     const [newCategoryDesc, setNewCategoryDesc] = useState('');
     const [newCategoryImage, setNewCategoryImage] = useState('');
@@ -78,7 +75,19 @@ const CategoryManage = () => {
             else if (navStack.length === 2) {
                 const catId = navStack[0].id;
                 const subcategoryId = navStack[1].id;
-                await axios.post(`/api/categories/${catId}/subcategories/${subcategoryId}/nested`, { name: newSubName }, config);
+                if (editingCategoryId) {
+                    await axios.put(
+                        `/api/categories/${catId}/subcategories/${subcategoryId}/nested/${editingCategoryId}`,
+                        { name: newSubName, description: newSubDesc },
+                        config
+                    );
+                } else {
+                    await axios.post(
+                        `/api/categories/${catId}/subcategories/${subcategoryId}/nested`,
+                        { name: newSubName, description: newSubDesc },
+                        config
+                    );
+                }
             }
 
             setNewCategoryName('');
@@ -128,31 +137,21 @@ const CategoryManage = () => {
         }
     };
 
-    const addSubcategoryHandler = async (e, categoryId) => {
-        e.preventDefault();
-        try {
-            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            await axios.post(`/api/categories/${categoryId}/subcategories`, {
-                name: newSubcategoryName
-            }, config);
-
-            setNewSubcategoryName('');
-            setActiveCategoryId(null);
-            fetchCategories();
-        } catch (error) {
-            alert('Failed to add subcategory');
-        }
-    };
-
     const pushToStack = (id, name, type) => {
+        setEditingCategoryId(null);
+        setShowAddForm(false);
         setNavStack([...navStack, { id, name, type }]);
     };
 
     const popFromStack = (index) => {
+        setEditingCategoryId(null);
+        setShowAddForm(false);
         setNavStack(navStack.slice(0, index + 1));
     };
 
     const goBack = () => {
+        setEditingCategoryId(null);
+        setShowAddForm(false);
         setNavStack(navStack.slice(0, -1));
     };
 
@@ -348,7 +347,7 @@ const CategoryManage = () => {
                     {navStack.length === 1 && categories.find(c => c._id === navStack[0].id)?.subcategories?.map((sub) => (
                         <div key={sub._id} className="bg-surface rounded-3xl p-6 border border-default shadow-sm hover:border-brand/40 transition-all group">
                             <div className="flex justify-between items-start mb-4">
-                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-brand-subtle rounded-2xl flex items-center justify-center text-brand">
                                         <div className="w-2 h-2 rounded-full bg-brand animate-pulse"></div>
                                     </div>
@@ -357,12 +356,22 @@ const CategoryManage = () => {
                                         <span className="text-[10px] font-black text-tertiary uppercase tracking-widest">{sub.nestedSubcategories?.length || 0} nested items</span>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => deleteCategoryHandler(sub._id, sub.name)} // Need to refine delete logic for sub-levels
-                                    className="p-2 text-tertiary hover:text-error transition-colors"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => openEditForm(sub)}
+                                        className="p-2 text-tertiary hover:text-brand transition-colors"
+                                        title="Edit subcategory"
+                                    >
+                                        <Edit size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => deleteCategoryHandler(sub._id, sub.name)}
+                                        className="p-2 text-tertiary hover:text-error transition-colors"
+                                        title="Delete subcategory"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
                             </div>
                             <p className="text-sm text-secondary mb-6 font-medium line-clamp-2">{sub.description || "Standard sub-classification."}</p>
                             <button 
@@ -383,12 +392,22 @@ const CategoryManage = () => {
                                 </div>
                                 <span className="font-bold text-primary">{nested.name}</span>
                             </div>
-                            <button 
-                                onClick={() => deleteNestedSubcategoryHandler(navStack[0].id, navStack[1].id, nested._id)}
-                                className="p-2 text-tertiary hover:text-error opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0"
-                            >
-                                <Trash2 size={18} />
-                            </button>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                                <button
+                                    onClick={() => openEditForm(nested)}
+                                    className="p-2 text-tertiary hover:text-brand transition-colors"
+                                    title="Edit inner item"
+                                >
+                                    <Edit size={18} />
+                                </button>
+                                <button
+                                    onClick={() => deleteNestedSubcategoryHandler(navStack[0].id, navStack[1].id, nested._id)}
+                                    className="p-2 text-tertiary hover:text-error transition-colors"
+                                    title="Delete inner item"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>

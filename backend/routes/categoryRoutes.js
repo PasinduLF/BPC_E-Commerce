@@ -9,6 +9,7 @@ const {
     updateSubcategory,
     deleteSubcategory,
     addNestedSubcategory,
+    updateNestedSubcategory,
     deleteNestedSubcategory
 } = require('../controllers/categoryController');
 const { protect, admin } = require('../middleware/authMiddleware');
@@ -23,6 +24,8 @@ router.route('/:id/subcategories/:subId')
     .put(protect, admin, updateSubcategory)
     .delete(protect, admin, deleteSubcategory);
 router.route('/:id/subcategories/:subId/nested').post(protect, admin, addNestedSubcategory);
-router.route('/:id/subcategories/:subId/nested/:nestedId').delete(protect, admin, deleteNestedSubcategory);
+router.route('/:id/subcategories/:subId/nested/:nestedId')
+    .put(protect, admin, updateNestedSubcategory)
+    .delete(protect, admin, deleteNestedSubcategory);
 
 module.exports = router;

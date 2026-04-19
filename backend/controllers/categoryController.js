@@ -164,6 +164,39 @@ const addNestedSubcategory = async (req, res) => {
     }
 };
 
+// @desc    Update nested subcategory
+// @route   PUT /api/categories/:id/subcategories/:subId/nested/:nestedId
+// @access  Private/Admin
+const updateNestedSubcategory = async (req, res) => {
+    const { name, description } = req.body;
+    const category = await Category.findById(req.params.id);
+
+    if (!category) {
+        res.status(404);
+        throw new Error('Category not found');
+    }
+
+    const subcategory = category.subcategories.id(req.params.subId);
+    if (!subcategory) {
+        res.status(404);
+        throw new Error('Subcategory not found');
+    }
+
+    const nested = subcategory.nestedSubcategories.id(req.params.nestedId);
+    if (!nested) {
+        res.status(404);
+        throw new Error('Nested subcategory not found');
+    }
+
+    nested.name = name || nested.name;
+    if (typeof description !== 'undefined') {
+        nested.description = description;
+    }
+
+    await category.save();
+    res.json(category);
+};
+
 // @desc    Delete nested subcategory
 // @route   DELETE /api/categories/:id/subcategories/:subId/nested/:nestedId
 // @access  Private/Admin
@@ -195,5 +228,6 @@ module.exports = {
     updateSubcategory,
     deleteSubcategory,
     addNestedSubcategory,
+    updateNestedSubcategory,
     deleteNestedSubcategory
 };
