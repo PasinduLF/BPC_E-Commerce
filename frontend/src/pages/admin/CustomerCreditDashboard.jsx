@@ -243,9 +243,15 @@ const CustomerCreditDashboard = () => {
                         </thead>
                         <tbody className="bg-surface divide-y divide-default">
                             {loading ? (
-                                <tr>
-                                    <td colSpan="5" className="text-center py-8 text-secondary">Loading customers...</td>
-                                </tr>
+                                Array.from({ length: 6 }).map((_, idx) => (
+                                    <tr key={`credit-customer-skeleton-${idx}`}>
+                                        <td className="px-6 py-4"><div className="skeleton h-8 w-40" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-4 w-32" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-4 w-24 ml-auto" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-4 w-24 ml-auto" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-8 w-24 mx-auto" /></td>
+                                    </tr>
+                                ))
                             ) : customers.length === 0 ? (
                                 <tr>
                                     <td colSpan="5" className="text-center py-12 text-secondary">No customer credit accounts found.</td>

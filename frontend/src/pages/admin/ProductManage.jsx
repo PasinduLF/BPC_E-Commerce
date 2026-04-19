@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
 import { useConfigStore } from '../../context/useConfigStore';
 import { Package, Plus, Edit, Trash2, Tag, UploadCloud, ExternalLink, Search, Copy, Download, GripVertical } from 'lucide-react';
+import { notify } from '../../utils/notify';
+import StatusLegend from '../../components/admin/StatusLegend';
 
 const PRODUCT_DRAFT_KEY = 'admin-product-draft-v1';
 
@@ -395,7 +397,7 @@ const ProductManage = () => {
         } catch (error) {
             setUploading(false);
             setUploadProgress(0);
-            alert(error.response?.data?.message || 'Failed to save product');
+            notify({ type: 'error', title: 'Save failed', description: error.response?.data?.message || 'Failed to save product' });
         }
     };
 
@@ -434,8 +436,9 @@ const ProductManage = () => {
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
                 await axios.delete(`/api/products/${id}`, config);
                 fetchData();
+                notify({ type: 'success', title: 'Product deleted', description: `${title} was removed.` });
             } catch (error) {
-                alert(error.response?.data?.message || 'Failed to delete product');
+                notify({ type: 'error', title: 'Delete failed', description: error.response?.data?.message || 'Failed to delete product' });
             }
         }
     };
@@ -493,6 +496,8 @@ const ProductManage = () => {
                     </button>
                 </div>
             </div>
+
+            <StatusLegend />
 
             {showAddForm && (
                 <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 sm:p-8 animate-fade-in-up mb-8">
@@ -809,11 +814,11 @@ const ProductManage = () => {
                                 {existingImages.length > 0 && (
                                     <div className="mb-4 p-4 bg-surface rounded-lg border border-default">
                                         <h4 className="text-xs font-bold text-secondary mb-2 uppercase tracking-wide">Currently Saved Images (Drag left/right implicitly via buttons)</h4>
-                                        <div className="flex gap-2 overflow-x-auto pb-2">
+                                        <div className="flex gap-2 overflow-x-auto pb-2 snap-x touch-pan-x">
                                             {existingImages.map((img, idx) => (
                                                 <div
                                                     key={idx}
-                                                    className="relative w-24 h-24 flex-shrink-0 border border-default rounded-md overflow-hidden group"
+                                                    className="relative w-24 h-24 flex-shrink-0 border border-default rounded-md overflow-hidden group snap-start"
                                                     draggable
                                                     onDragStart={() => setDraggedExistingImageIndex(idx)}
                                                     onDragOver={(e) => e.preventDefault()}
@@ -890,9 +895,9 @@ const ProductManage = () => {
                                                 <p className="text-warning">Some images are larger than 2MB. Consider compressing for faster loading.</p>
                                             )}
                                         </div>
-                                        <div className="flex gap-2 overflow-x-auto pb-2">
+                                        <div className="flex gap-2 overflow-x-auto pb-2 snap-x touch-pan-x">
                                             {Array.from(selectedFiles).map((file, idx) => (
-                                                <div key={idx} className="w-16 h-16 flex-shrink-0 border border-success/30 rounded overflow-hidden relative group">
+                                                <div key={idx} className="w-16 h-16 flex-shrink-0 border border-success/30 rounded overflow-hidden relative group snap-start">
                                                     <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
                                                     <div className="absolute top-0 right-0 bg-success text-white text-[9px] px-1 font-bold">NEW</div>
                                                     <button
@@ -986,7 +991,7 @@ const ProductManage = () => {
             </div>
 
             {/* Product List */}
-            <div className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden text-sm">
+            <div className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden text-sm hidden md:block">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-default">
                         <thead className="bg-page">
@@ -1002,7 +1007,11 @@ const ProductManage = () => {
                         </thead>
                         <tbody className="bg-surface divide-y divide-default">
                             {loading ? (
-                                <tr><td colSpan="7" className="text-center py-8 text-secondary">Loading catalog...</td></tr>
+                                Array.from({ length: 5 }).map((_, idx) => (
+                                    <tr key={`skeleton-row-${idx}`}>
+                                        <td colSpan="7" className="px-6 py-4"><div className="skeleton h-10 w-full" /></td>
+                                    </tr>
+                                ))
                             ) : filteredProducts.length === 0 ? (
                                 <tr><td colSpan="7" className="text-center py-12 text-secondary">No products match the selected filters.</td></tr>
                             ) : (
@@ -1080,6 +1089,7 @@ const ProductManage = () => {
                                             <Link
                                                 to={`/product/${product._id}`}
                                                 target="_blank"
+                                                aria-label={`Open product ${product.name} in storefront`}
                                                 className="inline-flex text-tertiary hover:text-info p-2 rounded-lg transition-colors mr-1"
                                                 title="View Product Details"
                                             >
@@ -1087,6 +1097,7 @@ const ProductManage = () => {
                                             </Link>
                                             <button
                                                 onClick={() => openEditForm(product)}
+                                                aria-label={`Edit product ${product.name}`}
                                                 className="text-tertiary hover:text-brand p-2 rounded-lg transition-colors"
                                                 title="Edit Product"
                                             >
@@ -1094,6 +1105,7 @@ const ProductManage = () => {
                                             </button>
                                             <button
                                                 onClick={() => cloneProduct(product)}
+                                                aria-label={`Clone product ${product.name}`}
                                                 className="text-tertiary hover:text-info p-2 rounded-lg transition-colors"
                                                 title="Clone Product"
                                             >
@@ -1101,6 +1113,7 @@ const ProductManage = () => {
                                             </button>
                                             <button
                                                 onClick={() => deleteProductHandler(product._id, product.name)}
+                                                aria-label={`Delete product ${product.name}`}
                                                 className="text-error hover:brightness-90 p-2 rounded-lg transition-colors ml-2"
                                                 title="Delete Product"
                                             >
@@ -1113,6 +1126,42 @@ const ProductManage = () => {
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <div className="md:hidden space-y-3">
+                {loading ? (
+                    Array.from({ length: 6 }).map((_, idx) => (
+                        <div key={idx} className="bg-surface rounded-xl border border-default p-4 space-y-2">
+                            <div className="skeleton h-24 w-full" />
+                            <div className="skeleton h-4 w-2/3" />
+                            <div className="skeleton h-4 w-1/3" />
+                        </div>
+                    ))
+                ) : filteredProducts.length === 0 ? (
+                    <div className="bg-surface rounded-xl border border-default p-4 text-sm text-secondary">No products match the selected filters.</div>
+                ) : (
+                    filteredProducts.map((product) => (
+                        <div key={`mobile-${product._id}`} className="bg-surface rounded-xl border border-default p-4">
+                            <div className="flex items-start gap-3">
+                                <div className="w-20 h-20 rounded-lg overflow-hidden bg-page border border-default">
+                                    {product.images?.[0] ? (
+                                        <img src={product.images[0].url} alt={product.name || 'Product image'} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">No Image</div>
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-primary line-clamp-1">{product.name}</p>
+                                    <p className="text-xs text-secondary mt-1">{currency}{Number(product.price || 0).toFixed(2)} • Stock {Number(product.stock || 0)}</p>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <button onClick={() => openEditForm(product)} className="btn-tertiary text-xs px-3 py-1.5">Edit</button>
+                                        <button onClick={() => cloneProduct(product)} className="btn-tertiary text-xs px-3 py-1.5">Clone</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
 
         </div>

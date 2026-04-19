@@ -392,7 +392,14 @@ const BrandManage = () => {
                         </thead>
                         <tbody className="bg-surface divide-y divide-default">
                             {loading ? (
-                                <tr><td colSpan="4" className="text-center py-8 text-secondary">Loading brands...</td></tr>
+                                Array.from({ length: 5 }).map((_, idx) => (
+                                    <tr key={`brand-skeleton-${idx}`}>
+                                        <td className="px-6 py-4"><div className="skeleton h-10 w-10 rounded-lg" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-4 w-32" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-4 w-full max-w-sm" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-8 w-24 mx-auto" /></td>
+                                    </tr>
+                                ))
                             ) : brands.length === 0 ? (
                                 <tr><td colSpan="4" className="text-center py-12 text-secondary">No brands found. Add one above.</td></tr>
                             ) : (

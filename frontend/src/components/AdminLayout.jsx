@@ -20,6 +20,7 @@ import {
     Moon,
     CreditCard
 } from 'lucide-react';
+import NotificationCenter from './admin/NotificationCenter';
 
 const AdminLayout = () => {
     const { userInfo } = useAuthStore();
@@ -101,10 +102,10 @@ const AdminLayout = () => {
                         </h2>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={toggleMode} className="text-secondary hover:text-brand p-1.5 rounded-full hover:bg-subtle focus:outline-none transition-colors" title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+                        <button aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"} onClick={toggleMode} className="text-secondary hover:text-brand p-1.5 rounded-full hover:bg-subtle focus:outline-none transition-colors" title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
                             {isDark ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
-                        <button className="xl:hidden text-secondary hover:text-primary p-1 rounded-full hover:bg-subtle" onClick={() => setIsMobileMenuOpen(false)}>
+                        <button aria-label="Close admin menu" className="xl:hidden text-secondary hover:text-primary p-1 rounded-full hover:bg-subtle" onClick={() => setIsMobileMenuOpen(false)}>
                             <X size={24} />
                         </button>
                     </div>
@@ -145,7 +146,7 @@ const AdminLayout = () => {
                 {/* Mobile Header */}
                 <div className="xl:hidden bg-surface border-b border-default px-4 py-4 flex items-center justify-between sticky top-0 z-10">
                     <div className="flex items-center gap-3">
-                        <button className="text-secondary hover:text-primary p-1 rounded-full hover:bg-page" onClick={() => setIsMobileMenuOpen(true)}>
+                        <button aria-label="Open admin menu" className="text-secondary hover:text-primary p-1 rounded-full hover:bg-page" onClick={() => setIsMobileMenuOpen(true)}>
                             <Menu size={24} />
                         </button>
                         <img src={logoImage} alt="Beauty P&C Logo" className="h-6 w-auto object-contain dark:brightness-0 dark:invert" />
@@ -155,23 +156,29 @@ const AdminLayout = () => {
                             </span>
                         )}
                     </div>
-                    {/* Simple mobile menu (could be expanded) */}
-                    <select
-                        className="bg-page border border-default text-primary rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand"
-                        value={location.pathname}
-                        onChange={(e) => {
-                            setIsMobileMenuOpen(false);
-                            navigate(e.target.value);
-                        }}
-                    >
-                        {navItems.map(item => (
-                            <option key={item.path} value={item.path}>{item.name}</option>
-                        ))}
-                    </select>
+                    <div className="flex items-center gap-2">
+                        <NotificationCenter />
+                        {/* Simple mobile menu (could be expanded) */}
+                        <select
+                            className="bg-page border border-default text-primary rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand"
+                            value={location.pathname}
+                            onChange={(e) => {
+                                setIsMobileMenuOpen(false);
+                                navigate(e.target.value);
+                            }}
+                        >
+                            {navItems.map(item => (
+                                <option key={item.path} value={item.path}>{item.name}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
                 {/* Render nested routes */}
                 <div className="p-4 sm:p-6 lg:p-8 flex-1 overflow-y-auto animate-fade-in animate-slide-up">
+                    <div className="mb-4 hidden xl:flex justify-end">
+                        <NotificationCenter />
+                    </div>
                     <Outlet />
                 </div>
             </main>

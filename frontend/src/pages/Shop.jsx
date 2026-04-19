@@ -526,8 +526,24 @@ const Shop = () => {
                             innerSubcategory={selectedInnerSubcategories.length === 1 ? selectedInnerSubcategories[0] : null}
                         />
                         {loading ? (
-                            <div className="flex justify-center items-center h-64">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
+                            <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-8">
+                                {Array.from({ length: pageSize }).map((_, idx) => (
+                                    <div key={`shop-skeleton-${idx}`} className="bg-surface border border-default rounded-2xl overflow-hidden">
+                                        <div className="skeleton aspect-square w-full" />
+                                        <div className="p-5 space-y-3">
+                                            <div className="flex gap-1">
+                                                <div className="skeleton h-3 w-20" />
+                                            </div>
+                                            <div className="skeleton h-3 w-16" />
+                                            <div className="skeleton h-5 w-11/12" />
+                                            <div className="skeleton h-4 w-2/3" />
+                                            <div className="pt-3 flex items-center justify-between">
+                                                <div className="skeleton h-7 w-24" />
+                                                <div className="skeleton h-9 w-9 rounded-full" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-8">

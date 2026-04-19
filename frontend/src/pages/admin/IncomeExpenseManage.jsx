@@ -270,7 +270,16 @@ const IncomeExpenseManage = () => {
                         </thead>
                         <tbody className="bg-surface divide-y divide-default">
                             {loading ? (
-                                <tr><td colSpan="6" className="text-center py-8 text-secondary">Loading records...</td></tr>
+                                Array.from({ length: 6 }).map((_, idx) => (
+                                    <tr key={`transaction-skeleton-${idx}`}>
+                                        <td className="px-6 py-4"><div className="skeleton h-4 w-24" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-8 w-36" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-4 w-full max-w-sm" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-6 w-20" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-4 w-20 ml-auto" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-8 w-20 mx-auto" /></td>
+                                    </tr>
+                                ))
                             ) : transactions.length === 0 ? (
                                 <tr><td colSpan="6" className="text-center py-12 text-secondary">No transactions recorded yet.</td></tr>
                             ) : (

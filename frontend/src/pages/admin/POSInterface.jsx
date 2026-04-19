@@ -4,6 +4,7 @@ import { useAuthStore } from '../../context/useAuthStore';
 import { Search, Plus, Minus, Trash2, ShoppingBag, CreditCard, Banknote, UserRound, Phone, Printer, XCircle, FileDown } from 'lucide-react';
 import { useConfigStore } from '../../context/useConfigStore';
 import { toast } from 'sonner';
+import StatusLegend from '../../components/admin/StatusLegend';
 
 const POSInterface = () => {
     const { userInfo } = useAuthStore();
@@ -441,9 +442,21 @@ const POSInterface = () => {
                     </div>
                 </div>
 
+                <div className="px-4 py-3 border-b border-default bg-surface">
+                    <StatusLegend />
+                </div>
+
                 <div className="flex-1 p-4 overflow-y-auto bg-page">
                     {loading ? (
-                        <div className="text-center py-10 text-secondary">Loading products...</div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {Array.from({ length: 8 }).map((_, idx) => (
+                                <div key={idx} className="bg-surface p-4 rounded-xl border border-default space-y-2">
+                                    <div className="skeleton aspect-square rounded-lg" />
+                                    <div className="skeleton h-4 w-3/4" />
+                                    <div className="skeleton h-4 w-1/3" />
+                                </div>
+                            ))}
+                        </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                             {products.map(product => {
@@ -461,7 +474,7 @@ const POSInterface = () => {
                                     >
                                         <div className="aspect-square bg-page rounded-lg mb-3 overflow-hidden">
                                             {product.images[0] ? (
-                                                <img src={product.images[0].url} alt={product.name} className="w-full h-full object-cover" />
+                                                <img src={product.images[0].url} alt={product.name || 'Product image'} className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-xs text-tertiary">No Img</div>
                                             )}
@@ -520,14 +533,16 @@ const POSInterface = () => {
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center bg-page border border-default rounded-lg text-primary">
                                                 <button onClick={() => updateQty(item.cartId, item.qty - 1)} className="p-1 px-2 text-secondary hover:text-brand transition-colors">
+                                                    <span className="sr-only">Decrease quantity</span>
                                                     <Minus size={14} />
                                                 </button>
                                                 <span className="text-sm font-bold w-6 text-center">{item.qty}</span>
                                                 <button onClick={() => updateQty(item.cartId, item.qty + 1)} className="p-1 px-2 text-secondary hover:text-brand transition-colors">
+                                                    <span className="sr-only">Increase quantity</span>
                                                     <Plus size={14} />
                                                 </button>
                                             </div>
-                                            <button onClick={() => removeFromCart(item.cartId)} className="text-tertiary hover:text-error p-1 transition-colors">
+                                            <button onClick={() => removeFromCart(item.cartId)} aria-label={`Remove ${item.name} from cart`} className="touch-target text-tertiary hover:text-error p-1 transition-colors">
                                                 <Trash2 size={16} />
                                             </button>
                                         </div>
@@ -833,10 +848,10 @@ const POSInterface = () => {
                                 <button onClick={handleDownloadPdf} className="p-2 text-secondary hover:bg-surface rounded-lg transition-colors" title="Download PDF">
                                     <FileDown size={18} />
                                 </button>
-                                <button onClick={handlePrintInvoice} className="p-2 text-secondary hover:bg-surface rounded-lg transition-colors" title="Print Invoice">
+                                <button onClick={handlePrintInvoice} aria-label="Print invoice" className="p-2 text-secondary hover:bg-surface rounded-lg transition-colors" title="Print Invoice">
                                     <Printer size={18} />
                                 </button>
-                                <button onClick={() => setReceiptData(null)} className="p-2 text-error hover:bg-error-bg rounded-lg transition-colors" title="Close">
+                                <button onClick={() => setReceiptData(null)} aria-label="Close receipt" className="p-2 text-error hover:bg-error-bg rounded-lg transition-colors" title="Close">
                                     <XCircle size={18} />
                                 </button>
                             </div>

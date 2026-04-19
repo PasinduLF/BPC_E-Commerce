@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../context/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -8,6 +8,7 @@ const Profile = () => {
     const { userInfo, setCredentials, logout } = useAuthStore();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [pageLoading, setPageLoading] = useState(true);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
 
@@ -31,6 +32,14 @@ const Profile = () => {
 
     const savedAddresses = userInfo?.addresses || [];
     const savedCards = userInfo?.paymentCards || [];
+
+    useEffect(() => {
+        const raf = requestAnimationFrame(() => {
+            setPageLoading(false);
+        });
+
+        return () => cancelAnimationFrame(raf);
+    }, []);
 
     const handleSaveProfile = async (updates, successMsg, isFormData = false) => {
         setLoading(true);
@@ -113,6 +122,51 @@ const Profile = () => {
                 <div className="text-center">
                     <h2 className="text-2xl font-bold text-primary mb-2">Not Logged In</h2>
                     <p className="text-secondary mb-6">Please log in to view your profile.</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (pageLoading) {
+        return (
+            <div className="bg-page min-h-screen py-12 animate-fade-in">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="mb-8">
+                        <div className="skeleton h-10 w-44" />
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        <div className="lg:col-span-5">
+                            <div className="bg-surface rounded-3xl border border-default p-6 sm:p-8 space-y-5">
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="skeleton h-28 w-28 rounded-full" />
+                                    <div className="skeleton h-7 w-40" />
+                                    <div className="skeleton h-4 w-28" />
+                                    <div className="skeleton h-9 w-28 rounded-full" />
+                                </div>
+                                <div className="space-y-3 pt-4 border-t border-default">
+                                    <div className="skeleton h-12 w-full rounded-xl" />
+                                    <div className="skeleton h-12 w-full rounded-xl" />
+                                    <div className="skeleton h-12 w-full rounded-xl" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-7">
+                            <div className="bg-surface rounded-3xl border border-default p-6 sm:p-8 space-y-5">
+                                <div className="flex justify-between items-center">
+                                    <div className="space-y-2">
+                                        <div className="skeleton h-7 w-44" />
+                                        <div className="skeleton h-4 w-56" />
+                                    </div>
+                                    <div className="skeleton h-10 w-36" />
+                                </div>
+                                {Array.from({ length: 3 }).map((_, idx) => (
+                                    <div key={`profile-address-skeleton-${idx}`} className="skeleton h-24 w-full rounded-2xl" />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );

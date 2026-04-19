@@ -42,8 +42,43 @@ const MyOrders = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen bg-page">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
+            <div className="bg-page min-h-screen py-12 animate-fade-in">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="skeleton h-14 w-14 rounded-xl" />
+                        <div className="space-y-2">
+                            <div className="skeleton h-8 w-40" />
+                            <div className="skeleton h-4 w-72" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        {Array.from({ length: 3 }).map((_, idx) => (
+                            <div key={`my-order-skeleton-${idx}`} className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden">
+                                <div className="p-6 border-b border-default space-y-3">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="skeleton h-4 w-24" />
+                                        <div className="skeleton h-4 w-24" />
+                                        <div className="skeleton h-4 w-24" />
+                                        <div className="skeleton h-4 w-36" />
+                                    </div>
+                                    <div className="skeleton h-10 w-32" />
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    <div className="flex gap-3">
+                                        <div className="skeleton h-8 w-28 rounded-full" />
+                                        <div className="skeleton h-8 w-32 rounded-full" />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="skeleton h-12 w-12 rounded-full" />
+                                        <div className="skeleton h-12 w-12 rounded-full" />
+                                        <div className="skeleton h-12 w-12 rounded-full" />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }

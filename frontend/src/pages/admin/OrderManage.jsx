@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
 import { ShoppingCart, CheckCircle, Clock, XCircle, TrendingUp, Edit, Trash2, Printer, FileDown, ReceiptText, Search, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { useConfigStore } from '../../context/useConfigStore';
+import { notify } from '../../utils/notify';
+import StatusLegend from '../../components/admin/StatusLegend';
 
 const OrderManage = () => {
     const { userInfo } = useAuthStore();
@@ -69,7 +71,7 @@ const OrderManage = () => {
             await axios.put(`/api/orders/${id}/status`, payload, configHeader);
             fetchOrders(); // refresh
         } catch (error) {
-            alert(error.response?.data?.message || 'Failed to update order status');
+            notify({ type: 'error', title: 'Status update failed', description: error.response?.data?.message || 'Failed to update order status' });
         } finally {
             setActionLoadingKey('');
         }
@@ -94,8 +96,9 @@ const OrderManage = () => {
                 const configHeader = { headers: { Authorization: `Bearer ${userInfo.token}` } };
                 await axios.delete(`/api/orders/${id}`, configHeader);
                 fetchOrders();
+                notify({ type: 'success', title: 'Order deleted', description: 'The order has been removed.' });
             } catch (error) {
-                alert(error.response?.data?.message || 'Failed to delete order');
+                notify({ type: 'error', title: 'Delete failed', description: error.response?.data?.message || 'Failed to delete order' });
             } finally {
                 setActionLoadingKey('');
             }
@@ -129,7 +132,7 @@ const OrderManage = () => {
 
         const printWindow = window.open('', '_blank', 'width=420,height=760');
         if (!printWindow) {
-            alert('Unable to open print window. Please allow popups for this site.');
+            notify({ type: 'warning', title: 'Popup blocked', description: 'Please allow popups for this site to print.' });
             return;
         }
 
@@ -195,9 +198,9 @@ const OrderManage = () => {
 
             setEditModalOpen(false);
             fetchOrders();
-            alert('Order updated successfully');
+            notify({ type: 'success', title: 'Order updated', description: 'Changes were saved successfully.' });
         } catch (error) {
-            alert(error.response?.data?.message || 'Failed to update order');
+            notify({ type: 'error', title: 'Update failed', description: error.response?.data?.message || 'Failed to update order' });
         } finally {
             setSavingEdit(false);
         }
@@ -247,7 +250,7 @@ const OrderManage = () => {
 
     const bulkUpdateDelivery = async (markDelivered) => {
         if (selectedOrderIds.length === 0) {
-            alert('Select at least one order first.');
+            notify({ type: 'warning', title: 'No selection', description: 'Select at least one order first.' });
             return;
         }
 
@@ -265,8 +268,9 @@ const OrderManage = () => {
             );
             setSelectedOrderIds([]);
             await fetchOrders();
+            notify({ type: 'success', title: 'Bulk update complete', description: `${selectedOrderIds.length} orders updated.`, actionLabel: 'View Orders', onAction: () => window.scrollTo({ top: 0, behavior: 'smooth' }) });
         } catch (error) {
-            alert(error.response?.data?.message || 'Failed to apply bulk delivery update');
+            notify({ type: 'error', title: 'Bulk update failed', description: error.response?.data?.message || 'Failed to apply bulk delivery update' });
         } finally {
             setActionLoadingKey('');
         }
@@ -313,6 +317,8 @@ const OrderManage = () => {
                         <p className="text-secondary text-sm mt-1">Review sales, approve payments, and dispatch items.</p>
                     </div>
                 </div>
+
+                <StatusLegend />
 
                 <div className="bg-surface rounded-2xl border border-default p-4 space-y-4">
                     <div className="flex flex-wrap gap-2">
@@ -402,7 +408,7 @@ const OrderManage = () => {
                     </div>
                 </div>
 
-                <div className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden text-sm">
+                <div className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden text-sm hidden md:block">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-default">
                             <thead className="bg-page">
@@ -673,6 +679,42 @@ const OrderManage = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                <div className="md:hidden space-y-3">
+                    {loading ? (
+                        Array.from({ length: 5 }).map((_, idx) => (
+                            <div key={idx} className="bg-surface rounded-xl border border-default p-4 space-y-2">
+                                <div className="skeleton h-4 w-28" />
+                                <div className="skeleton h-4 w-40" />
+                                <div className="skeleton h-4 w-full" />
+                            </div>
+                        ))
+                    ) : filteredOrders.length === 0 ? (
+                        <div className="bg-surface rounded-xl border border-default p-4 text-sm text-secondary">No orders found.</div>
+                    ) : (
+                        filteredOrders.map((order) => (
+                            <div key={`mobile-${order._id}`} className="bg-surface rounded-xl border border-default p-4 space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="font-mono text-xs text-secondary">{order.orderNumber || `ORD-${order._id.substring(order._id.length - 6).toUpperCase()}`}</span>
+                                    <span className={`status-badge ${order.isPaid ? 'status-success' : 'status-error'}`}>{order.isPaid ? 'Paid' : 'Unpaid'}</span>
+                                </div>
+                                <p className="text-sm font-semibold text-primary">{order.isPOS ? (order.customerName || 'Walk-in') : (order.user?.name || 'Unknown')}</p>
+                                <p className="text-xs text-secondary">{new Date(order.createdAt).toLocaleDateString()} • {currency}{Number(order.totalPrice || 0).toFixed(2)}</p>
+                                <div className="flex items-center gap-2 pt-1">
+                                    <Link to={`/order/${order._id}`} className="btn-tertiary text-xs px-3 py-1.5">Details</Link>
+                                    <button
+                                        type="button"
+                                        onClick={() => deleteHandler(order._id)}
+                                        aria-label={`Delete order ${order.orderNumber || order._id}`}
+                                        className="touch-target inline-flex items-center justify-center rounded-lg border border-error-bg text-error hover:bg-error-bg"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
 
             </div>

@@ -286,9 +286,18 @@ const CategoryManage = () => {
 
             {/* Hierarchical View Content */}
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-24 text-tertiary gap-4">
-                    <div className="w-12 h-12 border-4 border-brand/20 border-t-brand rounded-full animate-spin"></div>
-                    <p className="font-bold uppercase tracking-widest text-xs">Syncing Directory...</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {Array.from({ length: 6 }).map((_, idx) => (
+                        <div key={`category-skeleton-${idx}`} className="bg-surface rounded-3xl border border-default overflow-hidden">
+                            <div className="skeleton h-32 w-full" />
+                            <div className="p-6 space-y-4">
+                                <div className="skeleton h-6 w-40" />
+                                <div className="skeleton h-4 w-full" />
+                                <div className="skeleton h-4 w-5/6" />
+                                <div className="skeleton h-10 w-full" />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : categories.length === 0 ? (
                 <div className="text-center py-20 bg-surface rounded-3xl border-2 border-dashed border-default">

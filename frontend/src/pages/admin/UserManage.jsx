@@ -79,7 +79,15 @@ const UserManage = () => {
                         </thead>
                         <tbody className="bg-surface divide-y divide-default">
                             {loading ? (
-                                <tr><td colSpan="5" className="text-center py-8 text-secondary">Loading users...</td></tr>
+                                Array.from({ length: 6 }).map((_, idx) => (
+                                    <tr key={`user-skeleton-${idx}`}>
+                                        <td className="px-6 py-4"><div className="skeleton h-4 w-20" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-8 w-40" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-4 w-56" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-7 w-10 mx-auto rounded-lg" /></td>
+                                        <td className="px-6 py-4"><div className="skeleton h-8 w-10 mx-auto rounded-lg" /></td>
+                                    </tr>
+                                ))
                             ) : users.length === 0 ? (
                                 <tr><td colSpan="5" className="text-center py-12 text-secondary">No users found.</td></tr>
                             ) : (

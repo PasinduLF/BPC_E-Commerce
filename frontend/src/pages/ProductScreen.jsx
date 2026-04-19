@@ -186,8 +186,40 @@ const ProductScreen = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen bg-page">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
+            <div className="bg-page min-h-screen py-8 animate-fade-in">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="skeleton h-4 w-64 mb-6" />
+                    <div className="bg-surface rounded-[2rem] shadow-sm border border-default overflow-hidden lg:grid lg:grid-cols-2 lg:gap-8 p-6 lg:p-12">
+                        <div className="mb-8 lg:mb-0">
+                            <div className="skeleton aspect-square w-full rounded-2xl mb-4" />
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="skeleton aspect-square w-full rounded-xl" />
+                                <div className="skeleton aspect-square w-full rounded-xl" />
+                                <div className="skeleton aspect-square w-full rounded-xl" />
+                                <div className="skeleton aspect-square w-full rounded-xl" />
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                            <div className="flex justify-between items-center">
+                                <div className="skeleton h-7 w-32 rounded-full" />
+                                <div className="skeleton h-7 w-28 rounded-full" />
+                            </div>
+                            <div className="skeleton h-4 w-24" />
+                            <div className="skeleton h-10 w-11/12" />
+                            <div className="skeleton h-5 w-48" />
+                            <div className="skeleton h-4 w-full" />
+                            <div className="skeleton h-4 w-5/6" />
+                            <div className="skeleton h-10 w-36" />
+                            <div className="skeleton h-24 w-full rounded-2xl" />
+                            <div className="skeleton h-12 w-full rounded-xl" />
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="skeleton h-12 w-full rounded-xl" />
+                                <div className="skeleton h-12 w-full rounded-xl" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }

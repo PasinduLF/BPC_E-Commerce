@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuthStore } from '../../context/useAuthStore';
 import { useConfigStore } from '../../context/useConfigStore';
 import { Users, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown, AlertTriangle, Target, Clock3 } from 'lucide-react';
+import StatusLegend from '../../components/admin/StatusLegend';
 
 const AdminDashboard = () => {
     const { userInfo } = useAuthStore();
@@ -153,7 +154,32 @@ const AdminDashboard = () => {
     }, [orders, periodDays, products]);
 
     if (loading) {
-        return <div className="p-8 text-center text-secondary">Loading dashboard data...</div>;
+        return (
+            <div className="space-y-6">
+                <div className="skeleton h-8 w-64" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {Array.from({ length: 4 }).map((_, idx) => (
+                        <div key={idx} className="bg-surface p-6 rounded-2xl border border-default">
+                            <div className="skeleton h-5 w-24 mb-3" />
+                            <div className="skeleton h-8 w-28" />
+                        </div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-surface p-6 rounded-2xl border border-default space-y-3">
+                        <div className="skeleton h-5 w-40" />
+                        <div className="skeleton h-12 w-full" />
+                        <div className="skeleton h-12 w-full" />
+                        <div className="skeleton h-12 w-full" />
+                    </div>
+                    <div className="bg-surface p-6 rounded-2xl border border-default space-y-3">
+                        <div className="skeleton h-5 w-40" />
+                        <div className="skeleton h-24 w-full" />
+                        <div className="skeleton h-24 w-full" />
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -191,6 +217,8 @@ const AdminDashboard = () => {
                     />
                 </div>
             </div>
+
+            <StatusLegend />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 

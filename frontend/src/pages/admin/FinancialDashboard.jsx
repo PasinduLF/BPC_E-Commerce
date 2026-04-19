@@ -31,7 +31,38 @@ const FinancialDashboard = () => {
     }, [userInfo.token]);
 
     if (loading) {
-        return <div className="p-8 text-center text-secondary">Calculating financial ledgers...</div>;
+        return (
+            <div className="space-y-6 max-w-5xl mx-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <div className="space-y-2">
+                        <div className="skeleton h-8 w-56" />
+                        <div className="skeleton h-4 w-80" />
+                    </div>
+                    <div className="skeleton h-10 w-36" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    {Array.from({ length: 4 }).map((_, idx) => (
+                        <div key={`financial-summary-skeleton-${idx}`} className="bg-surface border border-default rounded-2xl p-5 space-y-3">
+                            <div className="skeleton h-3 w-28" />
+                            <div className="skeleton h-8 w-32" />
+                            <div className="skeleton h-3 w-24" />
+                        </div>
+                    ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {Array.from({ length: 2 }).map((_, idx) => (
+                        <div key={`financial-panel-skeleton-${idx}`} className="bg-surface border border-default rounded-3xl p-8 space-y-3">
+                            <div className="skeleton h-6 w-40" />
+                            <div className="skeleton h-10 w-48" />
+                            <div className="skeleton h-4 w-full" />
+                            <div className="skeleton h-4 w-5/6" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
     }
 
     if (!metrics) {

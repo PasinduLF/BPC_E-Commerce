@@ -39,6 +39,10 @@
 
   --color-success: var(--color-success);
   --color-success-bg: var(--color-success-bg);
+  --color-warning: var(--color-warning);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-info: var(--color-info);
+  --color-info-bg: var(--color-info-bg);
   --color-error: var(--color-error);
   --color-error-bg: var(--color-error-bg);
 }
@@ -53,6 +57,11 @@
   body {
     @apply bg-page text-primary antialiased selection:bg-brand-subtle selection:text-brand-dark transition-colors duration-300;
     overflow-x: hidden;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
   }
 
   img,
@@ -75,6 +84,50 @@
 
   .btn-primary {
     @apply bg-brand text-on-brand font-medium py-2 px-4 rounded-lg hover:bg-brand-hover active:scale-95 transition-all shadow-sm;
+  }
+
+  .btn-tertiary {
+    @apply bg-page text-primary border border-default font-medium py-2 px-4 rounded-lg hover:border-brand hover:text-brand active:scale-95 transition-all;
+  }
+
+  .status-success {
+    @apply bg-success-bg text-success border border-success-bg;
+  }
+
+  .status-warning {
+    @apply bg-warning-bg text-warning border border-warning-bg;
+  }
+
+  .status-error {
+    @apply bg-error-bg text-error border border-error-bg;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-muted rounded;
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+    animation: skeletonShimmer 1.2s infinite;
+  }
+
+  @keyframes skeletonShimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
   }
 
   /* Navigation Animations */

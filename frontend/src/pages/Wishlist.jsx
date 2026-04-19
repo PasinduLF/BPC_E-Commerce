@@ -3,7 +3,7 @@ import { Heart, ShoppingBag, Star, Trash2, ArrowRight, Trash } from 'lucide-reac
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useCartStore } from '../context/useCartStore';
 import { useConfigStore } from '../context/useConfigStore';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const Wishlist = () => {
     const { wishlistItems, removeFromWishlist, clearWishlist } = useWishlistStore();
@@ -11,6 +11,15 @@ const Wishlist = () => {
     const { config } = useConfigStore();
     const currency = config?.currencySymbol || '$';
     const [showClearConfirm, setShowClearConfirm] = useState(false);
+    const [pageLoading, setPageLoading] = useState(true);
+
+    useEffect(() => {
+        const raf = requestAnimationFrame(() => {
+            setPageLoading(false);
+        });
+
+        return () => cancelAnimationFrame(raf);
+    }, []);
 
     const handleAddToCart = (product) => {
         addToCart({ ...product, qty: 1 });
@@ -26,6 +35,36 @@ const Wishlist = () => {
         clearWishlist();
         setShowClearConfirm(false);
     };
+
+    if (pageLoading) {
+        return (
+            <div className="bg-page min-h-screen py-12 animate-fade-in">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                    <div className="skeleton h-10 w-56" />
+                    <div className="bg-surface rounded-2xl border border-default p-4 sm:p-6 flex flex-col sm:flex-row gap-3 justify-between">
+                        <div className="skeleton h-6 w-48" />
+                        <div className="flex gap-3">
+                            <div className="skeleton h-10 w-36" />
+                            <div className="skeleton h-10 w-24" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+                        {Array.from({ length: 8 }).map((_, idx) => (
+                            <div key={`wishlist-skeleton-${idx}`} className="bg-surface border border-default rounded-2xl overflow-hidden">
+                                <div className="skeleton aspect-square w-full" />
+                                <div className="p-5 space-y-3">
+                                    <div className="skeleton h-3 w-16" />
+                                    <div className="skeleton h-5 w-11/12" />
+                                    <div className="skeleton h-7 w-24" />
+                                    <div className="skeleton h-10 w-full rounded-xl" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-page min-h-screen py-12 animate-fade-in">
