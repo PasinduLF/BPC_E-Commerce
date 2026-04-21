@@ -34,11 +34,11 @@ const Home = () => {
             try {
                 // Fetch New Arrivals (Trending)
                 const trendingRes = await axios.get('/api/products?sort=newest');
-                setTrendingProducts(trendingRes.data.products.slice(0, 4));
+                setTrendingProducts(trendingRes.data.products.slice(0, 5));
 
                 // Fetch Featured Products
                 const featuredRes = await axios.get('/api/products?isFeatured=true');
-                setFeaturedProducts(featuredRes.data.products.slice(0, 4));
+                setFeaturedProducts(featuredRes.data.products.slice(0, 5));
 
                 // Fetch Categories
                 const catRes = await axios.get('/api/categories');
@@ -101,7 +101,7 @@ const Home = () => {
                         <div className="w-32 h-32 rounded-full bg-brand-subtle opacity-50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-700"></div>
                     )}
                     {badgeName && (
-                        <div className={`absolute top-4 right-4 bg-surface/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${badgeColor}`}>
+                        <div className={`absolute top-4 right-4 bg-surface/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${badgeColor}`}>
                             {badgeName}
                         </div>
                     )}
@@ -118,38 +118,38 @@ const Home = () => {
 
             <div className="p-6 flex flex-col flex-1">
                 <div className="flex items-center gap-1 text-gold mb-3">
-                    <Star size={14} fill="currentColor" />
-                    <Star size={14} fill="currentColor" />
-                    <Star size={14} fill="currentColor" />
-                    <Star size={14} fill="currentColor" />
-                    <Star size={14} fill="currentColor" className="text-muted" />
+                    <Star size={16} fill="currentColor" />
+                    <Star size={16} fill="currentColor" />
+                    <Star size={16} fill="currentColor" />
+                    <Star size={16} fill="currentColor" />
+                    <Star size={16} fill="currentColor" className="text-muted" />
                 </div>
                 {product.brand && (
-                    <span className="block text-[10px] font-bold tracking-widest text-brand uppercase mb-1.5">
+                    <span className="block text-[11px] font-bold tracking-widest text-brand uppercase mb-1.5">
                         {product.brand.name || product.brand}
                     </span>
                 )}
                 <Link to={`/product/${product._id}`}>
-                    <h3 className="text-lg font-bold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
+                    <h3 className="text-xl font-bold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
                 </Link>
-                <p className="text-sm font-medium text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
+                <p className="text-base font-medium text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
 
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-default">
                     <div className="flex flex-col">
                         {window.Number(product.discountPrice) > 0 && window.Number(product.discountPrice) < window.Number(product.price) ? (
                             <>
-                                <span className="text-xl font-black text-brand">{currency}{product.discountPrice.toFixed(2)}</span>
-                                <span className="text-sm font-semibold text-tertiary line-through">{currency}{product.price.toFixed(2)}</span>
+                                <span className="text-2xl font-black text-brand">{currency}{product.discountPrice.toFixed(2)}</span>
+                                <span className="text-base font-semibold text-tertiary line-through">{currency}{product.price.toFixed(2)}</span>
                             </>
                         ) : (
-                            <span className="text-xl font-black text-primary">{currency}{product.price?.toFixed(2) || '0.00'}</span>
+                            <span className="text-2xl font-black text-primary">{currency}{product.price?.toFixed(2) || '0.00'}</span>
                         )}
                     </div>
                     <button
                         onClick={() => addToCart({ ...product, qty: 1 })}
-                        className="bg-primary hover:bg-brand text-surface p-3 rounded-full transition-colors self-end shadow-md"
+                        className="bg-primary hover:bg-brand text-surface p-4 rounded-full transition-colors self-end shadow-md"
                     >
-                        <ShoppingBag size={18} />
+                        <ShoppingBag size={22} />
                     </button>
                 </div>
             </div>
@@ -175,7 +175,7 @@ const Home = () => {
                                     {config.storefrontAppearance.heroHighlight}
                                 </span>
                             )}
-                            <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black text-primary tracking-tight leading-[1.05] mb-6 whitespace-pre-line">
+                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-primary tracking-tight leading-[1.05] mb-6 whitespace-pre-line">
                                 {config?.storefrontAppearance?.heroTitle ? (
                                     config.storefrontAppearance.heroTitle.split('\n').map((line, i, arr) => (
                                         <span key={i}>
@@ -197,14 +197,14 @@ const Home = () => {
                                     </>
                                 )}
                             </h1>
-                            <p className="mt-4 text-base sm:text-lg lg:text-xl text-secondary max-w-2xl mx-auto sm:mx-0 mb-10 leading-relaxed font-medium">
+                            <p className="mt-4 text-base sm:text-lg lg:text-xl text-secondary max-w-3xl mx-auto sm:mx-0 mb-10 leading-relaxed font-medium">
                                 {config?.storefrontAppearance?.heroSubtitle || 'Premium cosmetics curated for your skin. Experience the perfect blend of natural ingredients and modern beauty science.'}
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start">
-                                <Link to="/shop" className="btn-primary flex items-center justify-center gap-2 text-lg px-8 py-4 shadow-xl">
-                                    Shop Collection <ArrowRight size={20} />
+                                <Link to="/shop" className="btn-primary flex items-center justify-center gap-2 text-xl px-10 py-5 shadow-xl">
+                                    Shop Collection <ArrowRight size={22} />
                                 </Link>
-                                <Link to="/categories" className="bg-surface text-secondary hover:text-brand border-2 border-default font-bold py-4 px-8 rounded-full hover:border-brand transition-all shadow-sm flex items-center justify-center text-lg">
+                                <Link to="/categories" className="bg-surface text-secondary hover:text-brand border-2 border-default font-bold py-5 px-10 rounded-full hover:border-brand transition-all shadow-sm flex items-center justify-center text-xl">
                                     Explore Categories
                                 </Link>
                             </div>
@@ -239,7 +239,7 @@ const Home = () => {
                     <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                         <div className="flex items-end justify-between mb-12">
                             <div>
-                                <h2 className="text-3xl md:text-4xl font-black text-primary mb-3">Shop by Category</h2>
+                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-primary mb-3">Shop by Category</h2>
                                 <p className="text-secondary font-medium">Explore our wide selection of beauty products</p>
                             </div>
                             <Link to="/categories" className="hidden sm:flex text-brand font-bold hover:brightness-90 items-center gap-1 transition-colors">
@@ -273,12 +273,12 @@ const Home = () => {
                 <section className="py-24 bg-page border-y border-default scroll-reveal delay-100">
                     <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                         <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Best Sellers</h2>
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-primary mb-4">Best Sellers</h2>
                             <div className="w-16 h-1.5 bg-brand mx-auto rounded-full mb-4"></div>
                             <p className="text-secondary font-medium max-w-2xl mx-auto">Our most loved and highly rated products by customers like you.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-8">
                             {featuredProducts.map((product) => (
                                 <ProductCard key={`featured-${product._id}`} product={product} badgeName="Best Seller" badgeColor="text-error" />
                             ))}
@@ -294,7 +294,7 @@ const Home = () => {
                     <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 relative z-10">
                         <div className="flex items-end justify-between mb-12">
                             <div>
-                                <h2 className="text-3xl md:text-4xl font-black text-primary mb-3">New Arrivals</h2>
+                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-primary mb-3">New Arrivals</h2>
                                 <p className="text-secondary font-medium">Be the first to try our latest additions</p>
                             </div>
                             <Link to="/shop?sort=newest" className="hidden sm:flex text-brand font-bold hover:brightness-90 items-center gap-1 border border-brand-subtle rounded-full px-5 py-2 hover:bg-brand-subtle transition-colors">
@@ -302,7 +302,7 @@ const Home = () => {
                             </Link>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-8">
                             {trendingProducts.map((product) => (
                                 <ProductCard key={`new-${product._id}`} product={product} badgeName="New" badgeColor="text-brand" />
                             ))}
@@ -316,7 +316,7 @@ const Home = () => {
                 <div className="absolute inset-0 opacity-5 pattern-dots text-surface"></div>
                 <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 relative z-10">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-black mb-4 text-surface">Why Choose Beauty P&C</h2>
+                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black mb-4 text-surface">Why Choose Beauty P&C</h2>
                         <p className="text-surface/70 font-medium max-w-2xl mx-auto">We are committed to providing you with the best experience and highest quality products.</p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-8">
@@ -324,28 +324,28 @@ const Home = () => {
                             <div className="w-16 h-16 bg-surface/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-brand group-hover:bg-brand group-hover:text-on-brand transition-all transform group-hover:-translate-y-2">
                                 <Award size={32} />
                             </div>
-                            <h4 className="text-xl font-bold mb-3 text-surface">Premium Quality</h4>
+                            <h4 className="text-lg font-bold mb-3 text-surface">Premium Quality</h4>
                             <p className="text-surface/70 text-sm leading-relaxed">Sourced from the finest natural ingredients, meticulously tested for your safety and satisfaction.</p>
                         </div>
                         <div className="text-center group">
                             <div className="w-16 h-16 bg-surface/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-brand group-hover:bg-brand group-hover:text-on-brand transition-all transform group-hover:-translate-y-2">
                                 <Truck size={32} />
                             </div>
-                            <h4 className="text-xl font-bold mb-3 text-surface">Fast Delivery</h4>
+                            <h4 className="text-lg font-bold mb-3 text-surface">Fast Delivery</h4>
                             <p className="text-surface/70 text-sm leading-relaxed">Swift and reliable shipping nationwide. {config?.freeShippingThreshold > 0 ? `Free on orders over ${currency}${config.freeShippingThreshold}.` : 'Standard rates apply.'}</p>
                         </div>
                         <div className="text-center group">
                             <div className="w-16 h-16 bg-surface/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-brand group-hover:bg-brand group-hover:text-on-brand transition-all transform group-hover:-translate-y-2">
                                 <ShieldCheck size={32} />
                             </div>
-                            <h4 className="text-xl font-bold mb-3 text-surface">Verified Authentic</h4>
+                            <h4 className="text-lg font-bold mb-3 text-surface">Verified Authentic</h4>
                             <p className="text-surface/70 text-sm leading-relaxed">We guarantee 100% authenticity on all our products directly sourced from the manufacturers.</p>
                         </div>
                         <div className="text-center group">
                             <div className="w-16 h-16 bg-surface/10 rounded-2xl flex items-center justify-center mx-auto mb-6 text-brand group-hover:bg-brand group-hover:text-on-brand transition-all transform group-hover:-translate-y-2">
                                 <CreditCard size={32} />
                             </div>
-                            <h4 className="text-xl font-bold mb-3 text-surface">Secure Checkout</h4>
+                            <h4 className="text-lg font-bold mb-3 text-surface">Secure Checkout</h4>
                             <p className="text-surface/70 text-sm leading-relaxed">Your data is safe with us. We use industry-standard encryption for all transactions.</p>
                         </div>
                     </div>
@@ -357,7 +357,7 @@ const Home = () => {
                 <div className="py-16 bg-surface border-b border-default scroll-reveal overflow-hidden w-full">
                     <div className="w-full px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Our Trusted Brands</h2>
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-primary mb-4">Our Trusted Brands</h2>
                             <p className="text-secondary font-medium">Discover the world's most luxurious beauty brands in one place.</p>
                         </div>
                         
@@ -393,7 +393,7 @@ const Home = () => {
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-surface rounded-3xl shadow-xl shadow-brand-subtle/50 flex items-center justify-center mx-auto mb-8 border border-brand-subtle rotate-3">
                         <Mail size={32} className="text-brand -rotate-3" />
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-black text-primary mb-4">Join Our Beauty Club</h2>
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-primary mb-4">Join Our Beauty Club</h2>
                     <p className="text-secondary text-lg mb-10 max-w-2xl mx-auto">Subscribe to our newsletter and get 10% off your first purchase. Plus, be the first to know about new arrivals and exclusive sales!</p>
                     
                     {subscribed ? (

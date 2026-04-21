@@ -32,8 +32,8 @@ const Categories = () => {
 
                 <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-black text-primary mb-3">Explore Categories</h1>
-                        <p className="text-secondary font-medium">
+                        <h1 className="text-3xl sm:text-4xl font-black text-primary mb-3">Explore Categories</h1>
+                        <p className="text-base sm:text-lg text-secondary font-medium max-w-2xl">
                             Browse all product categories and jump directly into the collection you want.
                         </p>
                     </div>
@@ -75,10 +75,10 @@ const Categories = () => {
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent opacity-85 group-hover:opacity-100 transition-opacity" />
                                 <div className="relative z-10 p-5 w-full text-center">
-                                    <h2 className="text-surface font-bold text-lg leading-tight mb-1 group-hover:-translate-y-1 transition-transform">
+                                    <h2 className="text-surface font-bold text-base sm:text-lg leading-tight mb-1 group-hover:-translate-y-1 transition-transform">
                                         {cat.name}
                                     </h2>
-                                    <p className="text-surface/90 text-xs">
+                                    <p className="text-surface/90 text-[11px] sm:text-xs">
                                         {(cat.subcategories || []).length} subcategories
                                     </p>
                                 </div>

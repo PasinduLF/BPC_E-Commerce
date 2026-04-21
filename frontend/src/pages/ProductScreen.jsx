@@ -234,7 +234,7 @@ const ProductScreen = () => {
                     productName={product.name}
                 />
 
-                <div className="bg-surface rounded-[2rem] shadow-sm border border-default overflow-hidden animate-slide-up lg:grid lg:grid-cols-2 lg:gap-8 p-6 lg:p-12">
+                <div className="bg-surface rounded-[2rem] shadow-sm border border-default overflow-hidden animate-slide-up lg:grid lg:grid-cols-2 lg:gap-10 p-6 lg:p-14">
 
                     {/* Image Gallery */}
                     <div className="mb-8 lg:mb-0">
@@ -304,20 +304,20 @@ const ProductScreen = () => {
                                     onClick={() => toggleWishlist(product)}
                                     className={`p-3 rounded-full flex-shrink-0 transition-colors shadow-sm border ${isInWishlist(product._id) ? 'bg-brand text-on-brand border-brand hover:brightness-110' : 'bg-surface border-default text-tertiary hover:text-brand hover:border-brand'}`}
                                 >
-                                    <Heart size={24} className={isInWishlist(product._id) ? 'fill-current' : ''} />
+                                    <Heart size={22} className={isInWishlist(product._id) ? 'fill-current' : ''} />
                                 </button>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6">
                                 <div className="flex items-center gap-1 text-gold">
-                                    {renderStars(product.rating, 20)}
+                                    {renderStars(product.rating, 22)}
                                 </div>
                                 <span className="text-secondary text-sm hover:text-brand cursor-pointer transition-colors border-b border-dashed border-default">
                                     {product.numReviews || 0} Reviews
                                 </span>
                             </div>
 
-                            <p className="text-secondary leading-relaxed mb-6">
+                            <p className="text-lg text-secondary leading-relaxed mb-6 max-w-2xl">
                                 {formatDescription(product.description)}
                             </p>
 
@@ -354,12 +354,12 @@ const ProductScreen = () => {
                                             >
                                                 <span>{variant.name}: {variant.value}</span>
                                                 {(variant.discountPrice > 0 && variant.discountPrice < variant.price) ? (
-                                                    <div className="flex items-center gap-2 text-xs font-normal">
+                                                        <div className="flex items-center gap-2 text-xs font-normal">
                                                         <span className="text-brand font-bold">{currency}{variant.discountPrice.toFixed(2)}</span>
                                                         <span className="line-through opacity-70">{currency}{variant.price.toFixed(2)}</span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xs font-normal">{currency}{variant.price?.toFixed(2) || '0.00'}</span>
+                                                        <span className="text-xs font-normal">{currency}{variant.price?.toFixed(2) || '0.00'}</span>
                                                 )}
                                             </button>
                                         ))}
@@ -381,7 +381,7 @@ const ProductScreen = () => {
                                         >
                                             <Minus size={18} className="text-primary" />
                                         </button>
-                                        <span className="w-12 text-center font-bold text-primary text-lg">{qty}</span>
+                                        <span className="w-12 text-center font-bold text-primary text-base">{qty}</span>
                                         <button
                                             onClick={() => setQty(qty < displayStock ? qty + 1 : qty)}
                                             disabled={qty >= displayStock}
@@ -416,8 +416,8 @@ const ProductScreen = () => {
 
                             {/* Features */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-                                <div className="flex items-center gap-3 text-secondary bg-muted p-4 rounded-xl border border-default">
-                                    <Truck size={24} className="text-brand" />
+                                <div className="flex items-center gap-3 text-secondary bg-muted p-3 rounded-xl border border-default">
+                                    <Truck size={20} className="text-brand" />
                                     <div className="text-sm font-medium">
                                         <p>Free Delivery</p>
                                         <p className="text-tertiary font-normal">
@@ -427,8 +427,8 @@ const ProductScreen = () => {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 text-secondary bg-muted p-4 rounded-xl border border-default">
-                                    <ShieldCheck size={24} className="text-brand" />
+                                <div className="flex items-center gap-3 text-secondary bg-muted p-3 rounded-xl border border-default">
+                                    <ShieldCheck size={20} className="text-brand" />
                                     <div className="text-sm font-medium">
                                         <p>Authentic Guarantee</p>
                                         <p className="text-tertiary font-normal">100% Genuine Brands</p>

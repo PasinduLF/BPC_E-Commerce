@@ -285,10 +285,10 @@ const Shop = () => {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-primary tracking-tight">
+                        <h1 className="text-3xl sm:text-4xl font-bold text-primary tracking-tight">
                             {searchKeyword ? `Search Results for "${searchKeyword}"` : 'Our Collection'}
                         </h1>
-                        <p className="text-secondary mt-2">
+                        <p className="text-base sm:text-lg text-secondary mt-2 max-w-2xl">
                             {searchKeyword ? 'Find what you are looking for.' : 'Discover our full range of premium cosmetics.'}
                         </p>
                     </div>
@@ -526,7 +526,7 @@ const Shop = () => {
                             innerSubcategory={selectedInnerSubcategories.length === 1 ? selectedInnerSubcategories[0] : null}
                         />
                         {loading ? (
-                            <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-8">
+                            <div className="grid grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-8">
                                 {Array.from({ length: pageSize }).map((_, idx) => (
                                     <div key={`shop-skeleton-${idx}`} className="bg-surface border border-default rounded-2xl overflow-hidden">
                                         <div className="skeleton aspect-square w-full" />
@@ -546,7 +546,7 @@ const Shop = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-8">
+                            <div className="grid grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-8">
                                 {products.map((product) => (
                                     <div key={product._id} className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
                                         <Link to={`/product/${product._id}`} className="block relative">
@@ -583,36 +583,36 @@ const Shop = () => {
                                             <Eye size={16} />
                                         </button>
 
-                                        <div className="p-5 flex flex-col flex-1">
-                                            <div className="flex items-center gap-1 text-gold mb-2">
-                                                {renderStars(product.rating, 16)}
+                                            <div className="p-6 flex flex-col flex-1">
+                                                <div className="flex items-center gap-1 text-gold mb-2">
+                                                    {renderStars(product.rating, 18)}
                                                 <span className="text-tertiary text-xs ml-1">({product.numReviews || 0})</span>
                                             </div>
                                             {product.brand && (
-                                                <span className="block text-[10px] font-bold tracking-widest text-brand uppercase mb-1">
+                                                    <span className="block text-[11px] font-bold tracking-widest text-brand uppercase mb-1">
                                                     {product.brand.name}
                                                 </span>
                                             )}
                                             <Link to={`/product/${product._id}`}>
-                                                <h3 className="text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
+                                                    <h3 className="text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
                                             </Link>
-                                            <p className="text-sm text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
+                                                <p className="text-base text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
                                             <div className="flex items-center justify-between mt-auto pt-4">
                                                 <div className="flex flex-col">
                                                     {window.Number(product.discountPrice) > 0 && window.Number(product.discountPrice) < window.Number(product.price) ? (
                                                         <>
-                                                            <span className="text-xl font-bold text-brand">{currency}{product.discountPrice.toFixed(2)}</span>
-                                                            <span className="text-sm font-semibold text-tertiary line-through">{currency}{product.price.toFixed(2)}</span>
+                                                                <span className="text-xl font-bold text-brand">{currency}{product.discountPrice.toFixed(2)}</span>
+                                                                <span className="text-sm font-semibold text-tertiary line-through">{currency}{product.price.toFixed(2)}</span>
                                                         </>
                                                     ) : (
-                                                        <span className="text-xl font-bold text-primary">{currency}{product.price?.toFixed(2) || '0.00'}</span>
+                                                            <span className="text-xl font-bold text-primary">{currency}{product.price?.toFixed(2) || '0.00'}</span>
                                                     )}
                                                 </div>
                                                 <button
                                                     onClick={() => addToCart({ ...product, qty: 1 })}
-                                                    className="bg-brand-subtle hover:bg-brand text-brand hover:text-on-brand p-2 rounded-full transition-colors self-end"
+                                                        className="bg-brand-subtle hover:bg-brand text-brand hover:text-on-brand p-3 rounded-full transition-colors self-end"
                                                 >
-                                                    <ShoppingBag size={20} />
+                                                        <ShoppingBag size={22} />
                                                 </button>
                                             </div>
                                         </div>

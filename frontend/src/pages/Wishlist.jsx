@@ -70,8 +70,8 @@ const Wishlist = () => {
         <div className="bg-page min-h-screen py-12 animate-fade-in">
             <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
 
-                <div className="flex items-center justify-between mb-8">
-                    <h1 className="text-3xl font-black text-primary tracking-tight">Your Wishlist</h1>
+                    <div className="flex items-center justify-between mb-8">
+                <h1 className="text-3xl sm:text-4xl font-black text-primary tracking-tight">Your Wishlist</h1>
                 </div>
 
                 {wishlistItems.length === 0 ? (
@@ -134,7 +134,7 @@ const Wishlist = () => {
                         )}
 
                         {/* Product Grid */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+                        <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-8">
                         {wishlistItems.map((product) => (
                             <div key={product._id} className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
                                 <Link to={`/product/${product._id}`} className="block relative">
@@ -159,16 +159,16 @@ const Wishlist = () => {
                                     <Trash2 size={16} />
                                 </button>
 
-                                <div className="p-5 flex flex-col flex-1">
+                                <div className="p-6 flex flex-col flex-1">
                                     <div className="flex items-center gap-1 text-yellow-400 mb-2">
-                                        <Star size={16} fill="currentColor" />
-                                        <Star size={16} fill="currentColor" />
-                                        <Star size={16} fill="currentColor" />
-                                        <Star size={16} fill="currentColor" />
-                                        <Star size={16} fill="currentColor" className="text-default" />
+                                        <Star size={18} fill="currentColor" />
+                                        <Star size={18} fill="currentColor" />
+                                        <Star size={18} fill="currentColor" />
+                                        <Star size={18} fill="currentColor" />
+                                        <Star size={18} fill="currentColor" className="text-default" />
                                     </div>
                                     {product.brand && (
-                                        <span className="block text-[10px] font-bold tracking-widest text-brand uppercase mb-1">
+                                        <span className="block text-[11px] font-bold tracking-widest text-brand uppercase mb-1">
                                             {product.brand.name || product.brand}
                                         </span>
                                     )}
@@ -188,9 +188,9 @@ const Wishlist = () => {
                                         </div>
                                         <button
                                             onClick={() => handleAddToCart(product)}
-                                            className="w-full flex items-center justify-center gap-2 btn-primary rounded-xl py-3 font-semibold transition-colors"
+                                            className="w-full flex items-center justify-center gap-2 btn-primary rounded-xl py-3.5 text-lg font-semibold transition-colors"
                                         >
-                                            <ShoppingBag size={18} />
+                                            <ShoppingBag size={20} />
                                             Move to Cart
                                         </button>
                                     </div>

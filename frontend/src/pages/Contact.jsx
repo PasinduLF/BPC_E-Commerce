@@ -78,10 +78,10 @@ const Contact = () => {
                 
                 {/* Header */}
                 <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 animate-slide-up">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-primary tracking-tight mb-6">
+                    <h1 className="text-3xl sm:text-4xl font-black text-primary tracking-tight mb-6">
                         Get in Touch
                     </h1>
-                    <p className="text-lg text-secondary">
+                    <p className="text-base sm:text-lg text-secondary max-w-2xl mx-auto">
                         Have a question about our products, an order, or just want to say hello? 
                         We'd love to hear from you. Drop us a line below.
                     </p>
@@ -92,7 +92,7 @@ const Contact = () => {
                     {/* Contact Information */}
                     <div className="lg:col-span-4 space-y-6">
                         <div className="bg-surface rounded-3xl p-6 sm:p-8 border border-default shadow-sm hover:shadow-lg transition-all">
-                            <h3 className="text-xl font-bold text-primary mb-6">Contact Information</h3>
+                            <h3 className="text-lg font-bold text-primary mb-6">Contact Information</h3>
                             
                             <div className="space-y-6">
                                 <div className="flex items-start gap-4">
@@ -148,7 +148,7 @@ const Contact = () => {
                         </div>
 
                         <div className="bg-surface rounded-3xl p-6 sm:p-8 border border-default shadow-sm hover:shadow-lg transition-all">
-                            <h3 className="text-xl font-bold text-primary mb-4">Follow & Chat With Us</h3>
+                            <h3 className="text-lg font-bold text-primary mb-4">Follow & Chat With Us</h3>
                             <ul className="space-y-3">
                                 {socialLinks.map((link) => (
                                     <li key={link.label}>
@@ -178,14 +178,14 @@ const Contact = () => {
                     {/* Contact Form */}
                     <div className="lg:col-span-8">
                         <div className="bg-surface rounded-3xl p-6 sm:p-8 md:p-12 border border-default shadow-sm">
-                            <h2 className="text-2xl font-bold text-primary mb-8">Send us a Message</h2>
+                            <h2 className="text-xl sm:text-2xl font-bold text-primary mb-8">Send us a Message</h2>
                             
                             {status === 'success' ? (
                                 <div className="bg-success-bg text-success p-6 rounded-2xl flex flex-col items-center justify-center text-center py-12">
                                     <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mb-4">
                                         <Send size={24} className="text-success ml-1" />
                                     </div>
-                                    <h3 className="text-xl font-bold mb-2">Message Sent!</h3>
+                                    <h3 className="text-lg font-bold mb-2">Message Sent!</h3>
                                     <p>Thank you for reaching out. We will get back to you within 24 hours.</p>
                                 </div>
                             ) : (
