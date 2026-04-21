@@ -18,7 +18,8 @@ import {
     Store,
     Sun,
     Moon,
-    CreditCard
+    CreditCard,
+    Gift
 } from 'lucide-react';
 import NotificationCenter from './admin/NotificationCenter';
 
@@ -73,6 +74,7 @@ const AdminLayout = () => {
         { name: 'Products', path: '/admin/products', icon: <Package size={20} /> },
         { name: 'Brands', path: '/admin/brands', icon: <Grid size={20} /> },
         { name: 'Categories', path: '/admin/categories', icon: <Grid size={20} /> },
+        { name: 'Bundle Offers', path: '/admin/bundles', icon: <Gift size={20} /> },
         { name: 'Orders', path: '/admin/orders', icon: <ShoppingCart size={20} /> },
         { name: 'Wholesale Inventory', path: '/admin/wholesale', icon: <Truck size={20} /> },
         { name: 'Ledger Balances', path: '/admin/financials', icon: <Truck size={20} /> },

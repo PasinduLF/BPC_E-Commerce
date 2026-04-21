@@ -22,7 +22,8 @@ export const useWishlistStore = create((set, get) => ({
 
     addToWishlist: (product) => {
         const { wishlistItems } = get();
-        const existItem = wishlistItems.find((x) => x._id === product._id);
+        const isBundle = Boolean(product?.isBundle);
+        const existItem = wishlistItems.find((x) => x._id === product._id && Boolean(x?.isBundle) === isBundle);
 
         if (!existItem) {
             const updatedWishlist = [...wishlistItems, product];
@@ -35,9 +36,9 @@ export const useWishlistStore = create((set, get) => ({
         }
     },
 
-    removeFromWishlist: (id) => {
+    removeFromWishlist: (id, isBundle = false) => {
         const { wishlistItems } = get();
-        const updatedWishlist = wishlistItems.filter((x) => x._id !== id);
+        const updatedWishlist = wishlistItems.filter((x) => !(x._id === id && Boolean(x?.isBundle) === Boolean(isBundle)));
         set({ wishlistItems: updatedWishlist });
 
         const user = getUser();
@@ -46,17 +47,26 @@ export const useWishlistStore = create((set, get) => ({
         }
     },
 
-    isInWishlist: (id) => {
+    isInWishlist: (id, isBundle = false) => {
         const { wishlistItems } = get();
-        return wishlistItems.some((x) => x._id === id);
+        return wishlistItems.some((x) => x._id === id && Boolean(x?.isBundle) === Boolean(isBundle));
     },
 
     toggleWishlist: (product) => {
         const { isInWishlist, addToWishlist, removeFromWishlist } = get();
-        if (isInWishlist(product._id)) {
-            removeFromWishlist(product._id);
+        const isBundle = Boolean(product?.isBundle);
+        if (isInWishlist(product._id, isBundle)) {
+            removeFromWishlist(product._id, isBundle);
         } else {
             addToWishlist(product);
+        }
+    },
+
+    clearWishlist: () => {
+        set({ wishlistItems: [] });
+        const user = getUser();
+        if (!user) {
+            localStorage.removeItem('wishlistItems_guest');
         }
     },
 
@@ -66,7 +76,7 @@ export const useWishlistStore = create((set, get) => ({
 
         let mergedWishlist = [...userSavedWishlist];
         guestWishlist.forEach(guestItem => {
-            const exist = mergedWishlist.find(x => x._id === guestItem._id);
+            const exist = mergedWishlist.find(x => x._id === guestItem._id && Boolean(x?.isBundle) === Boolean(guestItem?.isBundle));
             if (!exist) {
                 mergedWishlist.push(guestItem);
             }

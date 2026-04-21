@@ -60,6 +60,7 @@ app.use('/api/financials', require('./routes/financialRoutes'));
 app.use('/api/brands', require('./routes/brandRoutes'));
 app.use('/api/transactions', require('./routes/transactionRoutes'));
 app.use('/api/config', require('./routes/configRoutes'));
+app.use('/api/bundles', require('./routes/bundleRoutes'));
 
 app.get('/', (req, res) => {
     res.send('Beauty P&C API is running...');

@@ -5,14 +5,9 @@ import { Search, Plus, Minus, Trash2, ShoppingBag, CreditCard, Banknote, UserRou
 import { useConfigStore } from '../../context/useConfigStore';
 import { toast } from 'sonner';
 import StatusLegend from '../../components/admin/StatusLegend';
+import { getProductImageUrl } from '../../utils/imageUtils';
 
 const POSInterface = () => {
-    const FALLBACK_PRODUCT_IMAGE = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23f5f5f4%22/%3E%3Cpath%20d%3D%22M0%20140h200v60H0z%22%20fill%3D%22%23e7e5e4%22/%3E%3Ccircle%20cx%3D%2268%22%20cy%3D%2275%22%20r%3D%2214%22%20fill%3D%22%23d6d3d1%22/%3E%3Cpath%20d%3D%22M44%20150l30-34%2022%2026%2020-22%2036%2034H44z%22%20fill%3D%22%23d6d3d1%22/%3E%3C/svg%3E';
-
-    const getProductImageUrl = (product) => {
-        const imageUrl = product?.images?.[0]?.url;
-        return !imageUrl || imageUrl.includes('via.placeholder.com') ? FALLBACK_PRODUCT_IMAGE : imageUrl;
-    };
 
     const { userInfo } = useAuthStore();
     const [products, setProducts] = useState([]);

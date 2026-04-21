@@ -7,6 +7,9 @@ import axios from 'axios';
 import { Star, Truck, ShieldCheck, Minus, Plus, ShoppingBag, Heart, CreditCard, ChevronDown, Trash2 } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
 import Breadcrumbs from '../components/Breadcrumbs';
+import { getProductImageUrl } from '../utils/imageUtils';
+import { formatSoldCount } from '../utils/salesUtils';
+import { toast } from 'sonner';
 
 const ProductScreen = () => {
     const { config } = useConfigStore();
@@ -63,22 +66,30 @@ const ProductScreen = () => {
     const displayStock = (product.variants && product.variants.length > 0) ? (selectedVariant?.stock || 0) : product.stock;
 
     const addToCartHandler = () => {
-        addToCart({
+        const ok = addToCart({
             ...product,
             price: displayPrice, // Save final resolved price
             variant: selectedVariant,
             qty
         });
+        if (!ok) {
+            toast.error('This product is out of stock.');
+            return;
+        }
         navigate('/cart');
     };
 
     const buyNowHandler = () => {
-        setBuyNowItem({
+        const ok = setBuyNowItem({
             ...product,
             price: displayPrice,
             variant: selectedVariant,
             qty
         });
+        if (!ok) {
+            toast.error('This product is out of stock.');
+            return;
+        }
         if (userInfo) {
             navigate('/shipping');
         } else {
@@ -239,22 +250,18 @@ const ProductScreen = () => {
                     {/* Image Gallery */}
                     <div className="mb-8 lg:mb-0">
                         <div className="aspect-square rounded-2xl bg-muted relative overflow-hidden mb-4 border border-default group">
-                            {(selectedVariant && selectedVariant.image) ? (
+                            {(selectedVariant && selectedVariant.image && !selectedVariant.image.includes('via.placeholder.com')) ? (
                                 <img
                                     src={selectedVariant.image}
                                     alt={selectedVariant.name}
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
-                            ) : (product.images && product.images[activeImage]) ? (
+                            ) : (
                                 <img
-                                    src={product.images[activeImage].url}
+                                    src={getProductImageUrl(product, activeImage)}
                                     alt={product.name}
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
-                            ) : (
-                                <div className="absolute inset-0 flex items-center justify-center bg-brand-subtle/50">
-                                    <span className="text-brand font-medium">No Image Available</span>
-                                </div>
                             )}
                         </div>
 
@@ -267,7 +274,7 @@ const ProductScreen = () => {
                                         onClick={() => setActiveImage(index)}
                                         className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${activeImage === index ? 'border-brand ring-2 ring-brand-subtle' : 'border-transparent hover:border-brand'}`}
                                     >
-                                        <img src={img.url} alt="Thumbnail" className="w-full h-full object-cover" />
+                                        <img src={getProductImageUrl(product, index)} alt="Thumbnail" className="w-full h-full object-cover" />
                                     </button>
                                 ))}
                             </div>
@@ -315,6 +322,11 @@ const ProductScreen = () => {
                                 <span className="text-secondary text-sm hover:text-brand cursor-pointer transition-colors border-b border-dashed border-default">
                                     {product.numReviews || 0} Reviews
                                 </span>
+                                {Number(product.soldCount || 0) > 0 && (
+                                    <span className="text-sm font-semibold text-tertiary">
+                                        {formatSoldCount(product.soldCount)} sold
+                                    </span>
+                                )}
                             </div>
 
                             <p className="text-lg text-secondary leading-relaxed mb-6 max-w-2xl">

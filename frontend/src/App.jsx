@@ -8,6 +8,8 @@ import Footer from './components/Footer';
 const Home = lazy(() => import('./pages/Home'));
 const Categories = lazy(() => import('./pages/Categories'));
 const Shop = lazy(() => import('./pages/Shop'));
+const Brands = lazy(() => import('./pages/Brands'));
+const Bundles = lazy(() => import('./pages/Bundles'));
 const Wishlist = lazy(() => import('./pages/Wishlist'));
 const ProductScreen = lazy(() => import('./pages/ProductScreen'));
 const Cart = lazy(() => import('./pages/Cart'));
@@ -29,6 +31,7 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const ProductManage = lazy(() => import('./pages/admin/ProductManage'));
 const CategoryManage = lazy(() => import('./pages/admin/CategoryManage'));
 const BrandManage = lazy(() => import('./pages/admin/BrandManage'));
+const BundleManage = lazy(() => import('./pages/admin/BundleManage'));
 const OrderManage = lazy(() => import('./pages/admin/OrderManage'));
 const WholesaleInventory = lazy(() => import('./pages/admin/WholesaleInventory'));
 const UserManage = lazy(() => import('./pages/admin/UserManage'));
@@ -103,6 +106,8 @@ function AppShell() {
               <Route path="/" element={<Home />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/shop" element={<Shop />} />
+              <Route path="/brands" element={<Brands />} />
+              <Route path="/bundles" element={<Bundles />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/wishlist" element={<Wishlist />} />
@@ -119,12 +124,13 @@ function AppShell() {
               <Route path="/my-orders" element={<MyOrders />} />
               <Route path="/profile" element={<Profile />} />
 
-              {/* Admin Routes */}
+                {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="products" element={<ProductManage />} />
                 <Route path="categories" element={<CategoryManage />} />
                 <Route path="brands" element={<BrandManage />} />
+                <Route path="bundles" element={<BundleManage />} />
                 <Route path="orders" element={<OrderManage />} />
                 <Route path="wholesale" element={<WholesaleInventory />} />
                 <Route path="users" element={<UserManage />} />

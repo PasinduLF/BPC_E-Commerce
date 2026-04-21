@@ -5,6 +5,7 @@ import { useAuthStore } from '../context/useAuthStore';
 import axios from 'axios';
 import { CheckCircle, Truck, Wallet, ArrowRight, Building, Upload, FileImage, Loader2 } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
+import { getProductImageUrl } from '../utils/imageUtils';
 
 const PlaceOrder = () => {
     const { config } = useConfigStore();
@@ -19,13 +20,35 @@ const PlaceOrder = () => {
     const [placingOrder, setPlacingOrder] = useState(false);
     const [paymentSlip, setPaymentSlip] = useState(null);
 
+    const normalizedShippingAddress = {
+        name: shippingAddress?.name || userInfo?.name || '',
+        phone: shippingAddress?.phone || userInfo?.phone || '',
+        address: isPickupOrder ? (config?.pickupStore?.address || shippingAddress?.address || 'Store Pickup') : (shippingAddress?.address || ''),
+        city: isPickupOrder ? (config?.pickupStore?.city || shippingAddress?.city || 'N/A') : (shippingAddress?.city || ''),
+        postalCode: isPickupOrder ? (shippingAddress?.postalCode || 'N/A') : (shippingAddress?.postalCode || ''),
+        country: isPickupOrder ? (shippingAddress?.country || 'N/A') : (shippingAddress?.country || ''),
+    };
+
+    const hasRequiredShipping = Boolean(
+        normalizedShippingAddress.name &&
+        normalizedShippingAddress.phone &&
+        normalizedShippingAddress.address &&
+        normalizedShippingAddress.city &&
+        normalizedShippingAddress.postalCode &&
+        normalizedShippingAddress.country
+    );
+
+    const hasValidPickupPayment = !isPickupOrder || paymentMethod === 'Bank Transfer';
+
     useEffect(() => {
-        if (!shippingAddress.name || !shippingAddress.address || !shippingAddress.phone) {
+        if (!hasRequiredShipping) {
             navigate('/shipping');
         } else if (!paymentMethod) {
             navigate('/payment');
+        } else if (!hasValidPickupPayment) {
+            navigate('/payment');
         }
-    }, [paymentMethod, shippingAddress, navigate]);
+    }, [paymentMethod, hasRequiredShipping, hasValidPickupPayment, navigate]);
 
     const checkoutItems = buyNowItem ? [buyNowItem] : cartItems;
 
@@ -64,6 +87,19 @@ const PlaceOrder = () => {
 
     const placeOrderHandler = async () => {
         if (placingOrder) return;
+
+        if (!hasRequiredShipping) {
+            alert('Shipping details are incomplete. Please check your shipping information.');
+            navigate('/shipping');
+            return;
+        }
+
+        if (!hasValidPickupPayment) {
+            alert('Pickup orders require Bank Transfer payment method.');
+            navigate('/payment');
+            return;
+        }
+
         setPlacingOrder(true);
         try {
             const config = {
@@ -77,7 +113,7 @@ const PlaceOrder = () => {
                 '/api/orders',
                 {
                     orderItems: checkoutItems,
-                    shippingAddress,
+                    shippingAddress: normalizedShippingAddress,
                     paymentMethod,
                     fulfillmentType: isPickupOrder ? 'pickup' : 'delivery',
                     paymentSlip: paymentMethod === 'Bank Transfer' ? paymentSlip : undefined,
@@ -98,7 +134,8 @@ const PlaceOrder = () => {
 
         } catch (error) {
             console.error('Order creation failed', error);
-            alert('Order failed to process. Please try again.');
+            const message = error?.response?.data?.message || 'Order failed to process. Please try again.';
+            alert(message);
         } finally {
             setPlacingOrder(false);
         }
@@ -301,20 +338,38 @@ const PlaceOrder = () => {
                                     {checkoutItems.map((item, index) => (
                                         <li key={index} className="py-4 flex items-start sm:items-center gap-4">
                                             <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0 border border-default">
-                                                {item.images && item.images[0] ? (
-                                                    <img src={item.images[0].url} alt={item.name} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full bg-brand-subtle opacity-50"></div>
-                                                )}
+                                                <img 
+                                                    src={item.image && !item.image.includes('via.placeholder.com') ? item.image : getProductImageUrl(item)} 
+                                                    alt={item.name} 
+                                                    className="w-full h-full object-cover" 
+                                                />
                                             </div>
                                             <div className="flex-1">
-                                                <Link to={`/product/${item._id}`} className="font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
-                                                    {item.name}
-                                                </Link>
+                                                {item.isBundle ? (
+                                                    <Link to="/bundles" className="font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
+                                                        {item.name}
+                                                    </Link>
+                                                ) : (
+                                                    <Link to={`/product/${item._id}`} className="font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
+                                                        {item.name}
+                                                    </Link>
+                                                )}
                                                 {item.variant && (
                                                     <p className="text-brand text-[10px] font-bold uppercase tracking-wider mt-1">
                                                         {item.variant.name}: {item.variant.value}
                                                     </p>
+                                                )}
+                                                {item.isBundle && Array.isArray(item.bundleProducts) && item.bundleProducts.length > 0 && (
+                                                    <div className="mt-2 space-y-1">
+                                                        {item.bundleProducts.slice(0, 3).map((bp, bpIdx) => (
+                                                            <p key={bpIdx} className="text-[11px] text-secondary leading-tight">
+                                                                {bp.qty} x {bp.name}{bp.variantName ? ` (${bp.variantName})` : ''}
+                                                            </p>
+                                                        ))}
+                                                        {item.bundleProducts.length > 3 && (
+                                                            <p className="text-[11px] text-tertiary">+{item.bundleProducts.length - 3} more item(s)</p>
+                                                        )}
+                                                    </div>
                                                 )}
                                                 <p className="text-secondary text-sm mt-1">
                                                     {item.qty} x {currency}{item.price.toFixed(2)} = <span className="font-medium text-primary">{currency}{(item.qty * item.price).toFixed(2)}</span>

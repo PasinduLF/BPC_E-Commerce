@@ -8,12 +8,7 @@ import { notify } from '../../utils/notify';
 import StatusLegend from '../../components/admin/StatusLegend';
 
 const PRODUCT_DRAFT_KEY = 'admin-product-draft-v1';
-const FALLBACK_PRODUCT_IMAGE = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20300%20300%22%3E%3Crect%20width%3D%22300%22%20height%3D%22300%22%20fill%3D%22%23f5f5f4%22/%3E%3Cpath%20d%3D%22M0%20210h300v90H0z%22%20fill%3D%22%23e7e5e4%22/%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%22115%22%20r%3D%2222%22%20fill%3D%22%23d6d3d1%22/%3E%3Cpath%20d%3D%22M70%20235l44-52%2034%2038%2030-32%2052%2050H70z%22%20fill%3D%22%23d6d3d1%22/%3E%3Ctext%20x%3D%22150%22%20y%3D%22258%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%2C%20sans-serif%22%20font-size%3D%2224%22%20fill%3D%22%239ca3af%22%3EProduct%3C/text%3E%3C/svg%3E';
-
-const getProductImageUrl = (product) => {
-    const imageUrl = product?.images?.[0]?.url;
-    return !imageUrl || imageUrl.includes('via.placeholder.com') ? FALLBACK_PRODUCT_IMAGE : imageUrl;
-};
+import { FALLBACK_PRODUCT_IMAGE, getProductImageUrl } from '../../utils/imageUtils';
 
 const ProductManage = () => {
     const { userInfo } = useAuthStore();

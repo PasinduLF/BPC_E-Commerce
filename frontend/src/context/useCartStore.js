@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getFirstAvailableVariant, hasBundleStock, hasProductStock } from '../utils/stockUtils';
 
 const getUser = () => {
     return JSON.parse(localStorage.getItem('userInfo'));
@@ -33,30 +34,97 @@ export const useCartStore = create((set) => ({
         ? JSON.parse(localStorage.getItem('buyNowItem'))
         : null,
 
-    setBuyNowItem: (item) => set(() => {
-        localStorage.setItem('buyNowItem', JSON.stringify(item));
-        return { buyNowItem: item };
-    }),
+    setBuyNowItem: (item) => {
+        const isBundle = Boolean(item?.isBundle);
+
+        if (isBundle) {
+            if (!hasBundleStock(item, item?.qty || 1)) {
+                return false;
+            }
+        } else if (!hasProductStock(item, item?.qty || 1, item?.variant || null)) {
+            return false;
+        }
+
+        set(() => {
+            localStorage.setItem('buyNowItem', JSON.stringify(item));
+            return { buyNowItem: item };
+        });
+
+        return true;
+    },
 
     clearBuyNowItem: () => set(() => {
         localStorage.removeItem('buyNowItem');
         return { buyNowItem: null };
     }),
 
-    addToCart: (item) => set((state) => {
-        const cartId = item.variant ? `${item._id}-${item.variant._id}` : item._id;
-        const itemWithCartId = { ...item, cartId };
+    addToCart: (item) => {
+        const qty = Math.max(Number(item?.qty || 1), 1);
+        let resolvedVariant = item?.variant || null;
 
-        const existItem = state.cartItems.find((x) => x.cartId === cartId);
-
-        let updatedCart;
-        if (existItem) {
-            updatedCart = state.cartItems.map((x) =>
-                x.cartId === existItem.cartId ? itemWithCartId : x
-            );
-        } else {
-            updatedCart = [...state.cartItems, itemWithCartId];
+        if (!resolvedVariant && Array.isArray(item?.variants) && item.variants.length > 0) {
+            resolvedVariant = getFirstAvailableVariant(item);
         }
+
+        if (!hasProductStock(item, qty, resolvedVariant)) {
+            return false;
+        }
+
+        set((state) => {
+            const cartId = resolvedVariant ? `${item._id}-${resolvedVariant._id}` : item._id;
+            const itemWithCartId = { ...item, variant: resolvedVariant, cartId, qty };
+
+            const existItem = state.cartItems.find((x) => x.cartId === cartId);
+
+            let updatedCart;
+            if (existItem) {
+                updatedCart = state.cartItems.map((x) =>
+                    x.cartId === existItem.cartId ? itemWithCartId : x
+                );
+            } else {
+                updatedCart = [...state.cartItems, itemWithCartId];
+            }
+
+            const user = getUser();
+            if (!user) {
+                localStorage.setItem('cartItems_guest', JSON.stringify(updatedCart));
+            }
+
+            return { cartItems: updatedCart };
+        });
+
+        return true;
+    },
+
+    addBundleToCart: (bundle) => {
+        if (!hasBundleStock(bundle, 1)) {
+            return false;
+        }
+
+        set((state) => {
+        // Bundles use a unique cartId prefix so they don't conflict with products
+        const cartId = `bundle-${bundle._id}`;
+
+        // If already in cart, do nothing (bundle is atomic — qty always 1)
+        const alreadyInCart = state.cartItems.find((x) => x.cartId === cartId);
+        if (alreadyInCart) {
+            return { cartItems: state.cartItems };
+        }
+
+        const bundleCartItem = {
+            _id: bundle._id,
+            cartId,
+            name: bundle.name,
+            image: bundle.image?.url || '',
+            price: bundle.bundlePrice,
+            qty: 1,
+            isBundle: true,
+            bundleProducts: bundle.products || [],
+            // Bundle availability is validated before insertion.
+            stock: 9999,
+        };
+
+        const updatedCart = [...state.cartItems, bundleCartItem];
 
         const user = getUser();
         if (!user) {
@@ -64,7 +132,10 @@ export const useCartStore = create((set) => ({
         }
 
         return { cartItems: updatedCart };
-    }),
+        });
+
+        return true;
+    },
 
     removeFromCart: (cartIdToRemove) => set((state) => {
         const updatedCart = state.cartItems.filter((x) => x.cartId !== cartIdToRemove);

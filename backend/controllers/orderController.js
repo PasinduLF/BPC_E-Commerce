@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const Bundle = require('../models/Bundle');
 const SystemConfig = require('../models/SystemConfig');
 const User = require('../models/User');
 const { sendEmailSafely } = require('../utils/emailService');
@@ -12,6 +13,25 @@ const getEffectiveUnitPrice = (price, discountPrice) => {
     const basePrice = Number(price || 0);
     const discounted = Number(discountPrice || 0);
     return discounted > 0 && discounted < basePrice ? discounted : basePrice;
+};
+
+const buildVariantPoolDeductions = (variants = [], requiredQty = 0) => {
+    let remaining = Number(requiredQty || 0);
+    const deductions = [];
+
+    for (const variant of variants) {
+        const available = Number(variant?.stock || 0);
+        if (available <= 0 || remaining <= 0) continue;
+
+        const take = Math.min(available, remaining);
+        deductions.push({
+            variantId: variant._id,
+            qty: take,
+        });
+        remaining -= take;
+    }
+
+    return remaining === 0 ? deductions : null;
 };
 
 const createHttpError = (statusCode, message) => {
@@ -200,61 +220,163 @@ const addOrderItems = async (req, res) => {
                     throw createHttpError(400, 'Each order item quantity must be a positive whole number');
                 }
 
-                const productId = item.product || item._id;
-                if (!productId) {
-                    throw createHttpError(400, 'Each order item must include a product reference');
-                }
-
-                const productRecord = await Product.findById(productId);
-                if (!productRecord) {
-                    throw createHttpError(404, 'One or more products are no longer available');
-                }
-
-                const requestedVariantId = item.variantId || item.variant?._id;
-                let resolvedName = item.name || productRecord.name;
-                let resolvedImage = item.image || (productRecord.images && productRecord.images.length > 0 ? productRecord.images[0].url : 'placeholder');
-                let resolvedPrice = getEffectiveUnitPrice(productRecord.price, productRecord.discountPrice);
-                let resolvedCostPrice = Number(productRecord.costPrice || 0);
-                let availableStock = Number(productRecord.stock || 0);
-                let resolvedVariantId;
-                let resolvedVariantName;
-
-                if (requestedVariantId) {
-                    const variant = productRecord.variants.id(requestedVariantId);
-                    if (!variant) {
-                        throw createHttpError(400, `Selected variant is no longer available for ${productRecord.name}`);
+                if (item.isBundle) {
+                    const bundleId = item.bundle || item._id;
+                    const bundleRecord = await Bundle.findById(bundleId).populate('products.product');
+                    
+                    if (!bundleRecord) {
+                        throw createHttpError(404, 'The selected bundle is no longer available');
                     }
 
-                    availableStock = Number(variant.stock || 0);
-                    resolvedPrice = getEffectiveUnitPrice(variant.price, variant.discountPrice);
-                    resolvedCostPrice = Number(variant.costPrice ?? productRecord.costPrice ?? 0);
-                    resolvedVariantId = variant._id;
-                    resolvedVariantName = `${variant.name}: ${variant.value}`;
-                    resolvedImage = variant.image || resolvedImage;
+                    if (!bundleRecord.isActive) {
+                        throw createHttpError(400, `Bundle "${bundleRecord.name}" is currently unavailable`);
+                    }
+
+                    if (!Array.isArray(bundleRecord.products) || bundleRecord.products.length === 0) {
+                        throw createHttpError(400, `Bundle "${bundleRecord.name}" has no products configured`);
+                    }
+
+                    const bundlePrice = Number(bundleRecord.bundlePrice || 0);
+                    const preparedBundleProducts = [];
+
+                    // Verify and prepare all products in the bundle
+                    for (const bp of bundleRecord.products) {
+                        const p = bp.product;
+                        if (!p) {
+                            throw createHttpError(400, `Bundle "${bundleRecord.name}" has one or more missing products`);
+                        }
+
+                        if (p.isActive === false) {
+                            throw createHttpError(400, `Product "${p.name}" in bundle "${bundleRecord.name}" is inactive`);
+                        }
+
+                        const bundleProductQty = Number(bp.qty || 1);
+                        const requiredBundleQty = bundleProductQty * qty;
+                        const selectedVariantId = bp.variantId;
+                        const hasVariants = Array.isArray(p.variants) && p.variants.length > 0;
+
+                        let selectedVariant;
+                        if (selectedVariantId) {
+                            selectedVariant = p.variants.id(selectedVariantId);
+                            if (!selectedVariant) {
+                                throw createHttpError(400, `Selected variant for "${p.name}" in bundle "${bundleRecord.name}" is no longer available`);
+                            }
+                            if (Number(selectedVariant.stock || 0) < requiredBundleQty) {
+                                throw createHttpError(400, `Insufficient stock for product "${p.name}" (${selectedVariant.name}: ${selectedVariant.value}) in bundle "${bundleRecord.name}"`);
+                            }
+                        }
+
+                        let variantPoolDeductions = null;
+                        if (selectedVariant) {
+                            variantPoolDeductions = [{ variantId: selectedVariant._id, qty: requiredBundleQty }];
+                        } else if (hasVariants) {
+                            variantPoolDeductions = buildVariantPoolDeductions(p.variants, requiredBundleQty);
+                            if (!variantPoolDeductions) {
+                                throw createHttpError(400, `Insufficient stock for product "${p.name}" in bundle "${bundleRecord.name}"`);
+                            }
+                        } else if (Number(p.stock || 0) < requiredBundleQty) {
+                            throw createHttpError(400, `Insufficient stock for product "${p.name}" in bundle "${bundleRecord.name}"`);
+                        }
+
+                        preparedBundleProducts.push({
+                            product: p._id,
+                            name: p.name,
+                            qty: bundleProductQty,
+                            variantId: selectedVariant?._id,
+                            variantName: selectedVariant ? `${selectedVariant.name}: ${selectedVariant.value}` : '',
+                            price: selectedVariant
+                                ? getEffectiveUnitPrice(selectedVariant.price, selectedVariant.discountPrice)
+                                : getEffectiveUnitPrice(p.price, p.discountPrice)
+                        });
+
+                        if (variantPoolDeductions) {
+                            stockUpdates.push({
+                                kind: 'variantPool',
+                                productId: p._id,
+                                variantDeductions: variantPoolDeductions,
+                            });
+                        } else {
+                            stockUpdates.push({
+                                productId: p._id,
+                                qty: requiredBundleQty,
+                            });
+                        }
+                    }
+
+                    if (preparedBundleProducts.length === 0) {
+                        throw createHttpError(400, `Bundle "${bundleRecord.name}" has no valid products available`);
+                    }
+
+                    preparedOrderItems.push({
+                        name: bundleRecord.name,
+                        qty,
+                        image: bundleRecord.image?.url || '',
+                        price: bundlePrice,
+                        costPrice: 0, // Cost price logic for bundles can be complex, default to 0 for now
+                        isBundle: true,
+                        bundle: bundleRecord._id,
+                        bundleProducts: preparedBundleProducts
+                    });
+
+                    computedItemsPrice += bundlePrice * qty;
+
+                } else {
+                    const productId = item.product || item._id;
+                    if (!productId) {
+                        throw createHttpError(400, 'Each order item must include a product reference');
+                    }
+
+                    const productRecord = await Product.findById(productId);
+                    if (!productRecord) {
+                        throw createHttpError(404, 'One or more products are no longer available');
+                    }
+
+                    const requestedVariantId = item.variantId || item.variant?._id;
+                    let resolvedName = item.name || productRecord.name;
+                    let resolvedImage = item.image || (productRecord.images && productRecord.images.length > 0 ? productRecord.images[0].url : 'placeholder');
+                    let resolvedPrice = getEffectiveUnitPrice(productRecord.price, productRecord.discountPrice);
+                    let resolvedCostPrice = Number(productRecord.costPrice || 0);
+                    let availableStock = Number(productRecord.stock || 0);
+                    let resolvedVariantId;
+                    let resolvedVariantName;
+
+                    if (requestedVariantId) {
+                        const variant = productRecord.variants.id(requestedVariantId);
+                        if (!variant) {
+                            throw createHttpError(400, `Selected variant is no longer available for ${productRecord.name}`);
+                        }
+
+                        availableStock = Number(variant.stock || 0);
+                        resolvedPrice = getEffectiveUnitPrice(variant.price, variant.discountPrice);
+                        resolvedCostPrice = Number(variant.costPrice ?? productRecord.costPrice ?? 0);
+                        resolvedVariantId = variant._id;
+                        resolvedVariantName = `${variant.name}: ${variant.value}`;
+                        resolvedImage = variant.image || resolvedImage;
+                    }
+
+                    if (availableStock < qty) {
+                        throw createHttpError(400, `Insufficient stock for ${resolvedName}`);
+                    }
+
+                    preparedOrderItems.push({
+                        name: resolvedName,
+                        qty,
+                        image: resolvedImage,
+                        price: resolvedPrice,
+                        costPrice: resolvedCostPrice,
+                        product: productRecord._id,
+                        variantId: resolvedVariantId,
+                        variantName: resolvedVariantName,
+                    });
+
+                    computedItemsPrice += resolvedPrice * qty;
+
+                    stockUpdates.push({
+                        productId: productRecord._id,
+                        variantId: resolvedVariantId,
+                        qty,
+                    });
                 }
-
-                if (availableStock < qty) {
-                    throw createHttpError(400, `Insufficient stock for ${resolvedName}`);
-                }
-
-                preparedOrderItems.push({
-                    name: resolvedName,
-                    qty,
-                    image: resolvedImage,
-                    price: resolvedPrice,
-                    costPrice: resolvedCostPrice,
-                    product: productRecord._id,
-                    variantId: resolvedVariantId,
-                    variantName: resolvedVariantName,
-                });
-
-                computedItemsPrice += resolvedPrice * qty;
-
-                stockUpdates.push({
-                    productId: productRecord._id,
-                    variantId: resolvedVariantId,
-                    qty,
-                });
             }
 
             const normalizedShippingPrice = normalizedFulfillmentType === 'pickup'
@@ -267,6 +389,32 @@ const addOrderItems = async (req, res) => {
             try {
                 for (const update of stockUpdates) {
                     let result;
+                    if (update.kind === 'variantPool') {
+                        for (const deduction of update.variantDeductions || []) {
+                            result = await Product.updateOne(
+                                {
+                                    _id: update.productId,
+                                    'variants._id': deduction.variantId,
+                                    'variants.stock': { $gte: deduction.qty },
+                                },
+                                {
+                                    $inc: { 'variants.$.stock': -deduction.qty },
+                                }
+                            );
+
+                            if (result.modifiedCount !== 1) {
+                                throw createHttpError(409, 'Inventory changed while placing order. Please review your cart and try again.');
+                            }
+
+                            appliedStockUpdates.push({
+                                productId: update.productId,
+                                variantId: deduction.variantId,
+                                qty: deduction.qty,
+                            });
+                        }
+                        continue;
+                    }
+
                     if (update.variantId) {
                         result = await Product.updateOne(
                             {
@@ -294,7 +442,11 @@ const addOrderItems = async (req, res) => {
                         throw createHttpError(409, 'Inventory changed while placing order. Please review your cart and try again.');
                     }
 
-                    appliedStockUpdates.push(update);
+                    appliedStockUpdates.push({
+                        productId: update.productId,
+                        variantId: update.variantId,
+                        qty: update.qty,
+                    });
                 }
 
                 const order = new Order({
@@ -604,15 +756,26 @@ const deleteOrder = async (req, res) => {
         // Refund stock for POS orders (or any delivered orders we want to reverse)
         if (order.isPOS) {
             for (const item of order.orderItems) {
-                const productRecord = await Product.findById(item.product);
-                if (productRecord) {
-                    if (item.variantId && productRecord.variants && productRecord.variants.length > 0) {
-                        const variant = productRecord.variants.id(item.variantId);
-                        if (variant) variant.stock += item.qty;
-                    } else {
-                        productRecord.stock += item.qty;
+                if (item.isBundle && Array.isArray(item.bundleProducts)) {
+                    // Refund each product in the bundle
+                    for (const bp of item.bundleProducts) {
+                        const productRecord = await Product.findById(bp.product);
+                        if (productRecord) {
+                            productRecord.stock += (bp.qty * item.qty);
+                            await productRecord.save();
+                        }
                     }
-                    await productRecord.save();
+                } else {
+                    const productRecord = await Product.findById(item.product);
+                    if (productRecord) {
+                        if (item.variantId && productRecord.variants && productRecord.variants.length > 0) {
+                            const variant = productRecord.variants.id(item.variantId);
+                            if (variant) variant.stock += item.qty;
+                        } else {
+                            productRecord.stock += item.qty;
+                        }
+                        await productRecord.save();
+                    }
                 }
             }
         }

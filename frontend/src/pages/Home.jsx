@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Star, ShoppingBag, Heart, ShieldCheck, Truck, CreditCard, Mail, Sparkles, Award } from 'lucide-react';
 import axios from 'axios';
 import { useConfigStore } from '../context/useConfigStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useCartStore } from '../context/useCartStore';
+import { getProductImageUrl } from '../utils/imageUtils';
+import { useAuthStore } from '../context/useAuthStore';
+import { getFirstAvailableVariant, hasBundleStock, hasProductStock } from '../utils/stockUtils';
+import { formatSoldCount } from '../utils/salesUtils';
+import { toast } from 'sonner';
 
 const Home = () => {
     const { config } = useConfigStore();
     const currency = config?.currencySymbol || '$';
+    const navigate = useNavigate();
     
     const [trendingProducts, setTrendingProducts] = useState([]);
     const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -16,14 +22,46 @@ const Home = () => {
     const [brands, setBrands] = useState([]);
     const [email, setEmail] = useState('');
     const [subscribed, setSubscribed] = useState(false);
+    const [featuredBundles, setFeaturedBundles] = useState([]);
 
     const { isInWishlist, toggleWishlist } = useWishlistStore();
-    const { addToCart } = useCartStore();
+    const { addToCart, addBundleToCart, setBuyNowItem } = useCartStore();
+    const { userInfo } = useAuthStore();
+
+    const toBundleCartItem = (bundle) => ({
+        _id: bundle._id,
+        name: bundle.name,
+        image: bundle.image?.url || '',
+        bundlePrice: Number(bundle.bundlePrice || 0),
+        products: bundle.products || [],
+        isBundle: true,
+        qty: 1,
+    });
+
+    const handleBundleBuyNow = (bundle) => {
+        if (!hasBundleStock(bundle, 1)) {
+            toast.error('This bundle is out of stock.');
+            return;
+        }
+
+        const ok = setBuyNowItem(toBundleCartItem(bundle));
+        if (!ok) {
+            toast.error('This bundle is out of stock.');
+            return;
+        }
+
+        if (userInfo) {
+            navigate('/shipping');
+        } else {
+            navigate('/login?redirect=/shipping');
+        }
+    };
 
     const getBrandImageSrc = (brand) => {
         if (!brand?.image) return '';
-        if (typeof brand.image === 'string') return brand.image;
-        return brand.image?.url || '';
+        const img = typeof brand.image === 'string' ? brand.image : brand.image?.url;
+        if (!img || img.includes('via.placeholder.com')) return '';
+        return img;
     };
 
     const logoBrands = brands.filter((brand) => getBrandImageSrc(brand));
@@ -47,6 +85,11 @@ const Home = () => {
                 // Fetch Brands
                 const brandRes = await axios.get('/api/brands');
                 setBrands(brandRes.data);
+
+                // Fetch Featured Bundles
+                const bundleRes = await axios.get('/api/bundles');
+                const activeFeatured = bundleRes.data.filter(b => b.isActive && b.isFeatured).slice(0, 4);
+                setFeaturedBundles(activeFeatured);
             } catch (error) {
                 console.error("Failed to load home data:", error);
             }
@@ -88,18 +131,19 @@ const Home = () => {
     };
 
     const ProductCard = ({ product, badgeName, badgeColor }) => (
+        (() => {
+            const defaultVariant = getFirstAvailableVariant(product);
+            const canAdd = hasProductStock(product, 1, defaultVariant);
+
+            return (
         <div key={product._id} className="group relative bg-surface border border-default rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
             <Link to={`/product/${product._id}`} className="block relative">
                 <div className="aspect-square bg-muted relative p-6 flex flex-col items-center justify-center overflow-hidden">
-                    {product.images && product.images[0] ? (
-                        <img
-                            src={product.images[0].url}
-                            alt={product.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
-                        />
-                    ) : (
-                        <div className="w-32 h-32 rounded-full bg-brand-subtle opacity-50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-700"></div>
-                    )}
+                    <img
+                        src={getProductImageUrl(product)}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
+                    />
                     {badgeName && (
                         <div className={`absolute top-4 right-4 bg-surface/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${badgeColor}`}>
                             {badgeName}
@@ -124,6 +168,11 @@ const Home = () => {
                     <Star size={16} fill="currentColor" />
                     <Star size={16} fill="currentColor" className="text-muted" />
                 </div>
+                {Number(product.soldCount || 0) > 0 && (
+                    <p className="text-xs font-semibold text-tertiary mb-2">
+                        {formatSoldCount(product.soldCount)} sold
+                    </p>
+                )}
                 {product.brand && (
                     <span className="block text-[11px] font-bold tracking-widest text-brand uppercase mb-1.5">
                         {product.brand.name || product.brand}
@@ -146,14 +195,123 @@ const Home = () => {
                         )}
                     </div>
                     <button
-                        onClick={() => addToCart({ ...product, qty: 1 })}
-                        className="bg-primary hover:bg-brand text-surface p-4 rounded-full transition-colors self-end shadow-md"
+                        onClick={() => {
+                            const ok = addToCart({ ...product, variant: defaultVariant || undefined, qty: 1 });
+                            if (!ok) {
+                                toast.error('This product is out of stock.');
+                            }
+                        }}
+                        disabled={!canAdd}
+                        className="bg-primary hover:bg-brand text-surface p-4 rounded-full transition-colors self-end shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <ShoppingBag size={22} />
                     </button>
                 </div>
             </div>
         </div>
+            );
+        })()
+    );
+
+    const BundleCard = ({ bundle }) => (
+        (() => {
+            const canBuyBundle = hasBundleStock(bundle, 1);
+
+            return (
+        <div key={bundle._id} className="group relative bg-surface border border-brand-subtle rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-brand-subtle/50 transition-all duration-500 transform hover:-translate-y-2 flex flex-col">
+            <Link to="/bundles" className="block relative">
+                <div className="aspect-[4/3] bg-muted relative overflow-hidden">
+                    <img
+                        src={bundle.image?.url || getProductImageUrl({})}
+                        alt={bundle.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-in-out"
+                    />
+                    <div className="absolute top-4 left-4 bg-brand text-on-brand px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
+                        Special Bundle
+                    </div>
+                </div>
+            </Link>
+
+            <button
+                onClick={(e) => {
+                    e.preventDefault();
+                    toggleWishlist({
+                        _id: bundle._id,
+                        name: bundle.name,
+                        image: bundle.image || { url: '' },
+                        price: Number(bundle.bundlePrice || 0),
+                        bundlePrice: Number(bundle.bundlePrice || 0),
+                        originalPrice: Number(bundle.originalPrice || 0),
+                        isBundle: true,
+                        products: bundle.products || [],
+                        bundleProducts: bundle.products || [],
+                    });
+                }}
+                className="absolute top-4 left-4 bg-surface/90 backdrop-blur-sm p-2.5 rounded-full shadow-sm z-10 transition-colors hover:bg-brand-subtle"
+                title={isInWishlist(bundle._id, true) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+            >
+                <Heart size={16} className={isInWishlist(bundle._id, true) ? 'fill-brand text-brand' : 'text-tertiary hover:text-brand'} />
+            </button>
+
+            <div className="p-6 flex flex-col flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                    <Sparkles size={16} className="text-brand animate-pulse" />
+                    <span className="text-[11px] font-black tracking-[0.2em] text-brand uppercase">Exclusive Deal</span>
+                </div>
+                {Number(bundle.soldCount || 0) > 0 && (
+                    <p className="text-xs font-semibold text-tertiary mb-2">
+                        {formatSoldCount(bundle.soldCount)} bundles sold
+                    </p>
+                )}
+                
+                <h3 className="text-xl font-bold text-primary mb-2 group-hover:text-brand transition-colors line-clamp-1">{bundle.name}</h3>
+                <p className="text-sm text-secondary mb-6 line-clamp-2 leading-relaxed">
+                    {bundle.description}
+                </p>
+
+                <div className="mt-auto space-y-4">
+                    <div className="flex flex-col">
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black text-brand">{currency}{bundle.bundlePrice.toFixed(2)}</span>
+                            {bundle.originalPrice > bundle.bundlePrice && (
+                                <span className="text-base font-semibold text-tertiary line-through">{currency}{bundle.originalPrice.toFixed(2)}</span>
+                            )}
+                        </div>
+                        {bundle.originalPrice > bundle.bundlePrice && (
+                            <span className="text-[10px] font-bold text-success uppercase tracking-wider">
+                                Save {currency}{(bundle.originalPrice - bundle.bundlePrice).toFixed(2)}
+                            </span>
+                        )}
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button
+                            onClick={() => {
+                                const ok = addBundleToCart(bundle);
+                                if (!ok) {
+                                    toast.error('This bundle is out of stock.');
+                                }
+                            }}
+                            disabled={!canBuyBundle}
+                            className="w-full bg-primary hover:bg-brand text-surface font-bold py-3.5 rounded-2xl transition-all shadow-lg shadow-primary/10 flex items-center justify-center gap-2 group-hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <ShoppingBag size={18} />
+                            {canBuyBundle ? 'Add to Cart' : 'Out of Stock'}
+                        </button>
+                        <button
+                            onClick={() => handleBundleBuyNow(bundle)}
+                            disabled={!canBuyBundle}
+                            className="w-full border border-default text-primary hover:text-brand hover:border-brand py-3.5 rounded-2xl transition-all font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <CreditCard size={18} />
+                            Buy Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+            );
+        })()
     );
 
     return (
@@ -282,6 +440,38 @@ const Home = () => {
                             {featuredProducts.map((product) => (
                                 <ProductCard key={`featured-${product._id}`} product={product} badgeName="Best Seller" badgeColor="text-error" />
                             ))}
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {/* Featured Bundles */}
+            {featuredBundles.length > 0 && (
+                <section className="py-24 bg-surface relative overflow-hidden scroll-reveal">
+                    <div className="absolute -right-40 top-40 w-96 h-96 bg-brand-subtle rounded-full blur-3xl opacity-30 z-0 rotate-45"></div>
+                    <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 relative z-10">
+                        <div className="flex items-end justify-between mb-12">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-10 h-1 px-1 bg-brand rounded-full"></div>
+                                    <span className="text-brand font-black uppercase text-xs tracking-widest">Limited Offers</span>
+                                </div>
+                                <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-primary mb-3">Bundle & Save More</h2>
+                                <p className="text-secondary font-medium max-w-xl">Get our expert-curated beauty sets at unbeatable prices. Perfection in a package.</p>
+                            </div>
+                            <Link to="/bundles" className="hidden sm:flex text-brand font-bold hover:brightness-90 items-center gap-2 border-2 border-brand/20 rounded-2xl px-6 py-3 hover:bg-brand-subtle hover:border-brand/40 transition-all shadow-sm">
+                                View All Bundles <ArrowRight size={20} />
+                            </Link>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                            {featuredBundles.map((bundle) => (
+                                <BundleCard key={`home-bundle-${bundle._id}`} bundle={bundle} />
+                            ))}
+                        </div>
+                        
+                        <div className="mt-12 sm:hidden">
+                            <Link to="/bundles" className="btn-primary w-full py-4 text-center">View All Bundles</Link>
                         </div>
                     </div>
                 </section>

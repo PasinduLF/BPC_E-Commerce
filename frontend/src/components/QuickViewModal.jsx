@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Star, ShoppingBag, Heart, ChevronDown, Minus, Plus } from 'lucide-react';
 import { useCartStore } from '../context/useCartStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useConfigStore } from '../context/useConfigStore';
 import { Link } from 'react-router-dom';
+import { getProductImageUrl } from '../utils/imageUtils';
+import { getFirstAvailableVariant, hasProductStock } from '../utils/stockUtils';
+import { formatSoldCount } from '../utils/salesUtils';
+import { toast } from 'sonner';
 
 const QuickViewModal = ({ product, onClose, isOpen }) => {
     const { config } = useConfigStore();
@@ -13,7 +17,14 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
     
     const [qty, setQty] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
-    const [selectedVariant, setSelectedVariant] = useState(product?.variants?.[0] || null);
+    const [selectedVariant, setSelectedVariant] = useState(getFirstAvailableVariant(product) || product?.variants?.[0] || null);
+
+    useEffect(() => {
+        if (!isOpen || !product) return;
+        setQty(1);
+        setActiveImage(0);
+        setSelectedVariant(getFirstAvailableVariant(product) || product?.variants?.[0] || null);
+    }, [isOpen, product]);
 
     if (!isOpen || !product) return null;
 
@@ -24,12 +35,18 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
     const displayStock = selectedVariant?.stock || product.stock || 0;
 
     const handleAddToCart = () => {
-        addToCart({
+        const ok = addToCart({
             ...product,
             price: displayPrice,
             variant: selectedVariant,
             qty
         });
+
+        if (!ok) {
+            toast.error('This product is out of stock.');
+            return;
+        }
+
         onClose();
     };
 
@@ -50,15 +67,11 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                     {/* Image Section */}
                     <div className="flex flex-col gap-4">
                         <div className="aspect-square bg-page rounded-2xl border border-default overflow-hidden flex items-center justify-center">
-                            {product.images?.[activeImage] ? (
                                 <img
-                                    src={product.images[activeImage].url}
+                                    src={getProductImageUrl(product, activeImage)}
                                     alt={product.name}
                                     className="w-full h-full object-cover"
                                 />
-                            ) : (
-                                <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-brand-subtle opacity-50"></div>
-                            )}
                         </div>
                         
                         {/* Image Thumbnails */}
@@ -72,7 +85,7 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                                             activeImage === idx ? 'border-brand' : 'border-default'
                                         }`}
                                     >
-                                        <img src={img.url} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                                        <img src={getProductImageUrl(product, idx)} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
                                     </button>
                                 ))}
                             </div>
@@ -114,6 +127,12 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                                 <span className="text-lg text-tertiary line-through">{currency}{basePrice.toFixed(2)}</span>
                             )}
                         </div>
+
+                        {Number(product.soldCount || 0) > 0 && (
+                            <div className="text-sm font-semibold text-tertiary">
+                                {formatSoldCount(product.soldCount)} sold
+                            </div>
+                        )}
 
                         {/* Stock Status */}
                         <div className={`text-sm font-bold ${displayStock > 0 ? 'text-success' : 'text-error'}`}>
@@ -163,7 +182,7 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
 
                             <button
                                 onClick={handleAddToCart}
-                                disabled={displayStock <= 0}
+                                disabled={!hasProductStock(product, qty, selectedVariant)}
                                 className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 min-h-11"
                             >
                                 <ShoppingBag size={18} />
@@ -171,7 +190,7 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                             </button>
 
                             <button
-                                onClick={() => toggleWishlist(product._id)}
+                                onClick={() => toggleWishlist(product)}
                                 className={`p-3 rounded-lg border-2 transition-colors self-center sm:self-auto ${
                                     isInWishlist(product._id)
                                         ? 'bg-brand-subtle border-brand text-brand'

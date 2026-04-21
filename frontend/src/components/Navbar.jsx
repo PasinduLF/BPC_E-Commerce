@@ -128,10 +128,15 @@ const Navbar = () => {
                             </Link>
                         </div>
 
-                        {/* Desktop Mega Menu Categories */}
+                        {/* Desktop Mega Menu Navigation */}
                         <div className="hidden md:flex items-center justify-center flex-1 px-8">
                             <div className="flex space-x-6 h-full items-center">
-                                {categories.slice(0, 5).map(category => (
+                                {/* All Products static link */}
+                                <Link to="/shop" className="nav-link text-sm uppercase tracking-wider">
+                                    All Products
+                                </Link>
+
+                                {categories.slice(0, 4).map(category => (
                                     <div 
                                         key={category._id} 
                                         className="relative h-20 flex items-center group"
@@ -209,12 +214,20 @@ const Navbar = () => {
                                                         </div>
                                                     )}
                                                 </div>
-
-                                                {/* Optional Promo Panel (Hidden for sidebar menu to keep width manageable, or made wider) */}
                                             </div>
                                         )}
                                     </div>
                                 ))}
+
+                                {/* Brands static link */}
+                                <Link to="/brands" className="nav-link text-sm uppercase tracking-wider">
+                                    Brands
+                                </Link>
+
+                                {/* Bundle Deals static link */}
+                                <Link to="/bundles" className="nav-link text-sm uppercase tracking-wider text-brand">
+                                    Deals
+                                </Link>
                             </div>
                         </div>
 
@@ -418,6 +431,12 @@ const Navbar = () => {
                                     )}
                                 </div>
                             ))}
+
+                            <Link to="/shop" className="block px-5 py-4 font-bold text-primary border-b border-default hover:bg-subtle" onClick={() => setIsOpen(false)}>All Products</Link>
+
+                            <Link to="/brands" className="block px-5 py-4 font-bold text-primary border-b border-default hover:bg-subtle" onClick={() => setIsOpen(false)}>Browse by Brand</Link>
+
+                            <Link to="/bundles" className="block px-5 py-4 font-bold text-brand border-b border-default hover:bg-subtle" onClick={() => setIsOpen(false)}>Bundle Deals</Link>
 
                             <Link to="/about" className="block px-5 py-4 font-bold text-primary border-b border-default hover:bg-subtle" onClick={() => setIsOpen(false)}>About Us</Link>
                         </div>

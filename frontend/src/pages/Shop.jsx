@@ -7,6 +7,10 @@ import QuickViewModal from '../components/QuickViewModal';
 import { useConfigStore } from '../context/useConfigStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useCartStore } from '../context/useCartStore';
+import { getProductImageUrl } from '../utils/imageUtils';
+import { getFirstAvailableVariant, hasProductStock } from '../utils/stockUtils';
+import { formatSoldCount } from '../utils/salesUtils';
+import { toast } from 'sonner';
 
 const Shop = () => {
     const { config } = useConfigStore();
@@ -551,15 +555,11 @@ const Shop = () => {
                                     <div key={product._id} className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
                                         <Link to={`/product/${product._id}`} className="block relative">
                                             <div className="aspect-square bg-muted relative p-6 flex flex-col items-center justify-center overflow-hidden">
-                                                {product.images && product.images[0] ? (
-                                                    <img
-                                                        src={product.images[0].url}
-                                                        alt={product.name}
-                                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                    />
-                                                ) : (
-                                                    <div className="w-32 h-32 rounded-full bg-brand-subtle opacity-50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-500"></div>
-                                                )}
+                                                <img
+                                                    src={getProductImageUrl(product)}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                />
                                                 {Number(product.rating || 0) >= 4 && (
                                                     <div className="absolute top-4 right-4 bg-surface/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-brand">
                                                         Top Rated
@@ -588,6 +588,11 @@ const Shop = () => {
                                                     {renderStars(product.rating, 18)}
                                                 <span className="text-tertiary text-xs ml-1">({product.numReviews || 0})</span>
                                             </div>
+                                            {Number(product.soldCount || 0) > 0 && (
+                                                <p className="text-[11px] font-semibold text-tertiary mb-2">
+                                                    {formatSoldCount(product.soldCount)} sold
+                                                </p>
+                                            )}
                                             {product.brand && (
                                                     <span className="block text-[11px] font-bold tracking-widest text-brand uppercase mb-1">
                                                     {product.brand.name}
@@ -609,10 +614,17 @@ const Shop = () => {
                                                     )}
                                                 </div>
                                                 <button
-                                                    onClick={() => addToCart({ ...product, qty: 1 })}
-                                                        className="bg-brand-subtle hover:bg-brand text-brand hover:text-on-brand p-3 rounded-full transition-colors self-end"
+                                                    onClick={() => {
+                                                        const variant = getFirstAvailableVariant(product);
+                                                        const ok = addToCart({ ...product, variant: variant || undefined, qty: 1 });
+                                                        if (!ok) {
+                                                            toast.error('This product is out of stock.');
+                                                        }
+                                                    }}
+                                                    disabled={!hasProductStock(product, 1, getFirstAvailableVariant(product))}
+                                                    className="bg-brand-subtle hover:bg-brand text-brand hover:text-on-brand p-3 rounded-full transition-colors self-end disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
-                                                        <ShoppingBag size={22} />
+                                                    <ShoppingBag size={22} />
                                                 </button>
                                             </div>
                                         </div>

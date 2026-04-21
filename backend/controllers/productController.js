@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const { sendEmailSafely } = require('../utils/emailService');
+const { tallyProductSoldCounts } = require('../utils/salesCounts');
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -69,7 +70,14 @@ const getProducts = async (req, res) => {
         .limit(pageSize)
         .skip(pageSize * (page - 1));
 
-    res.json({ products, page, pages: Math.ceil(count / pageSize) });
+    const soldCounts = await tallyProductSoldCounts(products.map((product) => product._id));
+    const productsWithSoldCount = products.map((product) => {
+        const productData = product.toObject();
+        productData.soldCount = soldCounts.get(String(product._id)) || 0;
+        return productData;
+    });
+
+    res.json({ products: productsWithSoldCount, page, pages: Math.ceil(count / pageSize) });
 };
 
 // @desc    Fetch single product
@@ -86,7 +94,10 @@ const getProductById = async (req, res) => {
         if (product.isActive === false && !isAdminRequest) {
             return res.status(404).json({ message: 'Product not found' });
         }
-        res.json(product);
+        const soldCounts = await tallyProductSoldCounts([product._id]);
+        const productData = product.toObject();
+        productData.soldCount = soldCounts.get(String(product._id)) || 0;
+        res.json(productData);
     } else {
         res.status(404);
         throw new Error('Product not found');

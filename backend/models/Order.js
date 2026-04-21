@@ -26,7 +26,15 @@ const orderSchema = new mongoose.Schema({
                 type: mongoose.Schema.ObjectId,
                 required: false,
                 ref: 'Product'
-            }
+            },
+            // Bundle support
+            isBundle: { type: Boolean, default: false },
+            bundle: {
+                type: mongoose.Schema.ObjectId,
+                required: false,
+                ref: 'Bundle'
+            },
+            bundleProducts: { type: Array, default: [] } // Snapshot of included products
         }
     ],
     shippingAddress: {

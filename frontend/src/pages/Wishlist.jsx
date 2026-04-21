@@ -4,10 +4,13 @@ import { useWishlistStore } from '../context/useWishlistStore';
 import { useCartStore } from '../context/useCartStore';
 import { useConfigStore } from '../context/useConfigStore';
 import { useEffect, useState } from 'react';
+import { getProductImageUrl } from '../utils/imageUtils';
+import { getFirstAvailableVariant, hasBundleStock, hasProductStock } from '../utils/stockUtils';
+import { toast } from 'sonner';
 
 const Wishlist = () => {
     const { wishlistItems, removeFromWishlist, clearWishlist } = useWishlistStore();
-    const { addToCart } = useCartStore();
+    const { addToCart, addBundleToCart } = useCartStore();
     const { config } = useConfigStore();
     const currency = config?.currencySymbol || '$';
     const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -22,12 +25,42 @@ const Wishlist = () => {
     }, []);
 
     const handleAddToCart = (product) => {
-        addToCart({ ...product, qty: 1 });
+        if (product.isBundle) {
+            const bundleItem = {
+                _id: product._id,
+                name: product.name,
+                image: product.image?.url || product.image || '',
+                bundlePrice: Number(product.bundlePrice ?? product.price ?? 0),
+                products: product.bundleProducts || product.products || [],
+            };
+
+            if (!hasBundleStock(bundleItem, 1)) {
+                toast.error('This bundle is out of stock.');
+                return;
+            }
+
+            const ok = addBundleToCart(bundleItem);
+            if (!ok) {
+                toast.error('This bundle is out of stock.');
+            }
+            return;
+        }
+
+        const variant = getFirstAvailableVariant(product);
+        if (!hasProductStock(product, 1, variant)) {
+            toast.error('This product is out of stock.');
+            return;
+        }
+
+        const ok = addToCart({ ...product, variant: variant || undefined, qty: 1 });
+        if (!ok) {
+            toast.error('This product is out of stock.');
+        }
     };
 
     const handleAddAllToCart = () => {
         wishlistItems.forEach(product => {
-            addToCart({ ...product, qty: 1 });
+            handleAddToCart(product);
         });
     };
 
@@ -136,23 +169,37 @@ const Wishlist = () => {
                         {/* Product Grid */}
                         <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-8">
                         {wishlistItems.map((product) => (
+                            (() => {
+                                const isBundleItem = Boolean(product.isBundle);
+                                const itemPrice = Number(product.price ?? 0);
+                                const itemDiscountPrice = Number(product.discountPrice ?? 0);
+                                const bundlePrice = Number(product.bundlePrice ?? itemPrice);
+                                const imageSrc = isBundleItem
+                                    ? (product.image?.url || product.image || getProductImageUrl({}))
+                                    : getProductImageUrl(product);
+                                const itemLink = isBundleItem ? '/bundles' : `/product/${product._id}`;
+                                const canMoveToCart = isBundleItem
+                                    ? hasBundleStock({
+                                        _id: product._id,
+                                        products: product.bundleProducts || product.products || [],
+                                        isActive: product.isActive,
+                                    }, 1)
+                                    : hasProductStock(product, 1, getFirstAvailableVariant(product));
+
+                                return (
                             <div key={product._id} className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
-                                <Link to={`/product/${product._id}`} className="block relative">
+                                <Link to={itemLink} className="block relative">
                                     <div className="aspect-square bg-page relative p-6 flex flex-col items-center justify-center overflow-hidden">
-                                        {product.images && product.images[0] ? (
-                                            <img
-                                                src={product.images[0].url}
-                                                alt={product.name}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            />
-                                        ) : (
-                                            <div className="w-32 h-32 rounded-full bg-brand-subtle opacity-50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-500"></div>
-                                        )}
+                                        <img
+                                            src={imageSrc}
+                                            alt={product.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        />
                                     </div>
                                 </Link>
 
                                 <button
-                                    onClick={() => removeFromWishlist(product._id)}
+                                    onClick={() => removeFromWishlist(product._id, isBundleItem)}
                                     className="absolute top-4 right-4 bg-surface/90 backdrop-blur-sm p-2 rounded-full text-error hover:bg-error-bg transition-colors shadow-sm z-10"
                                     title="Remove from Wishlist"
                                 >
@@ -172,30 +219,33 @@ const Wishlist = () => {
                                             {product.brand.name || product.brand}
                                         </span>
                                     )}
-                                    <Link to={`/product/${product._id}`}>
+                                    <Link to={itemLink}>
                                         <h3 className="text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
                                     </Link>
                                     <div className="mt-auto pt-4 flex flex-col gap-3">
                                         <div className="flex items-center">
-                                            {window.Number(product.discountPrice) > 0 && window.Number(product.discountPrice) < window.Number(product.price) ? (
+                                            {!isBundleItem && itemDiscountPrice > 0 && itemDiscountPrice < itemPrice ? (
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xl font-bold text-brand">{currency}{product.discountPrice.toFixed(2)}</span>
-                                                    <span className="text-sm font-semibold text-tertiary line-through">{currency}{product.price.toFixed(2)}</span>
+                                                    <span className="text-xl font-bold text-brand">{currency}{itemDiscountPrice.toFixed(2)}</span>
+                                                    <span className="text-sm font-semibold text-tertiary line-through">{currency}{itemPrice.toFixed(2)}</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-xl font-bold text-primary">{currency}{product.price?.toFixed(2) || '0.00'}</span>
+                                                <span className="text-xl font-bold text-primary">{currency}{(isBundleItem ? bundlePrice : itemPrice).toFixed(2)}</span>
                                             )}
                                         </div>
                                         <button
                                             onClick={() => handleAddToCart(product)}
-                                            className="w-full flex items-center justify-center gap-2 btn-primary rounded-xl py-3.5 text-lg font-semibold transition-colors"
+                                            disabled={!canMoveToCart}
+                                            className="w-full flex items-center justify-center gap-2 btn-primary rounded-xl py-3.5 text-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <ShoppingBag size={20} />
-                                            Move to Cart
+                                            {!canMoveToCart ? 'Out of Stock' : (isBundleItem ? 'Add Bundle to Cart' : 'Move to Cart')}
                                         </button>
                                     </div>
                                 </div>
                             </div>
+                                );
+                            })()
                         ))}
                         </div>
                     </div>

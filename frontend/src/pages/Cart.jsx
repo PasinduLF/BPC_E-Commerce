@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getProductImageUrl } from '../utils/imageUtils';
 import { useCartStore } from '../context/useCartStore';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
@@ -34,7 +35,7 @@ const Cart = () => {
 
     const qtyChangeHandler = (cartId, newQty) => {
         const item = cartItems.find(i => (i.cartId || i._id) === cartId);
-        if (!item) return;
+        if (!item || item.isBundle) return; // Bundles are atomic — no qty change
 
         const checkStock = item.variant ? item.variant.stock : item.stock;
         if (newQty > 0 && newQty <= checkStock) {
@@ -53,7 +54,7 @@ const Cart = () => {
 
                 {cartItems.length === 0 ? (
                     <div className="space-y-16">
-                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-12 text-center">
+                        <div className="bg-surface rounded-3xl shadow-sm border border-default p-10 sm:p-12 text-center">
                             <div className="w-20 h-20 bg-brand-subtle rounded-full flex items-center justify-center mx-auto mb-6">
                                 <ShoppingBag size={32} className="text-brand" />
                             </div>
@@ -71,52 +72,72 @@ const Cart = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start animate-slide-up">
                         {/* Cart Items List */}
                         <div className="lg:col-span-8 space-y-6">
-                            <div className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden">
+                            <div className="bg-surface rounded-3xl shadow-sm border border-default overflow-hidden">
                                 <ul className="divide-y divide-default">
                                     {cartItems.map((item) => (
-                                        <li key={item.cartId || item._id} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6 hover:bg-page/50 transition-colors">
-                                            <div className="w-24 h-24 flex-shrink-0 bg-page rounded-xl border border-default overflow-hidden relative group">
-                                                {item.image || (item.images && item.images[0]) ? (
-                                                    <img src={item.image || item.images[0].url} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                                ) : (
-                                                    <div className="w-12 h-12 bg-brand-subtle rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-50"></div>
+                                        <li key={item.cartId || item._id} className="p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:gap-5 hover:bg-page/50 transition-colors">
+                                            <div className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 bg-page rounded-xl border border-default overflow-hidden relative group">
+                                                <img 
+                                                    src={getProductImageUrl(item)} 
+                                                    alt={item.name} 
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                                />
+                                                {item.isBundle && (
+                                                    <span className="absolute top-1 left-1 bg-brand text-on-brand text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full leading-none">Bundle</span>
                                                 )}
                                             </div>
 
                                             <div className="flex-1 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center w-full gap-4">
 
-                                                <div className="text-center sm:text-left">
-                                                    <div className="flex-1">
-                                                        <Link to={`/product/${item._id}`} className="text-lg font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
+                                                <div className="text-left flex-1 min-w-0">
+                                                    {item.isBundle ? (
+                                                        <Link to="/bundles" className="text-base sm:text-lg font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
                                                             {item.name}
                                                         </Link>
-                                                        {item.variant && item.variant.name !== 'Default' && (
-                                                            <p className="text-brand text-[10px] font-bold uppercase tracking-wider mt-1">
-                                                                    {item.variant.name}: {item.variant.value}
-                                                            </p>
-                                                        )}
-                                                        <p className="text-secondary text-sm mt-1">{currency}{item.price.toFixed(2)}</p>
-                                                    </div>
+                                                    ) : (
+                                                        <Link to={`/product/${item._id}`} className="text-base sm:text-lg font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
+                                                            {item.name}
+                                                        </Link>
+                                                    )}
+                                                    {item.isBundle && item.bundleProducts?.length > 0 && (
+                                                        <p className="text-tertiary text-xs mt-1">
+                                                            Includes: {item.bundleProducts.slice(0, 3).map(bp => bp.product?.name || 'Product').join(', ')}
+                                                            {item.bundleProducts.length > 3 && ` +${item.bundleProducts.length - 3} more`}
+                                                        </p>
+                                                    )}
+                                                    {!item.isBundle && item.variant && item.variant.name !== 'Default' && (
+                                                        <p className="text-brand text-[10px] font-bold uppercase tracking-wider mt-1">
+                                                            {item.variant.name}: {item.variant.value}
+                                                        </p>
+                                                    )}
+                                                    <p className="text-secondary text-sm mt-1">{currency}{(item.price || 0).toFixed(2)}</p>
                                                 </div>
 
-                                                <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto justify-between sm:justify-start">
-                                                    <div className="flex items-center border border-default rounded-lg bg-page">
-                                                        <button 
-                                                            onClick={() => qtyChangeHandler(item.cartId || item._id, item.qty - 1)} 
-                                                            disabled={item.qty <= 1}
-                                                            className="p-2 text-secondary hover:text-brand disabled:opacity-50 transition-colors"
-                                                        >
-                                                            <Minus size={16} />
-                                                        </button>
-                                                        <span className="w-8 text-center font-medium text-primary">{item.qty}</span>
-                                                        <button 
-                                                            onClick={() => qtyChangeHandler(item.cartId || item._id, item.qty + 1)} 
-                                                            disabled={item.qty >= (item.variant ? item.variant.stock : item.stock)}
-                                                            className="p-2 text-secondary hover:text-brand disabled:opacity-50 transition-colors"
-                                                        >
-                                                            <Plus size={16} />
-                                                        </button>
-                                                    </div>
+                                                <div className="flex items-center gap-3 sm:gap-5 w-full sm:w-auto justify-between sm:justify-start">
+                                                    {item.isBundle ? (
+                                                        // Bundles are atomic — show fixed qty badge, no controls
+                                                        <div className="flex items-center border border-default rounded-lg bg-page px-4 py-2">
+                                                            <span className="w-8 text-center font-medium text-primary">×1</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center border border-default rounded-lg bg-page">
+                                                            <button 
+                                                                onClick={() => qtyChangeHandler(item.cartId || item._id, item.qty - 1)} 
+                                                                disabled={item.qty <= 1}
+                                                                className="p-2 text-secondary hover:text-brand disabled:opacity-50 transition-colors"
+                                                            >
+                                                                <Minus size={16} />
+                                                            </button>
+                                                            <span className="w-8 text-center font-medium text-primary">{item.qty}</span>
+                                                            <button 
+                                                                onClick={() => qtyChangeHandler(item.cartId || item._id, item.qty + 1)} 
+                                                                disabled={item.qty >= (item.variant ? item.variant.stock : item.stock)}
+                                                                className="p-2 text-secondary hover:text-brand disabled:opacity-50 transition-colors"
+                                                            >
+                                                                <Plus size={16} />
+                                                            </button>
+                                                        </div>
+                                                    )}
 
                                                     <button
                                                         onClick={() => removeItemHandler(item.cartId || item._id)}
@@ -135,13 +156,13 @@ const Cart = () => {
 
                         {/* Order Summary */}
                         <div className="lg:col-span-4">
-                            <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 lg:sticky lg:top-24">
+                            <div className="bg-surface rounded-3xl shadow-sm border border-default p-6 lg:sticky lg:top-24">
                                 <h2 className="text-xl font-bold text-primary mb-6 pb-4 border-b border-default">Order Summary</h2>
                                 
                                 <div className="space-y-4 mb-8">
                                     <div className="flex justify-between text-secondary">
-                                        <span>Subtotal ({cartItems.reduce((acc, item) => acc + item.qty, 0)} items)</span>
-                                        <span className="font-medium text-primary">{currency}{cartItems.reduce((acc, item) => acc + item.qty * item.price, 0).toFixed(2)}</span>
+                                        <span>Subtotal ({cartItems.reduce((acc, item) => acc + (Number(item.qty) || 0), 0)} items)</span>
+                                        <span className="font-medium text-primary">{currency}{cartItems.reduce((acc, item) => acc + (Number(item.qty) || 0) * (Number(item.price) || 0), 0).toFixed(2)}</span>
                                     </div>
                                     
                                     <div className="flex justify-between text-secondary">
@@ -153,7 +174,7 @@ const Cart = () => {
                                 <div className="border-t border-default pt-4 mb-8 flex justify-between items-center">
                                     <span className="text-lg font-bold text-primary">Total</span>
                                     <span className="text-2xl font-bold text-brand">
-                                        {currency}{cartItems.reduce((acc, item) => acc + item.qty * item.price, 0).toFixed(2)}
+                                        {currency}{cartItems.reduce((acc, item) => acc + (Number(item.qty) || 0) * (Number(item.price) || 0), 0).toFixed(2)}
                                     </span>
                                 </div>
 

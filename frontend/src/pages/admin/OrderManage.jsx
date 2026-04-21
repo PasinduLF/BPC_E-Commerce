@@ -844,13 +844,33 @@ const OrderManage = () => {
                                 </thead>
                                 <tbody className="divide-y divide-dashed divide-default">
                                     {viewingOrder.orderItems.map((item, index) => (
-                                        <tr key={index}>
-                                            <td className="py-1.5 pr-1 align-top">
-                                                <div className="font-medium">{item.name}{item.variantName && <span className="text-tertiary font-normal text-[9px]"> ({item.variantName})</span>}</div>
-                                            </td>
-                                            <td className="py-1.5 text-center align-top w-10">{item.qty}</td>
-                                            <td className="py-1.5 text-right align-top w-16">{currency}{(item.price * item.qty).toFixed(2)}</td>
-                                        </tr>
+                                        <Fragment key={index}>
+                                            <tr>
+                                                <td className="py-1.5 pr-1 align-top">
+                                                    <div className="font-medium">
+                                                        {item.name}
+                                                        {item.isBundle && <span className="ml-1 text-[8px] bg-brand-subtle text-brand px-1 rounded font-black italic">BUNDLE</span>}
+                                                        {item.variantName && <span className="text-tertiary font-normal text-[9px]"> ({item.variantName})</span>}
+                                                    </div>
+                                                </td>
+                                                <td className="py-1.5 text-center align-top w-10">{item.qty}</td>
+                                                <td className="py-1.5 text-right align-top w-16">{currency}{(item.price * item.qty).toFixed(2)}</td>
+                                            </tr>
+                                            {item.isBundle && item.bundleProducts?.length > 0 && (
+                                                <tr>
+                                                    <td colSpan="3" className="pb-1.5 pl-3">
+                                                        <div className="text-[8px] text-secondary space-y-0.5 border-l border-default pl-2">
+                                                            {item.bundleProducts.map((bp, bpIdx) => (
+                                                                <div key={bpIdx} className="flex justify-between">
+                                                                    <span>- {bp.name}</span>
+                                                                    <span className="text-tertiary">x{bp.qty}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </Fragment>
                                     ))}
                                 </tbody>
                             </table>

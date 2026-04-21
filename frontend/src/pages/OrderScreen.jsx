@@ -340,10 +340,27 @@ const OrderScreen = () => {
                                                 )}
                                             </div>
                                             <div className="flex-1">
-                                                <Link to={`/product/${item.product}`} className="font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
-                                                    {item.name}
-                                                </Link>
-                                                {item.variantName && (
+                                                {item.isBundle ? (
+                                                    <span className="font-semibold text-primary">{item.name}</span>
+                                                ) : (
+                                                    <Link to={`/product/${item.product}`} className="font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
+                                                        {item.name}
+                                                    </Link>
+                                                )}
+
+                                                {item.isBundle && item.bundleProducts?.length > 0 && (
+                                                    <div className="mt-2 space-y-1">
+                                                        <p className="text-[10px] font-bold text-brand uppercase tracking-widest">Bundle Includes:</p>
+                                                        {item.bundleProducts.map((bp, bpIdx) => (
+                                                            <div key={bpIdx} className="text-xs text-secondary flex items-center gap-2">
+                                                                <span className="w-1 h-1 rounded-full bg-brand/40"></span>
+                                                                <span>{bp.qty} x {bp.name}{bp.variantName ? ` (${bp.variantName})` : ''}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {!item.isBundle && item.variantName && (
                                                     <p className="text-brand text-[10px] font-bold uppercase tracking-wider mt-1">
                                                         {item.variantName}
                                                     </p>
