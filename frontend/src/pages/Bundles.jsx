@@ -242,6 +242,11 @@ const BundleCard = ({ bundle, currency, savings, savingsPct, inCart, inWishlist,
                     <span className="text-sm font-medium text-secondary">Bundle Offer</span>
                 </div>
             )}
+            {isOutOfStock && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">Out of Stock</span>
+                </div>
+            )}
 
             {/* Badges */}
             <div className="absolute top-3 left-3 flex gap-2 flex-wrap">

@@ -144,6 +144,11 @@ const Home = () => {
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
                     />
+                    {!canAdd && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">Out of Stock</span>
+                        </div>
+                    )}
                     {badgeName && (
                         <div className={`absolute top-4 right-4 bg-surface/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${badgeColor}`}>
                             {badgeName}
@@ -226,6 +231,11 @@ const Home = () => {
                         alt={bundle.name}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-in-out"
                     />
+                    {!canBuyBundle && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">Out of Stock</span>
+                        </div>
+                    )}
                     <div className="absolute top-4 left-4 bg-brand text-on-brand px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
                         Special Bundle
                     </div>

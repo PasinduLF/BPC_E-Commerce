@@ -195,6 +195,11 @@ const Wishlist = () => {
                                             alt={product.name}
                                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                         />
+                                        {!canMoveToCart && (
+                                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                <span className="text-white font-bold text-lg">Out of Stock</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </Link>
 

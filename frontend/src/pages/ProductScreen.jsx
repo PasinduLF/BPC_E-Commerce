@@ -263,6 +263,11 @@ const ProductScreen = () => {
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
                             )}
+                            {displayStock === 0 && (
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                    <span className="text-white font-bold text-lg">Out of Stock</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Thumbnail Selection */}

@@ -66,12 +66,17 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 p-4 sm:p-6 md:p-8">
                     {/* Image Section */}
                     <div className="flex flex-col gap-4">
-                        <div className="aspect-square bg-page rounded-2xl border border-default overflow-hidden flex items-center justify-center">
+                        <div className="aspect-square bg-page rounded-2xl border border-default overflow-hidden flex items-center justify-center relative">
                                 <img
                                     src={getProductImageUrl(product, activeImage)}
                                     alt={product.name}
                                     className="w-full h-full object-cover"
                                 />
+                                {displayStock === 0 && (
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                        <span className="text-white font-bold text-lg">Out of Stock</span>
+                                    </div>
+                                )}
                         </div>
                         
                         {/* Image Thumbnails */}

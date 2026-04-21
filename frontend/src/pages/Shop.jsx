@@ -560,6 +560,11 @@ const Shop = () => {
                                                     alt={product.name}
                                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                                 />
+                                                {!hasProductStock(product, 1, getFirstAvailableVariant(product)) && (
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                        <span className="text-white font-bold text-lg">Out of Stock</span>
+                                                    </div>
+                                                )}
                                                 {Number(product.rating || 0) >= 4 && (
                                                     <div className="absolute top-4 right-4 bg-surface/80 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-brand">
                                                         Top Rated
