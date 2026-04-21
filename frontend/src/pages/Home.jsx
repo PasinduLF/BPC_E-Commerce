@@ -458,30 +458,22 @@ const Home = () => {
             {/* Featured Bundles */}
             {featuredBundles.length > 0 && (
                 <section className="py-24 bg-surface relative overflow-hidden scroll-reveal">
-                    <div className="absolute -right-40 top-40 w-96 h-96 bg-brand-subtle rounded-full blur-3xl opacity-30 z-0 rotate-45"></div>
+                    <div className="absolute -right-40 top-40 w-96 h-96 bg-brand-subtle rounded-full blur-3xl opacity-50 z-0"></div>
                     <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 relative z-10">
                         <div className="flex items-end justify-between mb-12">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-3">
-                                    <div className="w-10 h-1 px-1 bg-brand rounded-full"></div>
-                                    <span className="text-brand font-black uppercase text-xs tracking-widest">Limited Offers</span>
-                                </div>
-                                <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-primary mb-3">Bundle & Save More</h2>
-                                <p className="text-secondary font-medium max-w-xl">Get our expert-curated beauty sets at unbeatable prices. Perfection in a package.</p>
+                            <div>
+                                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-primary mb-3">Bundle Deals</h2>
+                                <p className="text-secondary font-medium">Get our expert-curated beauty sets at unbeatable prices. Perfection in a package.</p>
                             </div>
-                            <Link to="/bundles" className="hidden sm:flex text-brand font-bold hover:brightness-90 items-center gap-2 border-2 border-brand/20 rounded-2xl px-6 py-3 hover:bg-brand-subtle hover:border-brand/40 transition-all shadow-sm">
-                                View All Bundles <ArrowRight size={20} />
+                            <Link to="/bundles" className="hidden sm:flex text-brand font-bold hover:brightness-90 items-center gap-1 border border-brand-subtle rounded-full px-5 py-2 hover:bg-brand-subtle transition-colors">
+                                View All <ArrowRight size={18} />
                             </Link>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-8">
                             {featuredBundles.map((bundle) => (
                                 <BundleCard key={`home-bundle-${bundle._id}`} bundle={bundle} />
                             ))}
-                        </div>
-                        
-                        <div className="mt-12 sm:hidden">
-                            <Link to="/bundles" className="btn-primary w-full py-4 text-center">View All Bundles</Link>
                         </div>
                     </div>
                 </section>
