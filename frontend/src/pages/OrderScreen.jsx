@@ -131,7 +131,7 @@ const OrderScreen = () => {
                     <div className="skeleton h-7 w-24 rounded-full" />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
                     <div className="lg:col-span-8 space-y-8">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="skeleton h-36 w-full rounded-2xl" />
@@ -224,7 +224,7 @@ const OrderScreen = () => {
                         </div>
 
                         {/* Shipping / Pickup Information */}
-                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 md:p-8">
+                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-4 sm:p-6 md:p-8">
                             <div className="flex items-start gap-4 mb-6">
                                 <div className="p-3 bg-brand-subtle rounded-xl text-brand">
                                     <Truck size={24} />
@@ -254,7 +254,7 @@ const OrderScreen = () => {
                         </div>
 
                         {/* Payment Method */}
-                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 md:p-8">
+                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-4 sm:p-6 md:p-8">
                             <div className="flex items-start gap-4 mb-4">
                                 <div className="p-3 bg-brand-subtle rounded-xl text-brand">
                                     <Wallet size={24} />
@@ -322,7 +322,7 @@ const OrderScreen = () => {
                         </div>
 
                         {/* Order Items */}
-                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-6 md:p-8">
+                        <div className="bg-surface rounded-2xl shadow-sm border border-default p-4 sm:p-6 md:p-8">
                             <h2 className="text-xl font-bold text-primary mb-6 flex items-center gap-2">
                                 <Package size={20} className="text-brand" /> Items in Order
                             </h2>
@@ -331,7 +331,7 @@ const OrderScreen = () => {
                             ) : (
                                 <ul className="divide-y divide-default">
                                     {order.orderItems.map((item, index) => (
-                                        <li key={index} className="py-4 flex items-center gap-4">
+                                        <li key={index} className="py-4 flex items-start sm:items-center gap-3 sm:gap-4">
                                             <div className="w-16 h-16 bg-page rounded-lg overflow-hidden flex-shrink-0 border border-default">
                                                 {item.image ? (
                                                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
@@ -397,7 +397,7 @@ const OrderScreen = () => {
 
                             <div className="border-t border-default pt-4 mb-8 flex justify-between items-center bg-brand-subtle/50 p-4 rounded-xl">
                                 <span className="text-lg font-bold text-primary">Total</span>
-                                <span className="text-3xl font-bold text-brand">{currency}{safeMoney(order.totalPrice)}</span>
+                                <span className="text-2xl sm:text-3xl font-bold text-brand">{currency}{safeMoney(order.totalPrice)}</span>
                             </div>
 
                             {!order.isPaid && order.paymentMethod === 'Cash on Delivery' && (

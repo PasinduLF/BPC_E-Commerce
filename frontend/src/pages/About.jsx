@@ -31,8 +31,8 @@ const About = () => {
         <div className="bg-page min-h-screen">
             {/* Hero Section */}
             <div className="relative py-16 sm:py-24 lg:py-32 overflow-hidden bg-brand-subtle animate-fade-in">
-                <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[600px] h-[600px] rounded-full bg-brand opacity-10 blur-3xl mix-blend-multiply pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[400px] h-[400px] rounded-full bg-brand opacity-10 blur-3xl mix-blend-multiply pointer-events-none"></div>
+                <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] rounded-full bg-brand opacity-10 blur-3xl mix-blend-multiply pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[220px] h-[220px] sm:w-[400px] sm:h-[400px] rounded-full bg-brand opacity-10 blur-3xl mix-blend-multiply pointer-events-none"></div>
                 
                 <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 relative z-10 text-center">
                     <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-primary tracking-tight mb-6">

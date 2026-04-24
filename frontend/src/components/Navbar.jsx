@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Search, ShoppingBag, User, Menu, X, LogOut, ChevronDown, Heart, Package, Sun, Moon, Sparkles, ChevronRight } from 'lucide-react';
 import { useAuthStore } from '../context/useAuthStore';
@@ -29,6 +29,7 @@ const Navbar = () => {
     const { wishlistItems } = useWishlistStore();
     const { config } = useConfigStore();
     const { isDark, toggleMode } = useTheme();
+    const location = useLocation();
     const navigate = useNavigate();
 
     // Fetch Categories
@@ -69,6 +70,26 @@ const Navbar = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isOpen]);
+
+    useEffect(() => {
+        setIsOpen(false);
+        setDropdownOpen(false);
+        setExpandedCategory(null);
+        setActiveMegaMenu(null);
+    }, [location.pathname, location.search]);
 
     const logoutHandler = () => {
         logout();
@@ -360,10 +381,10 @@ const Navbar = () => {
             {isOpen && (
                 <div className="md:hidden z-50 fixed inset-0">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm mobile-drawer-overlay-animate" onClick={() => setIsOpen(false)}></div>
-                    <div className="absolute inset-y-0 left-0 w-4/5 max-w-sm bg-surface shadow-2xl mobile-drawer-animate flex flex-col">
+                    <div className="absolute inset-y-0 left-0 w-[88vw] max-w-sm bg-surface shadow-2xl mobile-drawer-animate flex flex-col px-safe">
                         
                         {/* Drawer Header */}
-                        <div className="p-5 border-b border-default flex items-center justify-between bg-subtle">
+                        <div className="p-4 sm:p-5 border-b border-default flex items-center justify-between bg-subtle pt-safe">
                             <div className="flex items-center gap-2">
                                 <img src={logoImage} alt="Logo" className="h-8 w-auto object-contain" />
                                 <span className="text-lg font-black text-primary tracking-tight">Menu</span>

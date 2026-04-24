@@ -330,8 +330,8 @@ const Home = () => {
             {/* Hero Section */}
             <div className="relative bg-surface overflow-hidden border-b border-default animate-fade-in pt-12 pb-24 sm:pt-24 lg:pb-32">
                 <div className="absolute inset-0 z-0">
-                    <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-brand-subtle to-brand opacity-30 blur-3xl mix-blend-multiply"></div>
-                    <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-brand to-brand-subtle opacity-20 blur-3xl mix-blend-multiply"></div>
+                    <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] rounded-full bg-gradient-to-tr from-brand-subtle to-brand opacity-30 blur-3xl mix-blend-multiply"></div>
+                    <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[220px] h-[220px] sm:w-[400px] sm:h-[400px] rounded-full bg-gradient-to-tr from-brand to-brand-subtle opacity-20 blur-3xl mix-blend-multiply"></div>
                 </div>
 
                 <div className="relative max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 text-center sm:text-left z-10">
@@ -446,7 +446,7 @@ const Home = () => {
                             <p className="text-secondary font-medium max-w-2xl mx-auto">Our most loved and highly rated products by customers like you.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-8">
+                        <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-8">
                             {featuredProducts.map((product) => (
                                 <ProductCard key={`featured-${product._id}`} product={product} badgeName="Best Seller" badgeColor="text-error" />
                             ))}
@@ -494,7 +494,7 @@ const Home = () => {
                             </Link>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-8">
+                        <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 sm:gap-8">
                             {trendingProducts.map((product) => (
                                 <ProductCard key={`new-${product._id}`} product={product} badgeName="New" badgeColor="text-brand" />
                             ))}

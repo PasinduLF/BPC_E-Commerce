@@ -100,7 +100,7 @@ function AppShell() {
   return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
-        <main className="flex-grow pb-24 sm:pb-20 md:pb-0">
+        <main className="flex-grow pb-[calc(5.25rem+var(--safe-area-bottom))] sm:pb-[calc(5rem+var(--safe-area-bottom))] md:pb-0">
           <Suspense fallback={<div className="py-20 text-center text-secondary">Loading...</div>}>
             <Routes>
               <Route path="/" element={<Home />} />

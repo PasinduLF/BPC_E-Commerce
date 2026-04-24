@@ -56,7 +56,7 @@ const MyOrders = () => {
                         {Array.from({ length: 3 }).map((_, idx) => (
                             <div key={`my-order-skeleton-${idx}`} className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden">
                                 <div className="p-6 border-b border-default space-y-3">
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-4 gap-4">
                                         <div className="skeleton h-4 w-24" />
                                         <div className="skeleton h-4 w-24" />
                                         <div className="skeleton h-4 w-24" />
@@ -112,7 +112,7 @@ const MyOrders = () => {
                         {orders.map((order) => (
                             <div key={order._id} className="bg-surface rounded-2xl shadow-sm border border-default overflow-hidden hover:border-brand-subtle transition-colors">
                                 <div className="p-6 border-b border-default bg-muted/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="grid grid-cols-2 md:flex md:gap-8 gap-4 text-sm">
+                                    <div className="grid grid-cols-1 min-[420px]:grid-cols-2 md:flex md:gap-8 gap-4 text-sm">
                                         <div>
                                             <p className="text-secondary mb-1">Order Placed</p>
                                             <p className="font-semibold text-primary">{new Date(order.createdAt).toLocaleDateString()}</p>

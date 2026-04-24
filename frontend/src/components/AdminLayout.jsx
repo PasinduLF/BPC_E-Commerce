@@ -56,6 +56,19 @@ const AdminLayout = () => {
         fetchPendingOrders();
     }, [location.pathname, userInfo?.role, userInfo?.token]);
 
+    useEffect(() => {
+        if (!isMobileMenuOpen) {
+            return;
+        }
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isMobileMenuOpen]);
+
     if (!userInfo || userInfo.role !== 'admin') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-page">
@@ -146,7 +159,7 @@ const AdminLayout = () => {
             {/* Main Content Area */}
             <main className="flex-1 min-w-0 flex flex-col">
                 {/* Mobile Header */}
-                <div className="xl:hidden bg-surface border-b border-default px-3 sm:px-4 py-3 flex items-center justify-between sticky top-0 z-10 gap-3">
+                <div className="xl:hidden bg-surface border-b border-default px-3 sm:px-4 py-3 pt-safe flex items-center justify-between sticky top-0 z-10 gap-3">
                     <div className="flex items-center gap-3">
                         <button aria-label="Open admin menu" className="text-secondary hover:text-primary p-1 rounded-full hover:bg-page" onClick={() => setIsMobileMenuOpen(true)}>
                             <Menu size={24} />

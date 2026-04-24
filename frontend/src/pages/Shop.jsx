@@ -256,6 +256,19 @@ const Shop = () => {
         }
     }, [page, pages]);
 
+    useEffect(() => {
+        if (!showMobileFilters) {
+            return;
+        }
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [showMobileFilters]);
+
     const getPageItems = () => {
         if (pages <= 7) {
             return Array.from({ length: pages }, (_, i) => i + 1);
@@ -297,10 +310,10 @@ const Shop = () => {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                         <button
                             onClick={() => setShowMobileFilters(!showMobileFilters)}
-                            className="lg:hidden flex items-center gap-2 px-4 py-2 border border-default bg-surface rounded-lg text-secondary hover:text-brand hover:border-brand transition-all shadow-sm"
+                            className="lg:hidden inline-flex items-center justify-center gap-2 px-4 py-2 border border-default bg-surface rounded-lg text-secondary hover:text-brand hover:border-brand transition-all shadow-sm w-full sm:w-auto"
                         >
                             <Filter size={18} />
                             <span className="font-medium">Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</span>
@@ -309,7 +322,7 @@ const Shop = () => {
                         <select
                             value={sort}
                             onChange={(e) => setSort(e.target.value)}
-                            className="border border-default bg-surface rounded-lg px-4 py-2 text-secondary focus:ring-2 focus:ring-brand focus:border-brand outline-none shadow-sm cursor-pointer hover:border-brand transition-all"
+                            className="border border-default bg-surface rounded-lg px-4 py-2 text-secondary focus:ring-2 focus:ring-brand focus:border-brand outline-none shadow-sm cursor-pointer hover:border-brand transition-all w-full sm:w-auto"
                         >
                             <option value="newest">Newest Arrivals</option>
                             <option value="priceAsc">Price: Low to High</option>
@@ -322,7 +335,7 @@ const Shop = () => {
                                 setPage(1);
                                 setPageSize(Number(e.target.value));
                             }}
-                            className="border border-default bg-surface rounded-lg px-4 py-2 text-secondary focus:ring-2 focus:ring-brand focus:border-brand outline-none shadow-sm cursor-pointer hover:border-brand transition-all"
+                            className="border border-default bg-surface rounded-lg px-4 py-2 text-secondary focus:ring-2 focus:ring-brand focus:border-brand outline-none shadow-sm cursor-pointer hover:border-brand transition-all w-full sm:w-auto"
                         >
                             <option value={12}>12 / page</option>
                             <option value={24}>24 / page</option>
@@ -354,9 +367,130 @@ const Shop = () => {
                     </div>
                 )}
 
+                {showMobileFilters && (
+                    <div className="lg:hidden fixed inset-0 z-50">
+                        <button
+                            type="button"
+                            aria-label="Close filters"
+                            className="absolute inset-0 bg-black/50"
+                            onClick={() => setShowMobileFilters(false)}
+                        />
+                        <div className="absolute inset-y-0 left-0 w-[90vw] max-w-sm bg-surface border-r border-default shadow-2xl overflow-y-auto p-4 pb-safe">
+                            <div className="flex items-center justify-between mb-4 pb-3 border-b border-default">
+                                <h2 className="text-lg font-bold text-primary">Filters</h2>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowMobileFilters(false)}
+                                    className="inline-flex items-center justify-center p-2 rounded-lg text-secondary hover:text-brand hover:bg-subtle"
+                                >
+                                    <XCircle size={18} />
+                                </button>
+                            </div>
+                            <div className="space-y-8">
+                                <div className="bg-surface p-4 rounded-2xl border border-default shadow-sm">
+                                    <h3 className="font-bold text-primary tracking-wide mb-4 flex items-center justify-between pb-3 border-b border-default">
+                                        Categories
+                                        {(selectedCategories.length > 0 || selectedSubcategories.length > 0 || selectedInnerSubcategories.length > 0) && (
+                                            <button onClick={() => { setSelectedCategories([]); setSelectedSubcategories([]); setSelectedInnerSubcategories([]); }} className="text-[10px] text-brand hover:underline">Clear</button>
+                                        )}
+                                    </h3>
+                                    <ul className="space-y-4">
+                                        {categories.map(category => {
+                                            const isSelected = selectedCategories.includes(category._id);
+                                            return (
+                                                <li key={category._id} className="flex flex-col">
+                                                    <label className="flex items-center gap-3 cursor-pointer group mb-1">
+                                                        <div className="relative flex items-center">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isSelected}
+                                                                onChange={() => handleCategoryChange(category._id)}
+                                                                className="w-4 h-4 text-brand border-default rounded focus:ring-brand cursor-pointer"
+                                                            />
+                                                        </div>
+                                                        <span className={`text-sm font-medium transition-colors ${isSelected ? 'text-brand' : 'text-primary group-hover:text-brand'}`}>
+                                                            {category.name}
+                                                        </span>
+                                                    </label>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                                <div className="bg-surface p-4 rounded-2xl border border-default shadow-sm">
+                                    <h3 className="font-bold text-primary tracking-wide mb-4 flex items-center justify-between pb-3 border-b border-default">
+                                        Brands
+                                        {selectedBrands.length > 0 && (
+                                            <button onClick={() => setSelectedBrands([])} className="text-[10px] text-brand hover:underline">Clear</button>
+                                        )}
+                                    </h3>
+                                    <ul className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                                        {brands.map(brand => {
+                                            const isBrandSelected = selectedBrands.includes(brand._id);
+                                            return (
+                                                <li key={brand._id}>
+                                                    <label className={`cursor-pointer transition-colors px-3 py-2 rounded-lg flex items-center gap-3 ${isBrandSelected ? 'bg-primary text-surface font-bold' : 'text-secondary hover:bg-muted'}`}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isBrandSelected}
+                                                            onChange={() => handleBrandChange(brand._id)}
+                                                            className="w-4 h-4 text-brand border-default rounded focus:ring-brand hidden"
+                                                        />
+                                                        <span className="text-sm">{brand.name}</span>
+                                                    </label>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                                <div className="bg-surface p-4 rounded-2xl border border-default shadow-sm">
+                                    <h3 className="font-bold text-primary tracking-wide mb-4 flex items-center justify-between pb-3 border-b border-default">
+                                        Price ({currency})
+                                    </h3>
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="number"
+                                            placeholder="Min"
+                                            value={minPrice}
+                                            onChange={(e) => setMinPrice(e.target.value)}
+                                            className="w-full px-3 py-2 border border-default rounded-lg text-sm bg-surface text-primary focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                                            min="0"
+                                        />
+                                        <span className="text-tertiary">-</span>
+                                        <input
+                                            type="number"
+                                            placeholder="Max"
+                                            value={maxPrice}
+                                            onChange={(e) => setMaxPrice(e.target.value)}
+                                            className="w-full px-3 py-2 border border-default rounded-lg text-sm bg-surface text-primary focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                                            min="0"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-5 flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={clearAllFilters}
+                                    className="flex-1 px-4 py-2 rounded-lg border border-default text-secondary hover:text-brand hover:border-brand"
+                                >
+                                    Clear
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowMobileFilters(false)}
+                                    className="flex-1 px-4 py-2 rounded-lg bg-brand text-on-brand font-semibold"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Filters Sidebar */}
-                    <div className={`lg:w-72 flex-shrink-0 space-y-8 lg:sticky lg:top-8 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
+                    <div className="hidden lg:block lg:w-72 flex-shrink-0 space-y-8 lg:sticky lg:top-8 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
                         {/* Categories & Subcategories */}
                         <div className="bg-surface p-5 rounded-2xl border border-default shadow-sm">
                             <h3 className="font-bold text-primary tracking-wide mb-4 flex items-center justify-between pb-3 border-b border-default">
@@ -530,7 +664,7 @@ const Shop = () => {
                             innerSubcategory={selectedInnerSubcategories.length === 1 ? selectedInnerSubcategories[0] : null}
                         />
                         {loading ? (
-                            <div className="grid grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-8">
+                            <div className="grid grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
                                 {Array.from({ length: pageSize }).map((_, idx) => (
                                     <div key={`shop-skeleton-${idx}`} className="bg-surface border border-default rounded-2xl overflow-hidden">
                                         <div className="skeleton aspect-square w-full" />
@@ -550,7 +684,7 @@ const Shop = () => {
                                 ))}
                             </div>
                         ) : (
-                            <div className="grid grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-8">
+                            <div className="grid grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
                                 {products.map((product) => (
                                     <div key={product._id} className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
                                         <Link to={`/product/${product._id}`} className="block relative">
@@ -588,7 +722,7 @@ const Shop = () => {
                                             <Eye size={16} />
                                         </button>
 
-                                            <div className="p-6 flex flex-col flex-1">
+                                            <div className="p-4 sm:p-6 flex flex-col flex-1">
                                                 <div className="flex items-center gap-1 text-gold mb-2">
                                                     {renderStars(product.rating, 18)}
                                                 <span className="text-tertiary text-xs ml-1">({product.numReviews || 0})</span>
@@ -604,7 +738,7 @@ const Shop = () => {
                                                 </span>
                                             )}
                                             <Link to={`/product/${product._id}`}>
-                                                    <h3 className="text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
+                                                    <h3 className="text-base sm:text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
                                             </Link>
                                                 <p className="text-base text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
                                             <div className="flex items-center justify-between mt-auto pt-4">

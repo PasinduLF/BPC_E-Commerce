@@ -7,8 +7,8 @@ const BottomMobileNav = () => {
     const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
     return (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-t border-default shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] pb-safe pt-2 px-3 sm:px-6">
-            <div className="grid grid-cols-4 items-center gap-1 h-14">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-t border-default shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] pb-safe pt-2 px-3 sm:px-6 px-safe">
+            <div className="grid grid-cols-4 items-center gap-1 h-14 min-[360px]:h-[3.75rem]">
                 
                 {/* Home */}
                 <Link to="/" className="flex flex-col items-center justify-center gap-1 group min-w-0">

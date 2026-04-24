@@ -245,7 +245,7 @@ const ProductScreen = () => {
                     productName={product.name}
                 />
 
-                <div className="bg-surface rounded-[2rem] shadow-sm border border-default overflow-hidden animate-slide-up lg:grid lg:grid-cols-2 lg:gap-10 p-6 lg:p-14">
+                <div className="bg-surface rounded-[2rem] shadow-sm border border-default overflow-hidden animate-slide-up lg:grid lg:grid-cols-2 lg:gap-10 p-4 sm:p-6 lg:p-14">
 
                     {/* Image Gallery */}
                     <div className="mb-8 lg:mb-0">
@@ -272,7 +272,7 @@ const ProductScreen = () => {
 
                         {/* Thumbnail Selection */}
                         {product.images && product.images.length > 1 && (
-                            <div className="grid grid-cols-4 gap-4">
+                            <div className="grid grid-cols-4 gap-2 sm:gap-4">
                                 {product.images.map((img, index) => (
                                     <button
                                         key={img.public_id}
@@ -411,14 +411,14 @@ const ProductScreen = () => {
                                     <div className="flex flex-col sm:flex-row gap-2 w-full">
                                         <button
                                             onClick={addToCartHandler}
-                                            className="flex-1 bg-surface border-2 border-primary text-primary hover:bg-primary hover:text-surface py-4 rounded-xl flex items-center justify-center gap-3 text-lg font-bold transition-colors group"
+                                            className="flex-1 bg-surface border-2 border-primary text-primary hover:bg-primary hover:text-surface py-3.5 sm:py-4 rounded-xl flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg font-bold transition-colors group"
                                         >
                                             <ShoppingBag size={22} className="group-hover:-translate-y-1 transition-transform" />
                                             Add to Cart
                                         </button>
                                         <button
                                             onClick={buyNowHandler}
-                                            className="flex-1 btn-primary py-4 rounded-xl flex items-center justify-center gap-3 text-lg font-bold group"
+                                            className="flex-1 btn-primary py-3.5 sm:py-4 rounded-xl flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg font-bold group"
                                         >
                                             <CreditCard size={22} className="group-hover:-translate-y-1 transition-transform" />
                                             Buy Now
@@ -464,7 +464,7 @@ const ProductScreen = () => {
                                                     onClick={() => setOpenDescriptionSection(isOpen ? '' : section.key)}
                                                     className="w-full py-4 flex items-center justify-between text-left"
                                                 >
-                                                    <span className="text-primary font-medium text-xl">{section.label}</span>
+                                                    <span className="text-primary font-medium text-base sm:text-xl">{section.label}</span>
                                                     <ChevronDown
                                                         size={18}
                                                         className={`text-tertiary transition-transform ${isOpen ? 'rotate-180' : ''}`}

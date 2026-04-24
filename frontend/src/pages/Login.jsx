@@ -136,8 +136,8 @@ const Login = () => {
         <div className="min-h-screen bg-page flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
 
             {/* Decorative blobs */}
-            <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[600px] h-[600px] rounded-full bg-brand opacity-20 blur-3xl -z-10"></div>
-            <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[400px] h-[400px] rounded-full bg-brand opacity-10 blur-3xl -z-10"></div>
+            <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[280px] h-[280px] sm:w-[600px] sm:h-[600px] rounded-full bg-brand opacity-20 blur-3xl -z-10"></div>
+            <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[220px] h-[220px] sm:w-[400px] sm:h-[400px] rounded-full bg-brand opacity-10 blur-3xl -z-10"></div>
 
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <h2 className="mt-6 text-center text-3xl font-extrabold text-primary tracking-tight">

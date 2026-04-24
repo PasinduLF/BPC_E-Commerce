@@ -701,8 +701,65 @@ const OrderManage = () => {
                                 </div>
                                 <p className="text-sm font-semibold text-primary">{order.isPOS ? (order.customerName || 'Walk-in') : (order.user?.name || 'Unknown')}</p>
                                 <p className="text-xs text-secondary">{new Date(order.createdAt).toLocaleDateString()} • {currency}{Number(order.totalPrice || 0).toFixed(2)}</p>
+                                <div className="flex flex-wrap items-center gap-2 text-[11px] pt-1">
+                                    <span className={`px-2 py-1 rounded-full font-semibold ${order.isDelivered ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning'}`}>
+                                        {order.isDelivered ? 'Delivered' : 'Processing'}
+                                    </span>
+                                    <span className="px-2 py-1 rounded-full font-semibold bg-page border border-default text-secondary">
+                                        {order.paymentMethod}
+                                    </span>
+                                    {order.paymentMethod === 'Bank Transfer' && order.paymentSlip?.url && (
+                                        <a
+                                            href={order.paymentSlip.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-brand font-semibold underline"
+                                        >
+                                            View Slip
+                                        </a>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => updatePaymentStatus(order._id, order.isPaid)}
+                                        disabled={isOrderBusy(order._id)}
+                                        className={`px-2 py-2 rounded-lg border text-xs font-semibold transition-colors ${order.isPaid ? 'text-error border-error-bg hover:bg-error-bg' : 'text-success border-success-bg hover:bg-success-bg'} disabled:opacity-60 disabled:cursor-not-allowed`}
+                                    >
+                                        {actionLoadingKey === `payment-${order._id}` ? 'Updating...' : (order.isPaid ? 'Mark Unpaid' : 'Mark Paid')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => updateDeliveryStatus(order._id, order.isDelivered)}
+                                        disabled={isOrderBusy(order._id)}
+                                        className={`px-2 py-2 rounded-lg border text-xs font-semibold transition-colors ${order.isDelivered ? 'text-warning border-warning-bg hover:bg-warning-bg' : 'text-success border-success-bg hover:bg-success-bg'} disabled:opacity-60 disabled:cursor-not-allowed`}
+                                    >
+                                        {actionLoadingKey === `delivery-${order._id}` ? 'Updating...' : (order.isDelivered ? 'Mark Processing' : 'Mark Delivered')}
+                                    </button>
+                                </div>
                                 <div className="flex items-center gap-2 pt-1">
                                     <Link to={`/order/${order._id}`} className="btn-tertiary text-xs px-3 py-1.5">Details</Link>
+                                    {order.isPOS && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={() => openReceiptModal(order)}
+                                                className="touch-target inline-flex items-center justify-center rounded-lg border border-default text-secondary hover:text-brand hover:border-brand"
+                                                aria-label={`View receipt for order ${order.orderNumber || order._id}`}
+                                            >
+                                                <ReceiptText size={16} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => openEditModal(order)}
+                                                disabled={isOrderBusy(order._id)}
+                                                className="touch-target inline-flex items-center justify-center rounded-lg border border-success-bg text-success hover:bg-success-bg disabled:opacity-60 disabled:cursor-not-allowed"
+                                                aria-label={`Edit order ${order.orderNumber || order._id}`}
+                                            >
+                                                <Edit size={16} />
+                                            </button>
+                                        </>
+                                    )}
                                     <button
                                         type="button"
                                         onClick={() => deleteHandler(order._id)}

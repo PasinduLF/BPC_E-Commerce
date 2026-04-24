@@ -34,7 +34,7 @@ const ProductRecommendations = ({ title = 'Recommended For You', excludeProductI
         return (
             <div className="space-y-4">
                 <h3 className="text-2xl font-bold text-primary">{title}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
                     {[...Array(4)].map((_, i) => (
                         <div key={i} className="bg-page rounded-2xl h-80"></div>
                     ))}
@@ -54,7 +54,7 @@ const ProductRecommendations = ({ title = 'Recommended For You', excludeProductI
                 <p className="text-secondary">Discover products you might love</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                 {products.map((product) => (
                     <div
                         key={product._id}
