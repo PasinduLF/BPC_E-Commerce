@@ -119,7 +119,7 @@ const Home = () => {
         elements.forEach(el => observer.observe(el));
 
         return () => observer.disconnect();
-    }, [categories, featuredProducts, trendingProducts, brands]);
+    }, [categories, featuredProducts, trendingProducts, featuredBundles, brands]);
 
     const handleSubscribe = (e) => {
         e.preventDefault();
