@@ -7,7 +7,7 @@ import { useAuthStore } from '../context/useAuthStore';
 import { useCartStore } from '../context/useCartStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useConfigStore } from '../context/useConfigStore';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import logoImage from '../assets/logo-color.png';
 import BottomMobileNav from './BottomMobileNav';
 
@@ -43,7 +43,7 @@ const Navbar = () => {
                 console.error('Failed to load categories for nav', error);
             }
         };
-        fetchCategories();
+        queueMicrotask(fetchCategories);
     }, []);
 
     // Fetch Search Suggestions
@@ -57,9 +57,9 @@ const Navbar = () => {
                     console.error('Failed to fetch suggestions', error);
                 }
             };
-            fetchSuggestions();
+            queueMicrotask(fetchSuggestions);
         } else {
-            setSearchSuggestions([]);
+            queueMicrotask(() => setSearchSuggestions([]));
         }
     }, [searchQuery]);
 
@@ -86,10 +86,12 @@ const Navbar = () => {
     }, [isOpen]);
 
     useEffect(() => {
-        setIsOpen(false);
-        setDropdownOpen(false);
-        setExpandedCategory(null);
-        setActiveMegaMenu(null);
+        queueMicrotask(() => {
+            setIsOpen(false);
+            setDropdownOpen(false);
+            setExpandedCategory(null);
+            setActiveMegaMenu(null);
+        });
     }, [location.pathname, location.search]);
 
     const logoutHandler = () => {

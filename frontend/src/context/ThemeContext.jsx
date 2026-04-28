@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { ThemeContext } from './themeCore';
 
 // ─── Palette ────────────────────────────────────────────────────────────────
 
-export const palette = {
+const palette = {
   // Brand – Warm Rose
   roseLight:    "#F5E8ED",
   rose:         "#D4739A",
@@ -152,8 +153,6 @@ function injectCSSVars(mode) {
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
-const ThemeContext = createContext(null);
-
 export function ThemeProvider({ children, defaultMode = "light" }) {
   const [mode, setMode] = useState(() => {
     if (typeof window === "undefined") return defaultMode;
@@ -201,13 +200,3 @@ export function ThemeProvider({ children, defaultMode = "light" }) {
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
-
-export function useTheme() {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) {
-    throw new Error("useTheme must be used within a <ThemeProvider>");
-  }
-  return ctx;
-}
-
-export default ThemeContext;

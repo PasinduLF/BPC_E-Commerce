@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../context/useAuthStore';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/useTheme';
 import logoImage from '../assets/logo-no-background.png';
 import {
     LayoutDashboard,

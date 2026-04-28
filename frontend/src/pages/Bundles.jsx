@@ -7,7 +7,6 @@ import { useCartStore } from '../context/useCartStore';
 import { useConfigStore } from '../context/useConfigStore';
 import { toast } from 'sonner';
 import Breadcrumbs from '../components/Breadcrumbs';
-import { getProductImageUrl } from '../utils/imageUtils';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { hasBundleStock } from '../utils/stockUtils';

@@ -1,18 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../context/useCartStore';
-import { useAuthStore } from '../context/useAuthStore';
-import { Building, Wallet, CreditCard as CreditCardIcon, Plus } from 'lucide-react';
+import { Building, Wallet } from 'lucide-react';
 import StepIndicator from '../components/StepIndicator';
 
 const Payment = () => {
     const navigate = useNavigate();
-    const { userInfo } = useAuthStore();
     const { shippingAddress, paymentMethod, savePaymentMethod } = useCartStore();
     const isPickupOrder = shippingAddress?.fulfillmentType === 'pickup';
 
-    const [selectedMethod, setSelectedMethod] = useState(isPickupOrder ? 'Bank Transfer' : (paymentMethod || 'Cash on Delivery'));
-    const [selectedCardId, setSelectedCardId] = useState('');
+    const [selectedMethod, setSelectedMethod] = useState(paymentMethod || 'Cash on Delivery');
+    const effectiveSelectedMethod = isPickupOrder ? 'Bank Transfer' : selectedMethod;
 
     useEffect(() => {
         if (!shippingAddress.address) {
@@ -20,19 +18,11 @@ const Payment = () => {
         }
     }, [shippingAddress, navigate]);
 
-    useEffect(() => {
-        if (isPickupOrder) {
-            setSelectedMethod('Bank Transfer');
-        }
-    }, [isPickupOrder]);
-
     const submitHandler = (e) => {
         e.preventDefault();
-        savePaymentMethod(selectedMethod);
+        savePaymentMethod(effectiveSelectedMethod);
         navigate('/placeorder');
     };
-
-    const hasSavedCards = userInfo?.paymentCards?.length > 0;
 
     return (
         <div className="bg-page min-h-screen py-10 sm:py-12 animate-fade-in">
@@ -53,7 +43,7 @@ const Payment = () => {
                             <div className="space-y-4">
 
                                 {!isPickupOrder && (
-                                    <label className={`relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-0 p-4 sm:p-6 cursor-pointer rounded-2xl border-2 transition-all ${selectedMethod === 'Cash on Delivery' ? 'border-brand bg-brand-subtle/50' : 'border-default bg-surface hover:border-brand-subtle'}`}>
+                                    <label className={`relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-0 p-4 sm:p-6 cursor-pointer rounded-2xl border-2 transition-all ${effectiveSelectedMethod === 'Cash on Delivery' ? 'border-brand bg-brand-subtle/50' : 'border-default bg-surface hover:border-brand-subtle'}`}>
                                         <div className="flex items-center gap-4 w-full sm:w-auto min-w-0">
                                             <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center shadow-sm text-brand">
                                                 <Wallet size={24} />
@@ -64,8 +54,8 @@ const Payment = () => {
                                             </div>
                                         </div>
                                         <div className="ml-0 sm:ml-auto self-end sm:self-auto">
-                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'Cash on Delivery' ? 'border-brand' : 'border-muted'}`}>
-                                                {selectedMethod === 'Cash on Delivery' && <div className="w-3 h-3 bg-brand rounded-full"></div>}
+                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${effectiveSelectedMethod === 'Cash on Delivery' ? 'border-brand' : 'border-muted'}`}>
+                                                {effectiveSelectedMethod === 'Cash on Delivery' && <div className="w-3 h-3 bg-brand rounded-full"></div>}
                                             </div>
                                         </div>
                                         <input
@@ -79,7 +69,7 @@ const Payment = () => {
                                 )}
 
                                 {/* Bank Transfer Option */}
-                                <label className={`relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-0 p-4 sm:p-6 cursor-pointer rounded-2xl border-2 transition-all ${selectedMethod === 'Bank Transfer' ? 'border-brand bg-brand-subtle/50' : 'border-default bg-surface hover:border-brand-subtle'}`}>
+                                <label className={`relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-0 p-4 sm:p-6 cursor-pointer rounded-2xl border-2 transition-all ${effectiveSelectedMethod === 'Bank Transfer' ? 'border-brand bg-brand-subtle/50' : 'border-default bg-surface hover:border-brand-subtle'}`}>
                                     <div className="flex items-center gap-4 w-full sm:w-auto min-w-0">
                                         <div className="w-12 h-12 bg-surface rounded-full flex items-center justify-center shadow-sm text-brand">
                                             <Building size={24} />
@@ -90,8 +80,8 @@ const Payment = () => {
                                         </div>
                                     </div>
                                     <div className="ml-0 sm:ml-auto self-end sm:self-auto">
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'Bank Transfer' ? 'border-brand' : 'border-muted'}`}>
-                                            {selectedMethod === 'Bank Transfer' && <div className="w-3 h-3 bg-brand rounded-full"></div>}
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${effectiveSelectedMethod === 'Bank Transfer' ? 'border-brand' : 'border-muted'}`}>
+                                            {effectiveSelectedMethod === 'Bank Transfer' && <div className="w-3 h-3 bg-brand rounded-full"></div>}
                                         </div>
                                     </div>
                                     <input

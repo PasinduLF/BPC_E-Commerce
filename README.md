@@ -1,193 +1,92 @@
 # BPC E-Commerce
 
-> **Version:** 1.0.0  
-> **Status:** Production Ready  
-> **Last Updated:** April 2026
+Full-stack e-commerce, admin, POS, inventory, and financial-management system for Beauty P&C.
 
-## 🚀 Project Overview
+## Status
 
-**BPC E-Commerce** is a comprehensive, full-stack online shopping platform built with modern web technologies. The system features a dual-interface architecture supporting both **Retail (B2C)** and **Wholesale (B2B)** customers, managed through a unified administrative dashboard.
+Production-readiness hardening is in progress. The app builds successfully, frontend lint has no blocking errors, and the backend now includes validation, rate limits, transactional order/POS writes, and integration-test scaffolding.
 
-## ✨ Key Features
-
-### 🛍️ Customer-Facing Features
-- **Dual Shopping Experience**:
-  - **Retail Mode**: Standard e-commerce with individual pricing.
-  - **Wholesale Mode**: Tiered pricing, bulk discounts, and credit limits.
-- **Product Discovery**:
-  - Advanced search with filters (category, brand, price, stock).
-  - Sorting options (newest, price low-high, price high-low).
-  - Featured products and brand showcases.
-- **User Accounts**:
-  - Secure authentication (JWT).
-  - Order history and tracking.
-  - Profile management with address book.
-- **Shopping Cart & Checkout**:
-  - Persistent cart across sessions.
-  - Multiple payment gateway integrations.
-  - Order confirmation and email notifications.
-
-### 🛡️ Admin & Management Features
-- **Dashboard Analytics**:
-  - Real-time sales metrics.
-  - Inventory overview.
-  - Financial summaries.
-- **Product Management**:
-  - CRUD operations for products and categories.
-  - Image management and SEO optimization.
-- **Order Management**:
-  - Order tracking and status updates.
-  - Customer management.
-- **Financial Management**:
-  - Transaction tracking.
-  - Balance management for wholesale accounts.
-- **System Configuration**:
-  - Store settings and branding.
-  - Payment gateway configuration.
-
-## 🛠️ Technology Stack
+## Stack
 
 ### Frontend
-- **Framework**: React 18
-- **Language**: JavaScript (ES6+)
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **State Management**: React Context API
-- **Routing**: React Router DOM
+- React 19
+- Vite
+- Tailwind CSS
+- Zustand
+- React Router
+- Sonner notifications
+- Lucide icons
 
 ### Backend
-- **Framework**: Node.js
-- **Runtime**: Express.js
-- **Database**: MongoDB (Mongoose ODM)
-- **Authentication**: JWT (JSON Web Tokens)
-- **Security**: Bcrypt.js
-- **Email**: Nodemailer
+- Node.js
+- Express 5
+- MongoDB with Mongoose
+- JWT cookie authentication
+- Cloudinary image uploads
+- Nodemailer email notifications
+- Zod request validation
+- Express rate limiting
+- Jest/Supertest integration-test setup
 
-## 📂 Project Structure
+## Project Structure
 
+```text
+backend/
+  controllers/      Express request handlers
+  middleware/       Auth, upload, validation, rate-limit, error handling
+  models/           Mongoose models
+  routes/           API route modules
+  tests/            Backend integration tests
+  validation/       Zod schemas
+  index.js          Backend app entry point
+
+frontend/
+  src/components/   Shared UI components
+  src/context/      Zustand stores and theme context
+  src/pages/        Customer and admin pages
+  src/utils/        UI/domain helpers
 ```
-BPC_E-Commerce/
-├── backend/                # Express.js API Server
-│   ├── config/             # Database and environment config
-│   ├── controllers/        # Request handlers
-│   ├── middleware/         # Auth, error handling
-│   ├── models/             # Mongoose schemas
-│   ├── routes/             # API endpoints
-│   └── server.js           # Application entry point
-├── frontend/               # React Application
-│   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Page components
-│   │   ├── services/       # API client
-│   │   ├── context/        # Global state
-│   │   └── App.jsx         # Main application
-│   └── package.json
-└── package.json            # Root dependencies
-```
 
-## ⚙️ Installation & Setup
+## Setup
 
-### Prerequisites
-- Node.js (v16 or higher)
-- MongoDB (local or cloud)
+### Backend
 
-### 1. Backend Setup
 ```bash
 cd backend
 npm install
-
-# Create .env file based on .env.example
-cp .env.example .env
-
-# Configure environment variables in .env
-# MONGO_URI=your_mongodb_connection_string
-# JWT_SECRET=your_secret_key
-# PORT=5000
-# FRONTEND_URL=http://localhost:5173
-# SMTP_HOST=smtp.example.com
-# SMTP_PORT=587
-# SMTP_SECURE=false
-# SMTP_USER=mailer@example.com
-# SMTP_PASS=your_smtp_password
-# SMTP_FROM_EMAIL=mailer@example.com
-# SMTP_FROM_NAME=Beauty P&C
-# ADMIN_NOTIFICATION_EMAIL=admin@example.com
-
-npm start
-```
-
-The API will be available at `http://localhost:5000`.
-
-### 2. Frontend Setup
-```bash
-cd frontend
-npm install
-
-# Configure API URL in .env
-# VITE_API_URL=http://localhost:5000
-
+copy .env.example .env
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`.
+Required environment variables are documented in `backend/.env.example`. Use strong production secrets and rotate any secret that was previously committed.
 
-## 🔑 Default Credentials
+### Frontend
 
-### Admin User
-- **Email**: [EMAIL_ADDRESS]`
-- **Password**: `admin123`
+```bash
+cd frontend
+npm install
+copy .env.example .env
+npm run dev
+```
 
-### Retail User
-- **Email**: [EMAIL_ADDRESS]`
-- **Password**: `user123`
+Set `VITE_API_URL` in `frontend/.env`.
 
-## 📊 Database Models
+## Scripts
 
-The system uses the following core MongoDB models:
-- **User**: Customer and admin accounts.
-- **Product**: Items for sale.
-- **Category**: Product categories.
-- **Brand**: Product brands.
-- **Order**: Customer orders.
-- **Transaction**: Financial transactions.
-- **Config**: System settings.
+### Backend
+- `npm start` - run `index.js`
+- `npm run dev` - run with Nodemon
+- `npm test` - run Jest integration tests
 
-## 🔌 API Endpoints
+### Frontend
+- `npm run dev` - Vite dev server
+- `npm run lint` - ESLint
+- `npm run build` - production build
+- `npm run preview` - preview production build
 
-### Authentication
-- `POST /api/users/auth` - Login
-- `POST /api/users` - Register (sends verification email)
-- `GET /api/users/verify-email?token=...` - Verify email
-- `POST /api/users/verify-email/resend` - Resend verification email
-- `POST /api/users/forgot-password` - Request password reset
-- `POST /api/users/reset-password` - Reset password from token
+## Important Production Notes
 
-### Products
-- `GET /api/products` - List products
-- `GET /api/products/:id` - Get product details
-
-### Orders
-- `POST /api/orders` - Create order
-- `GET /api/orders/myorders` - Get user orders
-
-### Admin
-- `GET /api/admin/users` - List all users
-- `PUT /api/admin/users/:id` - Update user
-- `GET /api/admin/products` - Manage products
-
-## 📝 License
-
-This project is proprietary software. All rights reserved.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
-
-## 📞 Support
-
-For issues or questions, please contact the development team.
+- Do not commit `.env`, `node_modules`, `dist`, uploads, logs, or generated reports.
+- MongoDB transactions require a replica set or Atlas cluster.
+- Backend tests use `mongodb-memory-server-core`; the first test run may need network access to download a MongoDB binary.
+- No default production credentials are provided. Create admin users through a secure operational process.

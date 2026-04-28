@@ -21,7 +21,7 @@ const UserManage = () => {
     };
 
     useEffect(() => {
-        fetchUsers();
+        queueMicrotask(fetchUsers);
     }, [userInfo.token]);
 
     const deleteHandler = async (id, name) => {
@@ -49,7 +49,7 @@ const UserManage = () => {
                     role: user.role === 'admin' ? 'customer' : 'admin'
                 }, config);
                 fetchUsers();
-            } catch (error) {
+            } catch {
                 alert('Failed to update user role');
             }
         }

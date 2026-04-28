@@ -61,8 +61,10 @@ const WholesaleInventory = () => {
     };
 
     useEffect(() => {
-        fetchPurchases();
-        fetchProducts();
+        queueMicrotask(() => {
+            fetchPurchases();
+            fetchProducts();
+        });
     }, [userInfo.token]);
 
     const handleAddItem = () => {
@@ -162,7 +164,7 @@ const WholesaleInventory = () => {
             const { data } = await axios.get(`/api/wholesale/${id}`, configHeader);
             setSelectedPurchase(data);
             setDetailsModalOpen(true);
-        } catch (error) {
+        } catch {
             alert('Failed to load purchase details');
         }
     };

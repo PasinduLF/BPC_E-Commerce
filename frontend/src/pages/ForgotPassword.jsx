@@ -12,7 +12,7 @@ const ForgotPassword = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    const [useOtpMode, setUseOtpMode] = useState(!Boolean(token));
+    const [useOtpMode, setUseOtpMode] = useState(!token);
     const [otpRequested, setOtpRequested] = useState(false);
 
     const isResetMode = Boolean(token) || otpRequested;

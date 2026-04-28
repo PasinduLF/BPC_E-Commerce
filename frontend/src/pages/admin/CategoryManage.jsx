@@ -36,7 +36,7 @@ const CategoryManage = () => {
     };
 
     useEffect(() => {
-        fetchCategories();
+        queueMicrotask(fetchCategories);
     }, []);
 
     const saveCategoryHandler = async (e) => {
@@ -99,7 +99,7 @@ const CategoryManage = () => {
             setEditingCategoryId(null);
             setShowAddForm(false);
             fetchCategories();
-        } catch (error) {
+        } catch {
             alert('Failed to save at this level');
         }
     };
@@ -131,7 +131,7 @@ const CategoryManage = () => {
                     await axios.delete(`/api/categories/${catId}/subcategories/${id}`, config);
                 }
                 fetchCategories();
-            } catch (error) {
+            } catch {
                 alert(`Failed to delete ${type}`);
             }
         }
@@ -161,7 +161,7 @@ const CategoryManage = () => {
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
             await axios.delete(`/api/categories/${catId}/subcategories/${subId}/nested/${nestedId}`, config);
             fetchCategories();
-        } catch (error) {
+        } catch {
             alert('Failed to delete nested subcategory');
         }
     };

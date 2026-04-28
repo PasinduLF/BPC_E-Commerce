@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 const { protect } = require('../middleware/authMiddleware');
+const { uploadLimiter } = require('../middleware/rateLimitMiddleware');
 
 const router = express.Router();
 
@@ -47,7 +48,7 @@ const upload = multer({
 });
 
 // Upload route
-router.post('/', protect, upload.single('image'), async (req, res) => {
+router.post('/', uploadLimiter, protect, upload.single('image'), async (req, res) => {
     let processedPath = null;
     try {
         if (!req.file) {

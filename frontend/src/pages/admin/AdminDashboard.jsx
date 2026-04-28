@@ -5,6 +5,8 @@ import { useConfigStore } from '../../context/useConfigStore';
 import { Users, Package, ShoppingCart, DollarSign, TrendingUp, TrendingDown, AlertTriangle, Target, Clock3 } from 'lucide-react';
 import StatusLegend from '../../components/admin/StatusLegend';
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 const AdminDashboard = () => {
     const { userInfo } = useAuthStore();
     const { config } = useConfigStore();
@@ -21,13 +23,12 @@ const AdminDashboard = () => {
     const [period, setPeriod] = useState('week');
     const [revenueTarget, setRevenueTarget] = useState(5000);
     const [loading, setLoading] = useState(true);
-
-    const DAY_MS = 24 * 60 * 60 * 1000;
+    const [now] = useState(() => Date.now());
 
     const isWithinDays = (dateValue, days) => {
         const date = new Date(dateValue);
         if (Number.isNaN(date.getTime())) return false;
-        return (Date.now() - date.getTime()) / DAY_MS <= days;
+        return (now - date.getTime()) / DAY_MS <= days;
     };
 
     const getDelta = (current, previous) => {
@@ -67,7 +68,7 @@ const AdminDashboard = () => {
             }
         };
 
-        fetchStats();
+        queueMicrotask(fetchStats);
     }, [userInfo.token]);
 
     const periodDays = period === 'month' ? 30 : 7;
@@ -77,7 +78,7 @@ const AdminDashboard = () => {
         const previousOrders = orders.filter((order) => {
             const date = new Date(order.createdAt);
             if (Number.isNaN(date.getTime())) return false;
-            const age = (Date.now() - date.getTime()) / DAY_MS;
+            const age = (now - date.getTime()) / DAY_MS;
             return age > periodDays && age <= periodDays * 2;
         });
 
@@ -135,7 +136,8 @@ const AdminDashboard = () => {
             .sort((a, b) => Number(a.stock || 0) - Number(b.stock || 0))
             .slice(0, 8);
 
-        const elapsedDays = period === 'month' ? new Date().getDate() : Math.min(new Date().getDay() + 1, 7);
+        const nowDate = new Date(now);
+        const elapsedDays = period === 'month' ? nowDate.getDate() : Math.min(nowDate.getDay() + 1, 7);
         const projection = elapsedDays > 0 ? (currentRevenue / elapsedDays) * periodDays : currentRevenue;
 
         return {
@@ -151,7 +153,7 @@ const AdminDashboard = () => {
             lowStockProducts,
             projection,
         };
-    }, [orders, periodDays, products]);
+    }, [isWithinDays, now, orders, period, periodDays, products]);
 
     if (loading) {
         return (

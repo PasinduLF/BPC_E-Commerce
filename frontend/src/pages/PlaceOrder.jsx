@@ -7,6 +7,7 @@ import { CheckCircle, Truck, Wallet, ArrowRight, Building, Upload, FileImage, Lo
 import { useConfigStore } from '../context/useConfigStore';
 import { getProductImageUrl } from '../utils/imageUtils';
 import { getProductUrl } from '../utils/slugUtils';
+import { notify } from '../utils/notify';
 
 const PlaceOrder = () => {
     const { config } = useConfigStore();
@@ -90,13 +91,13 @@ const PlaceOrder = () => {
         if (placingOrder) return;
 
         if (!hasRequiredShipping) {
-            alert('Shipping details are incomplete. Please check your shipping information.');
+            notify({ type: 'error', title: 'Shipping details incomplete', description: 'Please check your shipping information.' });
             navigate('/shipping');
             return;
         }
 
         if (!hasValidPickupPayment) {
-            alert('Pickup orders require Bank Transfer payment method.');
+            notify({ type: 'error', title: 'Invalid payment method', description: 'Pickup orders require Bank Transfer payment.' });
             navigate('/payment');
             return;
         }
@@ -136,7 +137,7 @@ const PlaceOrder = () => {
         } catch (error) {
             console.error('Order creation failed', error);
             const message = error?.response?.data?.message || 'Order failed to process. Please try again.';
-            alert(message);
+            notify({ type: 'error', title: 'Order failed', description: message });
         } finally {
             setPlacingOrder(false);
         }
@@ -165,7 +166,7 @@ const PlaceOrder = () => {
         } catch (error) {
             console.error(error);
             setUploading(false);
-            alert('Failed to upload payment slip. Please try again.');
+            notify({ type: 'error', title: 'Upload failed', description: 'Failed to upload payment slip. Please try again.' });
         }
     };
 

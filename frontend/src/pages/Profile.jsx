@@ -16,9 +16,6 @@ const Profile = () => {
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [newAddress, setNewAddress] = useState({ address: '', city: '', postalCode: '', country: '' });
 
-    const [showCardForm, setShowCardForm] = useState(false);
-    const [newCard, setNewCard] = useState({ cardName: '', cardNumber: '', expiryDate: '' });
-
     // Profile Edit State
     const [showEditProfile, setShowEditProfile] = useState(false);
     const [editProfileData, setEditProfileData] = useState({
@@ -31,8 +28,6 @@ const Profile = () => {
     const [profileImagePreview, setProfileImagePreview] = useState(null);
 
     const savedAddresses = userInfo?.addresses || [];
-    const savedCards = userInfo?.paymentCards || [];
-
     useEffect(() => {
         const raf = requestAnimationFrame(() => {
             setPageLoading(false);

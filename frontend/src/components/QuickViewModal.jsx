@@ -23,9 +23,11 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
 
     useEffect(() => {
         if (!isOpen || !product) return;
-        setQty(1);
-        setActiveImage(0);
-        setSelectedVariant(getFirstAvailableVariant(product) || product?.variants?.[0] || null);
+        queueMicrotask(() => {
+            setQty(1);
+            setActiveImage(0);
+            setSelectedVariant(getFirstAvailableVariant(product) || product?.variants?.[0] || null);
+        });
     }, [isOpen, product]);
 
     if (!isOpen || !product) return null;

@@ -27,7 +27,7 @@ const FinancialDashboard = () => {
     };
 
     useEffect(() => {
-        fetchBalances();
+        queueMicrotask(fetchBalances);
     }, [userInfo.token]);
 
     if (loading) {

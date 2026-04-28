@@ -1,4 +1,4 @@
-import { Star, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { useState } from 'react';
 
 const ReviewFilters = ({ 
@@ -8,8 +8,6 @@ const ReviewFilters = ({
 }) => {
     const [selectedRating, setSelectedRating] = useState(null);
     const [sortBy, setSortBy] = useState('recent');
-    const [helpfulVotes, setHelpfulVotes] = useState({});
-
     const handleRatingFilter = (rating) => {
         const newRating = selectedRating === rating ? null : rating;
         setSelectedRating(newRating);
@@ -19,13 +17,7 @@ const ReviewFilters = ({
     const handleSortChange = (sort) => {
         setSortBy(sort);
         onFilterChange(selectedRating, sort);
-    };
-
-    const toggleHelpful = (reviewId, isHelpful) => {
-        setHelpfulVotes(prev => ({
-            ...prev,
-            [reviewId]: isHelpful
-        }));
+        onSortChange(sort);
     };
 
     const ratingCounts = {

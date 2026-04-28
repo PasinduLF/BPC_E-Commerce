@@ -4,6 +4,8 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
+const helmet = require('helmet');
+const compression = require('compression');
 
 dotenv.config();
 
@@ -24,12 +26,21 @@ const allowedOrigins = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL ||
     .map((origin) => normalizeOrigin(origin.trim()))
     .filter(Boolean);
 
-// Middleware
+const connectDB = async () => {
+    if (!process.env.MONGO_URI) {
+        throw new Error('MONGO_URI is required');
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('MongoDB Connected successfully');
+};
+
+app.use(helmet());
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow non-browser requests (no Origin header) and explicit allowed frontends.
         if (!origin) return callback(null, true);
 
         const normalizedRequestOrigin = normalizeOrigin(origin);
@@ -41,14 +52,10 @@ app.use(cors({
     credentials: true,
 }));
 app.use(cookieParser());
-app.use(morgan('dev'));
+if (process.env.NODE_ENV !== 'test') {
+    app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+}
 
-// Database Connection
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('MongoDB Connected successfully'))
-    .catch(err => console.error('MongoDB connection error:', err));
-
-// Routes
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
@@ -66,12 +73,32 @@ app.get('/', (req, res) => {
     res.send('Beauty P&C API is running...');
 });
 
-// Error Middleware
+app.get('/health', (req, res) => {
+    const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+    res.json({
+        status: 'ok',
+        database: states[mongoose.connection.readyState] || 'unknown',
+        uptime: process.uptime(),
+    });
+});
+
 app.use(notFound);
 app.use(errorHandler);
 
-// Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+let server;
+
+if (require.main === module) {
+    connectDB()
+        .then(() => {
+            server = app.listen(PORT, () => {
+                console.log(`Server running on port ${PORT}`);
+            });
+        })
+        .catch((err) => {
+            console.error('MongoDB connection error:', err);
+            process.exit(1);
+        });
+}
+
+module.exports = { app, connectDB, server };

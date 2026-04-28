@@ -3,22 +3,41 @@ const WholesalePurchase = require('../models/WholesalePurchase');
 const Transaction = require('../models/Transaction');
 const CustomerAccount = require('../models/CustomerAccount');
 
+const buildDateFilter = (req) => {
+    const createdAt = {};
+    if (req.query.startDate) {
+        const start = new Date(req.query.startDate);
+        if (!Number.isNaN(start.getTime())) createdAt.$gte = start;
+    }
+    if (req.query.endDate) {
+        const end = new Date(req.query.endDate);
+        if (!Number.isNaN(end.getTime())) {
+            end.setHours(23, 59, 59, 999);
+            createdAt.$lte = end;
+        }
+    }
+    return Object.keys(createdAt).length > 0 ? { createdAt } : {};
+};
+
 // @desc    Get financial ledger balances (Cash vs Bank)
 // @route   GET /api/financials/balances
 // @access  Private/Admin
 const getFinancialBalances = async (req, res) => {
     try {
+        const dateFilter = buildDateFilter(req);
+        const limit = Math.min(Math.max(Number(req.query.limit) || 1000, 1), 5000);
         // 1. Calculate incoming revenue from Paid Orders
-        const orders = await Order.find({ isPaid: true });
+        const orders = await Order.find({ isPaid: true, ...dateFilter }).limit(limit);
         const creditOrders = await Order.find({
             isPOS: true,
             isPaid: false,
+            ...dateFilter,
             $or: [
                 { paymentMethod: 'Credit' },
                 { outstandingAddedAmount: { $gt: 0 } },
                 { appliedCreditAmount: { $gt: 0 } },
             ],
-        });
+        }).limit(limit);
 
         let cashIn = 0;
         let bankIn = 0;
@@ -84,7 +103,7 @@ const getFinancialBalances = async (req, res) => {
         });
 
         // 2. Calculate outgoing expenses from Wholesale Purchases
-        const purchases = await WholesalePurchase.find({});
+        const purchases = await WholesalePurchase.find(dateFilter).limit(limit);
 
         let cashOut = 0;
         let bankOut = 0;
@@ -101,7 +120,7 @@ const getFinancialBalances = async (req, res) => {
         });
 
         // 3. Process Manual Income & Expenses
-        const manualTransactions = await Transaction.find({});
+        const manualTransactions = await Transaction.find(dateFilter).limit(limit);
         let manualIncome = 0;
         let manualExpense = 0;
 
@@ -152,6 +171,11 @@ const getFinancialBalances = async (req, res) => {
             netProfit,
             paidOrdersCount: orders.length,
             manualTransactionsCount: manualTransactions.length,
+            limit,
+            dateFilter: {
+                startDate: req.query.startDate || null,
+                endDate: req.query.endDate || null,
+            },
         });
 
     } catch (error) {

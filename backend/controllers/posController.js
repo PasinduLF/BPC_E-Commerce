@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const CustomerAccount = require('../models/CustomerAccount');
+const mongoose = require('mongoose');
 
 const getEffectiveUnitPrice = (price, discountPrice) => {
     const basePrice = Number(price || 0);
@@ -182,166 +183,148 @@ const createPOSOrder = async (req, res) => {
 
         const finalChangeDue = 0;
 
-        const appliedStockUpdates = [];
+        const session = await mongoose.startSession();
+        let createdOrder;
+
         try {
-            for (const update of stockUpdates) {
-                let result;
-                if (update.variantId) {
-                    result = await Product.updateOne(
-                        {
-                            _id: update.productId,
-                            'variants._id': update.variantId,
-                            'variants.stock': { $gte: update.qty },
-                        },
-                        {
-                            $inc: { 'variants.$.stock': -update.qty },
-                        }
-                    );
-                } else {
-                    result = await Product.updateOne(
-                        {
-                            _id: update.productId,
-                            stock: { $gte: update.qty },
-                        },
-                        {
-                            $inc: { stock: -update.qty },
-                        }
-                    );
-                }
-
-                if (result.modifiedCount !== 1) {
-                    throw createHttpError(409, 'Inventory changed while processing POS order. Please refresh and try again.');
-                }
-
-                appliedStockUpdates.push(update);
-            }
-
-            const order = new Order({
-                orderItems: attachedItems,
-                shippingAddress: {
-                    name: normalizedCustomerName || 'Walk-in Customer',
-                    address: 'In-Store POS',
-                    city: 'Local',
-                    postalCode: '0000',
-                    country: 'Local',
-                    phone: normalizedCustomerPhone || 'N/A'
-                },
-                paymentMethod: normalizedPaymentMethod,
-                itemsPrice: Number(subtotal.toFixed(2)),
-                shippingPrice: 0.0,
-                totalPrice: netTotal,
-                discountType: normalizedDiscountType,
-                discountValue: normalizedDiscountValue,
-                discountAmount: Number(discountAmount.toFixed(2)),
-                customerName: normalizedCustomerName || undefined,
-                customerPhone: normalizedCustomerPhone || undefined,
-                cashGiven: paidNowAmount,
-                changeDue: finalChangeDue,
-                paidNowAmount,
-                appliedCreditAmount: Number(creditUsed.toFixed(2)),
-                outstandingAddedAmount: Number(outstandingAddedAmount.toFixed(2)),
-                creditAddedAmount: Number(creditAddedAmount.toFixed(2)),
-                isPaid: isFullyPaid,
-                paidAt: isFullyPaid ? Date.now() : undefined,
-                isDelivered: true, // Physical walk-out
-                deliveredAt: Date.now(),
-                isPOS: true,
-                status: isFullyPaid ? 'Delivered' : 'Processing'
-            });
-
-            const createdOrder = await order.save();
-            console.log('Order saved successfully:', createdOrder._id);
-
-            if (wantsCreditFlow && normalizedCustomerPhone) {
-                if (!customerAccount) {
-                    customerAccount = await CustomerAccount.create({
-                        customerName: normalizedCustomerName,
-                        customerPhone: normalizedCustomerPhone,
-                        creditBalance: 0,
-                        outstandingBalance: 0,
-                        ledger: [],
-                    });
-                } else {
-                    if (normalizedCustomerName) customerAccount.customerName = normalizedCustomerName;
-                }
-
-                customerAccount.ledger.push({
-                    type: 'sale',
-                    amount: Number(netTotal.toFixed(2)),
-                    order: createdOrder._id,
-                    note: note || 'POS sale',
-                    paymentMethod: normalizedPaymentMethod,
-                });
-
-                if (creditUsed > 0) {
-                    customerAccount.creditBalance = Number((customerAccount.creditBalance - creditUsed).toFixed(2));
-                    if (customerAccount.creditBalance < 0) customerAccount.creditBalance = 0;
-                    customerAccount.ledger.push({
-                        type: 'credit-used',
-                        amount: Number(creditUsed.toFixed(2)),
-                        order: createdOrder._id,
-                        note: 'Applied existing customer credit to POS order',
-                    });
-                }
-
-                if (outstandingAddedAmount > 0) {
-                    customerAccount.outstandingBalance = Number((customerAccount.outstandingBalance + outstandingAddedAmount).toFixed(2));
-                    customerAccount.ledger.push({
-                        type: 'outstanding-added',
-                        amount: Number(outstandingAddedAmount.toFixed(2)),
-                        order: createdOrder._id,
-                        note: 'Outstanding amount recorded from POS order',
-                    });
-                }
-
-                if (creditAddedAmount > 0) {
-                    customerAccount.creditBalance = Number((customerAccount.creditBalance + creditAddedAmount).toFixed(2));
-                    customerAccount.ledger.push({
-                        type: 'credit-added',
-                        amount: Number(creditAddedAmount.toFixed(2)),
-                        order: createdOrder._id,
-                        note: 'Advance amount added to customer credit balance',
-                    });
-                }
-
-                await customerAccount.save();
-            }
-
-            const orderResponse = createdOrder.toObject();
-            if (customerAccount) {
-                orderResponse.customerAccount = {
-                    customerName: customerAccount.customerName,
-                    customerPhone: customerAccount.customerPhone,
-                    creditBalance: Number(customerAccount.creditBalance || 0),
-                    outstandingBalance: Number(customerAccount.outstandingBalance || 0),
-                };
-            }
-
-            res.status(201).json(orderResponse);
-        } catch (error) {
-            if (appliedStockUpdates.length > 0) {
-                for (const rollback of appliedStockUpdates) {
-                    if (rollback.variantId) {
-                        await Product.updateOne(
+            await session.withTransaction(async () => {
+                for (const update of stockUpdates) {
+                    let result;
+                    if (update.variantId) {
+                        result = await Product.updateOne(
                             {
-                                _id: rollback.productId,
-                                'variants._id': rollback.variantId,
+                                _id: update.productId,
+                                'variants._id': update.variantId,
+                                'variants.stock': { $gte: update.qty },
                             },
                             {
-                                $inc: { 'variants.$.stock': rollback.qty },
-                            }
+                                $inc: { 'variants.$.stock': -update.qty },
+                            },
+                            { session }
                         );
                     } else {
-                        await Product.updateOne(
-                            { _id: rollback.productId },
-                            { $inc: { stock: rollback.qty } }
+                        result = await Product.updateOne(
+                            {
+                                _id: update.productId,
+                                stock: { $gte: update.qty },
+                            },
+                            {
+                                $inc: { stock: -update.qty },
+                            },
+                            { session }
                         );
                     }
-                }
-            }
 
-            throw error;
+                    if (result.modifiedCount !== 1) {
+                        throw createHttpError(409, 'Inventory changed while processing POS order. Please refresh and try again.');
+                    }
+                }
+
+                const order = new Order({
+                    orderItems: attachedItems,
+                    shippingAddress: {
+                        name: normalizedCustomerName || 'Walk-in Customer',
+                        address: 'In-Store POS',
+                        city: 'Local',
+                        postalCode: '0000',
+                        country: 'Local',
+                        phone: normalizedCustomerPhone || 'N/A'
+                    },
+                    paymentMethod: normalizedPaymentMethod,
+                    itemsPrice: Number(subtotal.toFixed(2)),
+                    shippingPrice: 0.0,
+                    totalPrice: netTotal,
+                    discountType: normalizedDiscountType,
+                    discountValue: normalizedDiscountValue,
+                    discountAmount: Number(discountAmount.toFixed(2)),
+                    customerName: normalizedCustomerName || undefined,
+                    customerPhone: normalizedCustomerPhone || undefined,
+                    cashGiven: paidNowAmount,
+                    changeDue: finalChangeDue,
+                    paidNowAmount,
+                    appliedCreditAmount: Number(creditUsed.toFixed(2)),
+                    outstandingAddedAmount: Number(outstandingAddedAmount.toFixed(2)),
+                    creditAddedAmount: Number(creditAddedAmount.toFixed(2)),
+                    isPaid: isFullyPaid,
+                    paidAt: isFullyPaid ? Date.now() : undefined,
+                    isDelivered: true,
+                    deliveredAt: Date.now(),
+                    isPOS: true,
+                    status: isFullyPaid ? 'Delivered' : 'Processing'
+                });
+
+                createdOrder = await order.save({ session });
+
+                if (wantsCreditFlow && normalizedCustomerPhone) {
+                    if (!customerAccount) {
+                        [customerAccount] = await CustomerAccount.create([{
+                            customerName: normalizedCustomerName,
+                            customerPhone: normalizedCustomerPhone,
+                            creditBalance: 0,
+                            outstandingBalance: 0,
+                            ledger: [],
+                        }], { session });
+                    } else {
+                        if (normalizedCustomerName) customerAccount.customerName = normalizedCustomerName;
+                    }
+
+                    customerAccount.ledger.push({
+                        type: 'sale',
+                        amount: Number(netTotal.toFixed(2)),
+                        order: createdOrder._id,
+                        note: note || 'POS sale',
+                        paymentMethod: normalizedPaymentMethod,
+                    });
+
+                    if (creditUsed > 0) {
+                        customerAccount.creditBalance = Number((customerAccount.creditBalance - creditUsed).toFixed(2));
+                        if (customerAccount.creditBalance < 0) customerAccount.creditBalance = 0;
+                        customerAccount.ledger.push({
+                            type: 'credit-used',
+                            amount: Number(creditUsed.toFixed(2)),
+                            order: createdOrder._id,
+                            note: 'Applied existing customer credit to POS order',
+                        });
+                    }
+
+                    if (outstandingAddedAmount > 0) {
+                        customerAccount.outstandingBalance = Number((customerAccount.outstandingBalance + outstandingAddedAmount).toFixed(2));
+                        customerAccount.ledger.push({
+                            type: 'outstanding-added',
+                            amount: Number(outstandingAddedAmount.toFixed(2)),
+                            order: createdOrder._id,
+                            note: 'Outstanding amount recorded from POS order',
+                        });
+                    }
+
+                    if (creditAddedAmount > 0) {
+                        customerAccount.creditBalance = Number((customerAccount.creditBalance + creditAddedAmount).toFixed(2));
+                        customerAccount.ledger.push({
+                            type: 'credit-added',
+                            amount: Number(creditAddedAmount.toFixed(2)),
+                            order: createdOrder._id,
+                            note: 'Advance amount added to customer credit balance',
+                        });
+                    }
+
+                    await customerAccount.save({ session });
+                }
+            });
+        } finally {
+            await session.endSession();
         }
+
+        const orderResponse = createdOrder.toObject();
+        if (customerAccount) {
+            orderResponse.customerAccount = {
+                customerName: customerAccount.customerName,
+                customerPhone: customerAccount.customerPhone,
+                creditBalance: Number(customerAccount.creditBalance || 0),
+                outstandingBalance: Number(customerAccount.outstandingBalance || 0),
+            };
+        }
+
+        res.status(201).json(orderResponse);
 
     } catch (error) {
         console.error('POS Order Error:', {

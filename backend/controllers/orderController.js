@@ -3,6 +3,7 @@ const Product = require('../models/Product');
 const Bundle = require('../models/Bundle');
 const SystemConfig = require('../models/SystemConfig');
 const User = require('../models/User');
+const mongoose = require('mongoose');
 const { sendEmailSafely } = require('../utils/emailService');
 
 const ORDER_PAYMENT_METHODS = ['Cash on Delivery', 'Bank Transfer', 'Cash'];
@@ -385,130 +386,104 @@ const addOrderItems = async (req, res) => {
             const normalizedItemsPrice = Number(computedItemsPrice.toFixed(2));
             const normalizedTotalPrice = Number((normalizedItemsPrice + normalizedShippingPrice).toFixed(2));
 
-            const appliedStockUpdates = [];
+            const session = await mongoose.startSession();
+            let createdOrder;
+
             try {
-                for (const update of stockUpdates) {
-                    let result;
-                    if (update.kind === 'variantPool') {
-                        for (const deduction of update.variantDeductions || []) {
+                await session.withTransaction(async () => {
+                    for (const update of stockUpdates) {
+                        let result;
+                        if (update.kind === 'variantPool') {
+                            for (const deduction of update.variantDeductions || []) {
+                                result = await Product.updateOne(
+                                    {
+                                        _id: update.productId,
+                                        'variants._id': deduction.variantId,
+                                        'variants.stock': { $gte: deduction.qty },
+                                    },
+                                    {
+                                        $inc: { 'variants.$.stock': -deduction.qty },
+                                    },
+                                    { session }
+                                );
+
+                                if (result.modifiedCount !== 1) {
+                                    throw createHttpError(409, 'Inventory changed while placing order. Please review your cart and try again.');
+                                }
+                            }
+                            continue;
+                        }
+
+                        if (update.variantId) {
                             result = await Product.updateOne(
                                 {
                                     _id: update.productId,
-                                    'variants._id': deduction.variantId,
-                                    'variants.stock': { $gte: deduction.qty },
+                                    'variants._id': update.variantId,
+                                    'variants.stock': { $gte: update.qty },
                                 },
                                 {
-                                    $inc: { 'variants.$.stock': -deduction.qty },
-                                }
-                            );
-
-                            if (result.modifiedCount !== 1) {
-                                throw createHttpError(409, 'Inventory changed while placing order. Please review your cart and try again.');
-                            }
-
-                            appliedStockUpdates.push({
-                                productId: update.productId,
-                                variantId: deduction.variantId,
-                                qty: deduction.qty,
-                            });
-                        }
-                        continue;
-                    }
-
-                    if (update.variantId) {
-                        result = await Product.updateOne(
-                            {
-                                _id: update.productId,
-                                'variants._id': update.variantId,
-                                'variants.stock': { $gte: update.qty },
-                            },
-                            {
-                                $inc: { 'variants.$.stock': -update.qty },
-                            }
-                        );
-                    } else {
-                        result = await Product.updateOne(
-                            {
-                                _id: update.productId,
-                                stock: { $gte: update.qty },
-                            },
-                            {
-                                $inc: { stock: -update.qty },
-                            }
-                        );
-                    }
-
-                    if (result.modifiedCount !== 1) {
-                        throw createHttpError(409, 'Inventory changed while placing order. Please review your cart and try again.');
-                    }
-
-                    appliedStockUpdates.push({
-                        productId: update.productId,
-                        variantId: update.variantId,
-                        qty: update.qty,
-                    });
-                }
-
-                const order = new Order({
-                    orderItems: preparedOrderItems,
-                    user: req.user._id,
-                    shippingAddress: normalizedShippingAddress,
-                    paymentMethod: normalizedPaymentMethod,
-                    fulfillmentType: normalizedFulfillmentType,
-                    pickupStore: pickupStoreSnapshot,
-                    paymentSlip,
-                    itemsPrice: normalizedItemsPrice,
-                    shippingPrice: normalizedShippingPrice,
-                    totalPrice: normalizedTotalPrice,
-                });
-
-                const createdOrder = await order.save();
-
-                const customerRecipient = await getCustomerRecipientForOrder(createdOrder, req.user);
-                const orderEmailDetails = await buildOrderEmailDetails(createdOrder);
-                notifyCustomer(customerRecipient, 'orderPlaced', {
-                    ...orderEmailDetails,
-                });
-
-                const adminRecipients = getAdminRecipients();
-                adminRecipients.forEach((adminEmail) => {
-                    sendEmailSafely({
-                        to: adminEmail,
-                        templateName: 'adminOrderReceived',
-                        data: {
-                            orderNumber: createdOrder.orderNumber,
-                            customerName: customerRecipient?.name || createdOrder.shippingAddress?.name,
-                            customerEmail: customerRecipient?.email || req.user?.email || '',
-                            ...orderEmailDetails,
-                        },
-                    });
-                });
-
-                return res.status(201).json(createdOrder);
-            } catch (error) {
-                if (appliedStockUpdates.length > 0) {
-                    for (const rollback of appliedStockUpdates) {
-                        if (rollback.variantId) {
-                            await Product.updateOne(
-                                {
-                                    _id: rollback.productId,
-                                    'variants._id': rollback.variantId,
+                                    $inc: { 'variants.$.stock': -update.qty },
                                 },
-                                {
-                                    $inc: { 'variants.$.stock': rollback.qty },
-                                }
+                                { session }
                             );
                         } else {
-                            await Product.updateOne(
-                                { _id: rollback.productId },
-                                { $inc: { stock: rollback.qty } }
+                            result = await Product.updateOne(
+                                {
+                                    _id: update.productId,
+                                    stock: { $gte: update.qty },
+                                },
+                                {
+                                    $inc: { stock: -update.qty },
+                                },
+                                { session }
                             );
                         }
-                    }
-                }
 
-                throw error;
+                        if (result.modifiedCount !== 1) {
+                            throw createHttpError(409, 'Inventory changed while placing order. Please review your cart and try again.');
+                        }
+                    }
+
+                    const order = new Order({
+                        orderItems: preparedOrderItems,
+                        user: req.user._id,
+                        shippingAddress: normalizedShippingAddress,
+                        paymentMethod: normalizedPaymentMethod,
+                        fulfillmentType: normalizedFulfillmentType,
+                        pickupStore: pickupStoreSnapshot,
+                        paymentSlip,
+                        itemsPrice: normalizedItemsPrice,
+                        shippingPrice: normalizedShippingPrice,
+                        totalPrice: normalizedTotalPrice,
+                    });
+
+                    createdOrder = await order.save({ session });
+                });
+            } finally {
+                await session.endSession();
             }
+
+            const customerRecipient = await getCustomerRecipientForOrder(createdOrder, req.user);
+            const orderEmailDetails = await buildOrderEmailDetails(createdOrder);
+            notifyCustomer(customerRecipient, 'orderPlaced', {
+                ...orderEmailDetails,
+            });
+
+            const adminRecipients = getAdminRecipients();
+            adminRecipients.forEach((adminEmail) => {
+                sendEmailSafely({
+                    to: adminEmail,
+                    templateName: 'adminOrderReceived',
+                    data: {
+                        orderNumber: createdOrder.orderNumber,
+                        customerName: customerRecipient?.name || createdOrder.shippingAddress?.name,
+                        customerEmail: customerRecipient?.email || req.user?.email || '',
+                        ...orderEmailDetails,
+                    },
+                });
+            });
+
+            return res.status(201).json(createdOrder);
         }
     } catch (error) {
         console.error('Order creation error:', error);

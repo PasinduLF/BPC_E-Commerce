@@ -4,13 +4,13 @@ import axios from 'axios';
 import { useAuthStore } from '../context/useAuthStore';
 import { useConfigStore } from '../context/useConfigStore';
 import { Package, Truck, Wallet, CheckCircle, Clock, UploadCloud } from 'lucide-react';
+import { notify } from '../utils/notify';
 
 const OrderScreen = () => {
     const { id } = useParams();
     const [order, setOrder] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [slipImage, setSlipImage] = useState('');
     const [uploading, setUploading] = useState(false);
     const [paymentUpdating, setPaymentUpdating] = useState(false);
     const [deliveryUpdating, setDeliveryUpdating] = useState(false);
@@ -60,8 +60,6 @@ const OrderScreen = () => {
             };
 
             const { data } = await axios.post('/api/upload', formData, config);
-            setSlipImage(data.image);
-
             // Now update the order with the slip
             await axios.put(`/api/orders/${id}/pay`, {
                 paymentSlipUrl: data.url,
@@ -83,7 +81,7 @@ const OrderScreen = () => {
         } catch (error) {
             console.error(error);
             setUploading(false);
-            alert('Error uploading slip');
+            notify({ type: 'error', title: 'Upload failed', description: 'Error uploading slip' });
         }
     };
 
@@ -97,9 +95,9 @@ const OrderScreen = () => {
             // refetch order
             const updatedData = await axios.get(`/api/orders/${id}`, configHeader);
             setOrder(updatedData.data);
-            alert('Payment verified successfully!');
-        } catch (error) {
-            alert('Failed to verify payment');
+            notify({ type: 'success', title: 'Payment verified' });
+        } catch {
+            notify({ type: 'error', title: 'Payment update failed', description: 'Failed to verify payment' });
         } finally {
             setPaymentUpdating(false);
         }
@@ -116,8 +114,8 @@ const OrderScreen = () => {
 
             const updatedData = await axios.get(`/api/orders/${id}`, configHeader);
             setOrder(updatedData.data);
-        } catch (error) {
-            alert('Failed to update delivery status');
+        } catch {
+            notify({ type: 'error', title: 'Delivery update failed', description: 'Failed to update delivery status' });
         } finally {
             setDeliveryUpdating(false);
         }

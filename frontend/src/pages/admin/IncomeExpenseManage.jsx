@@ -41,7 +41,7 @@ const IncomeExpenseManage = () => {
     };
 
     useEffect(() => {
-        fetchTransactions();
+        queueMicrotask(fetchTransactions);
     }, [userInfo.token]);
 
     const submitHandler = async (e) => {

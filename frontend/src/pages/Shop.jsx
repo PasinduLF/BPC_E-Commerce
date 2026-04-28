@@ -3,7 +3,7 @@ import SEO from '../components/SEO';
 import { getProductUrl } from '../utils/slugUtils';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Star, ShoppingBag, Filter, Heart, ChevronRight, ChevronLeft, XCircle, Eye } from 'lucide-react';
+import { ShoppingBag, Filter, Heart, ChevronRight, ChevronLeft, XCircle, Eye } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import QuickViewModal from '../components/QuickViewModal';
 import Rating from '../components/Rating';
@@ -127,15 +127,16 @@ const Shop = () => {
         const nextPage = pageFromUrl > 0 ? pageFromUrl : 1;
         const nextPageSize = [12, 24, 48].includes(pageSizeFromUrl) ? pageSizeFromUrl : 12;
 
-        setSelectedCategories((prev) => (arraysEqual(prev, nextCategories) ? prev : nextCategories));
-        setSelectedSubcategories((prev) => (arraysEqual(prev, nextSubcategories) ? prev : nextSubcategories));
-        setSelectedInnerSubcategories((prev) => (arraysEqual(prev, nextInnerSubcategories) ? prev : nextInnerSubcategories));
-        setSelectedBrands((prev) => (arraysEqual(prev, nextBrands) ? prev : nextBrands));
-        setSearchKeyword((prev) => (prev === nextSearch ? prev : nextSearch));
-        setPage((prev) => (prev === nextPage ? prev : nextPage));
-        setPageSize((prev) => (prev === nextPageSize ? prev : nextPageSize));
-
-        setFiltersReady(true);
+        queueMicrotask(() => {
+            setSelectedCategories((prev) => (arraysEqual(prev, nextCategories) ? prev : nextCategories));
+            setSelectedSubcategories((prev) => (arraysEqual(prev, nextSubcategories) ? prev : nextSubcategories));
+            setSelectedInnerSubcategories((prev) => (arraysEqual(prev, nextInnerSubcategories) ? prev : nextInnerSubcategories));
+            setSelectedBrands((prev) => (arraysEqual(prev, nextBrands) ? prev : nextBrands));
+            setSearchKeyword((prev) => (prev === nextSearch ? prev : nextSearch));
+            setPage((prev) => (prev === nextPage ? prev : nextPage));
+            setPageSize((prev) => (prev === nextPageSize ? prev : nextPageSize));
+            setFiltersReady(true);
+        });
     }, [location.search, filterDataLoaded]);
 
     useEffect(() => {
@@ -245,18 +246,6 @@ const Shop = () => {
         });
     };
 
-    const renderStars = (value, size = 16) => {
-        const filled = Math.round(Number(value || 0));
-        return Array.from({ length: 5 }).map((_, idx) => (
-            <Star
-                key={idx}
-                size={size}
-                fill={idx < filled ? 'currentColor' : 'none'}
-                className={idx < filled ? 'text-gold' : 'text-muted'}
-            />
-        ));
-    };
-
     const activeFilterCount = selectedCategories.length
         + selectedSubcategories.length
         + selectedInnerSubcategories.length
@@ -289,12 +278,12 @@ const Shop = () => {
     };
 
     useEffect(() => {
-        setPage(1);
+        queueMicrotask(() => setPage(1));
     }, [selectedCategories, selectedSubcategories, selectedInnerSubcategories, selectedBrands, minPrice, maxPrice, inStockOnly, sort, searchKeyword]);
 
     useEffect(() => {
         if (page > pages) {
-            setPage(Math.max(1, pages));
+            queueMicrotask(() => setPage(Math.max(1, pages)));
         }
     }, [page, pages]);
 
