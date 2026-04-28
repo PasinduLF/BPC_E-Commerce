@@ -16,7 +16,7 @@ const WhatsAppButton = () => {
             href={`https://wa.me/${whatsappNumber}?text=${message}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 flex items-center justify-center w-14 h-14 bg-[#25D366] text-white rounded-full shadow-lg hover:scale-110 hover:shadow-xl transition-all duration-300 group"
+            className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50 flex items-center justify-center w-14 h-14 bg-[#25D366] text-white rounded-full shadow-lg hover:scale-110 hover:shadow-xl transition-all duration-300 group"
             aria-label="Chat with us on WhatsApp"
         >
             <span className="absolute right-16 px-3 py-1.5 bg-surface text-primary text-sm font-semibold rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap border border-default">
