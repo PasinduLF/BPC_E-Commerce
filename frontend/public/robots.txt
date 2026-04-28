@@ -14,4 +14,4 @@ Disallow: /profile
 Disallow: /my-orders
 
 # Sitemap
-Sitemap: https://beautypandc.com/sitemap.xml
+Sitemap: https://beautypc.vercel.app/sitemap.xml
