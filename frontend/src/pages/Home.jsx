@@ -72,24 +72,20 @@ const Home = () => {
     useEffect(() => {
         const fetchHomeData = async () => {
             try {
-                // Fetch New Arrivals (Trending)
-                const trendingRes = await axios.get('/api/products?sort=newest');
+                // Fetch all data concurrently to prevent waterfall delays
+                const [trendingRes, featuredRes, catRes, brandRes, bundleRes] = await Promise.all([
+                    axios.get('/api/products?sort=newest'),
+                    axios.get('/api/products?isFeatured=true'),
+                    axios.get('/api/categories'),
+                    axios.get('/api/brands'),
+                    axios.get('/api/bundles')
+                ]);
+
                 setTrendingProducts(trendingRes.data.products.slice(0, 5));
-
-                // Fetch Featured Products
-                const featuredRes = await axios.get('/api/products?isFeatured=true');
                 setFeaturedProducts(featuredRes.data.products.slice(0, 5));
-
-                // Fetch Categories
-                const catRes = await axios.get('/api/categories');
                 setCategories(catRes.data.slice(0, 6)); // Top 6
-
-                // Fetch Brands
-                const brandRes = await axios.get('/api/brands');
                 setBrands(brandRes.data);
-
-                // Fetch Featured Bundles
-                const bundleRes = await axios.get('/api/bundles');
+                
                 const activeFeatured = bundleRes.data.filter(b => b.isActive && b.isFeatured).slice(0, 4);
                 setFeaturedBundles(activeFeatured);
             } catch (error) {
@@ -367,7 +363,7 @@ const Home = () => {
                                     {config.storefrontAppearance.heroHighlight}
                                 </span>
                             )}
-                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-primary tracking-tight leading-[1.05] mb-6 whitespace-pre-line">
+                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-primary tracking-tight leading-[1.05] mb-6 whitespace-pre-line animate-slide-up-delayed-1">
                                 {config?.storefrontAppearance?.heroTitle ? (
                                     config.storefrontAppearance.heroTitle.split('\n').map((line, i, arr) => (
                                         <span key={i}>
@@ -389,10 +385,10 @@ const Home = () => {
                                     </>
                                 )}
                             </h1>
-                            <p className="mt-4 text-base sm:text-lg lg:text-xl text-secondary max-w-3xl mx-auto sm:mx-0 mb-10 leading-relaxed font-medium">
+                            <p className="mt-4 text-base sm:text-lg lg:text-xl text-secondary max-w-3xl mx-auto sm:mx-0 mb-10 leading-relaxed font-medium animate-slide-up-delayed-2">
                                 {config?.storefrontAppearance?.heroSubtitle || 'Premium cosmetics curated for your skin. Experience the perfect blend of natural ingredients and modern beauty science.'}
                             </p>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start">
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start animate-slide-up-delayed-3">
                                 <Link to="/shop" className="btn-primary flex items-center justify-center gap-2 text-xl px-10 py-5 shadow-xl">
                                     Shop Collection <ArrowRight size={22} />
                                 </Link>

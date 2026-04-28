@@ -733,8 +733,12 @@ const Shop = () => {
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
-                                {products.map((product) => (
-                                    <div key={product._id} className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
+                                {products.map((product, index) => (
+                                    <div 
+                                        key={product._id} 
+                                        className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col animate-slide-up"
+                                        style={{ animationDelay: `${(index % 12) * 50}ms`, animationFillMode: 'both' }}
+                                    >
                                         <Link to={getProductUrl(product)} className="block relative">
                                             <div className="aspect-square bg-muted relative p-6 flex flex-col items-center justify-center overflow-hidden">
                                                 <img
