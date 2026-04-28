@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { useCartStore } from '../context/useCartStore';
 import { useAuthStore } from '../context/useAuthStore';
 import { useWishlistStore } from '../context/useWishlistStore';
@@ -9,13 +10,14 @@ import { useConfigStore } from '../context/useConfigStore';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { getProductImageUrl } from '../utils/imageUtils';
 import { formatSoldCount } from '../utils/salesUtils';
+import { getProductUrl } from '../utils/slugUtils';
 import { toast } from 'sonner';
 
 const ProductScreen = () => {
     const { config } = useConfigStore();
     const currency = config?.currencySymbol || '$';
 
-    const { id } = useParams();
+    const { slug } = useParams();
     const navigate = useNavigate();
     const [product, setProduct] = useState({});
     const [loading, setLoading] = useState(true);
@@ -36,7 +38,7 @@ const ProductScreen = () => {
 
     const fetchProduct = async () => {
         try {
-            const { data } = await axios.get(`/api/products/${id}`);
+            const { data } = await axios.get(`/api/products/${slug}`);
             setProduct(data);
             if (data.variants && data.variants.length > 0) {
                 setSelectedVariant((prev) => {
@@ -55,7 +57,7 @@ const ProductScreen = () => {
 
     useEffect(() => {
         fetchProduct();
-    }, [id]);
+    }, [slug]);
 
     const basePrice = (product.variants && product.variants.length > 0) ? (selectedVariant?.price || 0) : (product.price || 0);
     const discountPrice = (product.variants && product.variants.length > 0) ? (selectedVariant?.discountPrice || 0) : (product.discountPrice || 0);
@@ -101,7 +103,7 @@ const ProductScreen = () => {
         e.preventDefault();
 
         if (!userInfo) {
-            navigate(`/login?redirect=/product/${id}`);
+            navigate(`/login?redirect=${getProductUrl(product)}`);
             return;
         }
 
@@ -117,7 +119,7 @@ const ProductScreen = () => {
                 },
             };
 
-            await axios.post(`/api/products/${id}/reviews`, {
+            await axios.post(`/api/products/${product._id}/reviews`, {
                 rating: reviewRating,
                 comment: reviewComment,
             }, reqConfig);
@@ -147,7 +149,7 @@ const ProductScreen = () => {
                 },
             };
 
-            await axios.delete(`/api/products/${id}/reviews/${reviewId}`, reqConfig);
+            await axios.delete(`/api/products/${product._id}/reviews/${reviewId}`, reqConfig);
             setReviewSuccess('Review removed successfully.');
             await fetchProduct();
         } catch (error) {
@@ -237,6 +239,25 @@ const ProductScreen = () => {
 
     return (
         <div className="bg-page min-h-screen py-8 animate-fade-in">
+            <SEO
+                title={product.name || 'Product'}
+                description={product.description ? product.description.substring(0, 160) : `Buy ${product.name || 'this product'} at Beauty P&C. Premium quality, fast delivery, and 100% authentic guarantee.`}
+                canonical={getProductUrl(product)}
+                ogImage={getProductImageUrl(product)}
+                ogType="product"
+                keywords={`${product.name || ''}, ${product.brand?.name || ''}, ${product.category?.name || ''}, buy online, Beauty P&C`}
+                product={{
+                    name: product.name,
+                    description: product.description,
+                    image: getProductImageUrl(product),
+                    brand: product.brand,
+                    price: displayPrice,
+                    currency: config?.currencyCode || 'USD',
+                    inStock: displayStock > 0,
+                    rating: product.rating,
+                    numReviews: product.numReviews,
+                }}
+            />
             <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                 <Breadcrumbs 
                     category={product.category}
@@ -535,7 +556,7 @@ const ProductScreen = () => {
                             <h3 className="text-xl font-bold text-primary mb-4">Write a Review</h3>
                             {!userInfo ? (
                                 <p className="text-secondary text-sm">
-                                    Please <Link to={`/login?redirect=/product/${id}`} className="text-brand font-semibold hover:underline">sign in</Link> to write a review.
+                                    Please <Link to={`/login?redirect=${getProductUrl(product)}`} className="text-brand font-semibold hover:underline">sign in</Link> to write a review.
                                 </p>
                             ) : (
                                 <form onSubmit={submitReviewHandler} className="space-y-4">

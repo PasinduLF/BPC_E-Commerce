@@ -111,7 +111,7 @@ function AppShell() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/wishlist" element={<Wishlist />} />
-              <Route path="/product/:id" element={<ProductScreen />} />
+              <Route path="/product/:slug" element={<ProductScreen />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/login" element={<Login />} />
               <Route path="/verify-email" element={<VerifyEmail />} />

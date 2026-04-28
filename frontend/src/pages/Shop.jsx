@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import SEO from '../components/SEO';
+import { getProductUrl } from '../utils/slugUtils';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Star, ShoppingBag, Filter, Heart, ChevronRight, ChevronLeft, XCircle, Eye } from 'lucide-react';
@@ -51,7 +53,57 @@ const Shop = () => {
     };
 
     // Sync state with URL when navigating from Navbar
+    // This resolves slug-based params (e.g., ?category=skincare) to ObjectIds
+    // by looking up slugs against the loaded categories/brands data.
+    const [filterDataLoaded, setFilterDataLoaded] = useState(false);
+
     useEffect(() => {
+        const fetchFilters = async () => {
+            try {
+                const [categoryRes, brandRes] = await Promise.all([
+                    axios.get('/api/categories'),
+                    axios.get('/api/brands')
+                ]);
+                setCategories(categoryRes.data);
+                setBrands(brandRes.data);
+                setFilterDataLoaded(true);
+            } catch (error) {
+                console.error('Error fetching filter data:', error);
+                setFilterDataLoaded(true);
+            }
+        };
+        fetchFilters();
+    }, []);
+
+    // Helper: resolve a slug or ID to the actual ObjectId
+    const resolveId = (value, collection, subPath) => {
+        if (!value) return null;
+        // If it looks like a MongoDB ObjectId, use as-is
+        if (/^[0-9a-fA-F]{24}$/.test(value)) return value;
+        // Otherwise, look up by slug
+        if (subPath === 'subcategory') {
+            for (const cat of collection) {
+                const sub = cat.subcategories?.find(s => s.slug === value);
+                if (sub) return sub._id;
+            }
+            return value;
+        }
+        if (subPath === 'innerSubcategory') {
+            for (const cat of collection) {
+                for (const sub of cat.subcategories || []) {
+                    const nested = sub.nestedSubcategories?.find(n => n.slug === value);
+                    if (nested) return nested._id;
+                }
+            }
+            return value;
+        }
+        const found = collection.find(item => item.slug === value);
+        return found ? found._id : value;
+    };
+
+    useEffect(() => {
+        if (!filterDataLoaded) return;
+
         const params = new URLSearchParams(location.search);
         const category = params.get('category');
         const subcategory = params.get('subcategory');
@@ -61,10 +113,15 @@ const Shop = () => {
         const pageFromUrl = Number(params.get('page'));
         const pageSizeFromUrl = Number(params.get('pageSize'));
 
-        const nextCategories = category ? [category] : [];
-        const nextSubcategories = subcategory ? [subcategory] : [];
-        const nextInnerSubcategories = innerSubcategory ? [innerSubcategory] : [];
-        const nextBrands = brand ? [brand] : [];
+        const resolvedCategory = resolveId(category, categories);
+        const resolvedSubcategory = resolveId(subcategory, categories, 'subcategory');
+        const resolvedInnerSubcategory = resolveId(innerSubcategory, categories, 'innerSubcategory');
+        const resolvedBrand = resolveId(brand, brands);
+
+        const nextCategories = resolvedCategory ? [resolvedCategory] : [];
+        const nextSubcategories = resolvedSubcategory ? [resolvedSubcategory] : [];
+        const nextInnerSubcategories = resolvedInnerSubcategory ? [resolvedInnerSubcategory] : [];
+        const nextBrands = resolvedBrand ? [resolvedBrand] : [];
         const nextSearch = search || '';
         const nextPage = pageFromUrl > 0 ? pageFromUrl : 1;
         const nextPageSize = [12, 24, 48].includes(pageSizeFromUrl) ? pageSizeFromUrl : 12;
@@ -78,7 +135,7 @@ const Shop = () => {
         setPageSize((prev) => (prev === nextPageSize ? prev : nextPageSize));
 
         setFiltersReady(true);
-    }, [location.search]);
+    }, [location.search, filterDataLoaded]);
 
     useEffect(() => {
         if (!filtersReady) {
@@ -95,22 +152,6 @@ const Shop = () => {
             navigate(`/shop?${nextSearch}`, { replace: true });
         }
     }, [page, pageSize, filtersReady, location.search, navigate]);
-
-    useEffect(() => {
-        const fetchFilters = async () => {
-            try {
-                const [categoryRes, brandRes] = await Promise.all([
-                    axios.get('/api/categories'),
-                    axios.get('/api/brands')
-                ]);
-                setCategories(categoryRes.data);
-                setBrands(brandRes.data);
-            } catch (error) {
-                console.error('Error fetching filter data:', error);
-            }
-        };
-        fetchFilters();
-    }, []);
 
     useEffect(() => {
         if (!filtersReady) {
@@ -297,6 +338,13 @@ const Shop = () => {
 
     return (
         <div className="bg-page min-h-screen py-6">
+            <SEO
+                title={searchKeyword ? `Search: ${searchKeyword}` : 'Shop All Products'}
+                description={searchKeyword ? `Search results for "${searchKeyword}" at Beauty P&C. Find premium beauty and cosmetics products.` : 'Browse our full collection of premium beauty and cosmetics products. Filter by category, brand, and price at Beauty P&C.'}
+                canonical="/shop"
+                keywords="shop beauty products, buy cosmetics online, skincare products, makeup shop, Beauty P&C store"
+                noIndex={!!searchKeyword}
+            />
             <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-8 animate-fade-in">
 
                 {/* Header Section */}
@@ -687,7 +735,7 @@ const Shop = () => {
                             <div className="grid grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
                                 {products.map((product) => (
                                     <div key={product._id} className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
-                                        <Link to={`/product/${product._id}`} className="block relative">
+                                        <Link to={getProductUrl(product)} className="block relative">
                                             <div className="aspect-square bg-muted relative p-6 flex flex-col items-center justify-center overflow-hidden">
                                                 <img
                                                     src={getProductImageUrl(product)}
@@ -737,7 +785,7 @@ const Shop = () => {
                                                     {product.brand.name}
                                                 </span>
                                             )}
-                                            <Link to={`/product/${product._id}`}>
+                                            <Link to={getProductUrl(product)}>
                                                     <h3 className="text-base sm:text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
                                             </Link>
                                                 <p className="text-base text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const slugify = require('../utils/slugify');
 
 const reviewSchema = new mongoose.Schema({
     name: {
@@ -34,6 +35,11 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add a product name'],
         trim: true,
+    },
+    slug: {
+        type: String,
+        unique: true,
+        index: true,
     },
     sku: {
         type: String,
@@ -129,4 +135,24 @@ const productSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Auto-generate unique slug from product name before saving
+productSchema.pre('save', async function () {
+    if (!this.isModified('name') && this.slug) return;
+
+    let baseSlug = slugify(this.name);
+    if (!baseSlug) baseSlug = 'product';
+
+    let slug = baseSlug;
+    let counter = 1;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        const existing = await mongoose.model('Product').findOne({ slug, _id: { $ne: this._id } });
+        if (!existing) break;
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+    this.slug = slug;
+});
+
 module.exports = mongoose.model('Product', productSchema);
+

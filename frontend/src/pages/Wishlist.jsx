@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
+import { getProductUrl } from '../utils/slugUtils';
 import { Heart, ShoppingBag, Star, Trash2, ArrowRight, Trash } from 'lucide-react';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useCartStore } from '../context/useCartStore';
@@ -101,6 +103,7 @@ const Wishlist = () => {
 
     return (
         <div className="bg-page min-h-screen py-12 animate-fade-in">
+            <SEO title="Wishlist" noIndex />
             <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
 
                     <div className="flex items-center justify-between mb-8">
@@ -177,7 +180,7 @@ const Wishlist = () => {
                                 const imageSrc = isBundleItem
                                     ? (product.image?.url || product.image || getProductImageUrl({}))
                                     : getProductImageUrl(product);
-                                const itemLink = isBundleItem ? '/bundles' : `/product/${product._id}`;
+                                const itemLink = isBundleItem ? '/bundles' : getProductUrl(product);
                                 const canMoveToCart = isBundleItem
                                     ? hasBundleStock({
                                         _id: product._id,

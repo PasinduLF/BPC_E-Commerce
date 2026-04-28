@@ -64,8 +64,8 @@ const getProducts = async (req, res) => {
 
     const count = await Product.countDocuments(filterObj);
     const products = await Product.find(filterObj)
-        .populate('category', 'name subcategories')
-        .populate('brand', 'name')
+        .populate('category', 'name slug subcategories')
+        .populate('brand', 'name slug')
         .sort(sortOption)
         .limit(pageSize)
         .skip(pageSize * (page - 1));
@@ -80,14 +80,20 @@ const getProducts = async (req, res) => {
     res.json({ products: productsWithSoldCount, page, pages: Math.ceil(count / pageSize) });
 };
 
-// @desc    Fetch single product
+// @desc    Fetch single product by ID or slug
 // @route   GET /api/products/:id
 // @access  Public
 const getProductById = async (req, res) => {
     const isAdminRequest = req.user?.role === 'admin' && req.query.admin === 'true';
-    const product = await Product.findById(req.params.id)
-        .populate('category', 'name subcategories')
-        .populate('brand', 'name image') // Add brand population
+    const param = req.params.id;
+
+    // Determine if the param is a MongoDB ObjectId or a slug
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(param);
+    const query = isObjectId ? { _id: param } : { slug: param };
+
+    const product = await Product.findOne(query)
+        .populate('category', 'name slug subcategories')
+        .populate('brand', 'name slug image')
         .populate('user', 'name');
 
     if (product) {

@@ -4,6 +4,8 @@ import axios from 'axios';
 import { ArrowRight, Tag } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { FALLBACK_BRAND_IMAGE } from '../utils/imageUtils';
+import SEO from '../components/SEO';
+import { getShopUrl } from '../utils/slugUtils';
 
 const Brands = () => {
     const [brands, setBrands] = useState([]);
@@ -25,6 +27,12 @@ const Brands = () => {
 
     return (
         <div className="bg-page min-h-screen py-12 animate-fade-in">
+            <SEO
+                title="Brands"
+                description="Explore trusted beauty and personal care brands at Beauty P&C. Shop products from top cosmetics brands curated for your daily routine."
+                canonical="/brands"
+                keywords="beauty brands, cosmetics brands, skincare brands, makeup brands, Beauty P&C"
+            />
             <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                 <Breadcrumbs />
 
@@ -73,7 +81,7 @@ const Brands = () => {
                         {brands.map((brand) => (
                             <Link
                                 key={brand._id}
-                                to={`/shop?brand=${brand._id}`}
+                                to={getShopUrl({ brand: brand })}
                                 className="group bg-surface border border-default rounded-3xl overflow-hidden hover:shadow-lg hover:border-brand/30 transition-all duration-200 flex flex-col"
                             >
                                 <div className="aspect-[5/4] bg-page flex items-center justify-center p-5 overflow-hidden border-b border-default">

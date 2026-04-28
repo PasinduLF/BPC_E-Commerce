@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Star, ShoppingBag, Heart, ShieldCheck, Truck, CreditCard, Mail, Sparkles, Award } from 'lucide-react';
+import SEO from '../components/SEO';
+import { getProductUrl, getShopUrl } from '../utils/slugUtils';
 import axios from 'axios';
 import { useConfigStore } from '../context/useConfigStore';
 import { useWishlistStore } from '../context/useWishlistStore';
@@ -137,7 +139,7 @@ const Home = () => {
 
             return (
         <div key={product._id} className="group relative bg-surface border border-default rounded-3xl overflow-hidden hover:shadow-2xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
-            <Link to={`/product/${product._id}`} className="block relative">
+            <Link to={getProductUrl(product)} className="block relative">
                 <div className="aspect-square bg-muted relative p-6 flex flex-col items-center justify-center overflow-hidden">
                     <img
                         src={getProductImageUrl(product)}
@@ -183,7 +185,7 @@ const Home = () => {
                         {product.brand.name || product.brand}
                     </span>
                 )}
-                <Link to={`/product/${product._id}`}>
+                <Link to={getProductUrl(product)}>
                     <h3 className="text-xl font-bold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
                 </Link>
                 <p className="text-base font-medium text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
@@ -326,9 +328,31 @@ const Home = () => {
 
     return (
         <div className="flex flex-col min-h-screen">
+            <SEO
+                title="Home"
+                description="Shop premium beauty and cosmetics at Beauty P&C. Explore skincare, makeup, haircare, best sellers, new arrivals, and exclusive bundle deals with fast delivery and 100% authentic products."
+                canonical="/"
+                keywords="beauty products, cosmetics, skincare, makeup, haircare, premium beauty, beauty store online, Beauty P&C"
+                structuredData={{
+                    '@context': 'https://schema.org',
+                    '@type': 'WebPage',
+                    name: 'Beauty P&C – Premium Beauty & Cosmetics',
+                    description: 'Shop premium beauty and cosmetics at Beauty P&C. Explore skincare, makeup, haircare, best sellers, new arrivals, and exclusive bundle deals.',
+                    url: 'https://beautypandc.com/',
+                    breadcrumb: {
+                        '@type': 'BreadcrumbList',
+                        itemListElement: [{
+                            '@type': 'ListItem',
+                            position: 1,
+                            name: 'Home',
+                            item: 'https://beautypandc.com/'
+                        }]
+                    }
+                }}
+            />
 
             {/* Hero Section */}
-            <div className="relative bg-surface overflow-hidden border-b border-default animate-fade-in pt-12 pb-24 sm:pt-24 lg:pb-32">
+            <header className="relative bg-surface overflow-hidden border-b border-default animate-fade-in pt-12 pb-24 sm:pt-24 lg:pb-32">
                 <div className="absolute inset-0 z-0">
                     <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] rounded-full bg-gradient-to-tr from-brand-subtle to-brand opacity-30 blur-3xl mix-blend-multiply"></div>
                     <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[220px] h-[220px] sm:w-[400px] sm:h-[400px] rounded-full bg-gradient-to-tr from-brand to-brand-subtle opacity-20 blur-3xl mix-blend-multiply"></div>
@@ -383,7 +407,7 @@ const Home = () => {
                                 {config?.storefrontAppearance?.heroImage?.url ? (
                                     <img 
                                         src={config.storefrontAppearance.heroImage.url} 
-                                        alt="Hero Showcase" 
+                                        alt={config?.storefrontAppearance?.heroTitle || 'Beauty P&C Hero Showcase'} 
                                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
                                     />
                                 ) : (
@@ -399,11 +423,11 @@ const Home = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </header>
 
             {/* Shop by Category */}
             {categories.length > 0 && (
-                <div className="py-16 bg-page border-b border-default scroll-reveal">
+                <section aria-label="Shop by Category" className="py-16 bg-page border-b border-default scroll-reveal">
                     <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                         <div className="flex items-end justify-between mb-12">
                             <div>
@@ -417,9 +441,9 @@ const Home = () => {
                         
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
                             {categories.map((cat) => (
-                                <Link key={cat._id} to={`/shop?category=${cat._id}`} className="group relative rounded-3xl overflow-hidden aspect-[4/5] bg-muted flex flex-col justify-end">
+                                <Link key={cat._id} to={getShopUrl({ category: cat })} className="group relative rounded-3xl overflow-hidden aspect-[4/5] bg-muted flex flex-col justify-end">
                                     {cat.image && (
-                                        <img src={typeof cat.image === 'string' ? cat.image : cat.image.url} alt={cat.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                        <img src={typeof cat.image === 'string' ? cat.image : cat.image.url} alt={`${cat.name} - Beauty products category`} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                                     )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
                                     <div className="relative z-10 p-5 w-full text-center">
@@ -433,7 +457,7 @@ const Home = () => {
                             View All Categories
                         </Link>
                     </div>
-                </div>
+                </section>
             )}
 
             {/* Featured / Best Sellers */}
@@ -546,7 +570,7 @@ const Home = () => {
 
             {/* Our Brands Section */}
             {logoBrands.length > 0 && (
-                <div className="py-16 bg-surface border-b border-default scroll-reveal overflow-hidden w-full">
+                <section aria-label="Our Trusted Brands" className="py-16 bg-surface border-b border-default scroll-reveal overflow-hidden w-full">
                     <div className="w-full px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-16">
                             <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-primary mb-4">Our Trusted Brands</h2>
@@ -558,7 +582,7 @@ const Home = () => {
                                 {marqueeBrands.map((brand, index) => (
                                     <Link
                                         key={`${brand._id}-${index}`}
-                                        to={`/shop?brand=${brand._id}`}
+                                        to={getShopUrl({ brand: brand })}
                                         className="group relative block w-28 h-16 sm:w-36 sm:h-20 lg:w-44 lg:h-24 flex-shrink-0"
                                         aria-label={brand.name}
                                         title={brand.name}
@@ -575,11 +599,11 @@ const Home = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
             )}
 
             {/* Newsletter Section */}
-            <div className="bg-brand text-on-brand py-20 relative overflow-hidden scroll-reveal">
+            <section aria-label="Newsletter Subscription" className="bg-brand text-on-brand py-20 relative overflow-hidden scroll-reveal">
                 <div className="absolute right-0 top-0 w-64 h-64 bg-brand-subtle rounded-full blur-[100px] opacity-40"></div>
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-surface rounded-3xl shadow-xl shadow-brand-subtle/50 flex items-center justify-center mx-auto mb-8 border border-brand-subtle rotate-3">
@@ -608,7 +632,7 @@ const Home = () => {
                         </form>
                     )}
                 </div>
-            </div>
+            </section>
 
         </div>
     );

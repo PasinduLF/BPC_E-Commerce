@@ -6,6 +6,7 @@ import axios from 'axios';
 import { CheckCircle, Truck, Wallet, ArrowRight, Building, Upload, FileImage, Loader2 } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
 import { getProductImageUrl } from '../utils/imageUtils';
+import { getProductUrl } from '../utils/slugUtils';
 
 const PlaceOrder = () => {
     const { config } = useConfigStore();
@@ -350,7 +351,7 @@ const PlaceOrder = () => {
                                                         {item.name}
                                                     </Link>
                                                 ) : (
-                                                    <Link to={`/product/${item._id}`} className="font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
+                                                    <Link to={getProductUrl(item)} className="font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
                                                         {item.name}
                                                     </Link>
                                                 )}

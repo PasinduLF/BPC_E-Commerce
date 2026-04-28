@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Star, ShoppingBag, Heart } from 'lucide-react';
+import { getProductUrl } from '../utils/slugUtils';
 import { useCartStore } from '../context/useCartStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useConfigStore } from '../context/useConfigStore';
@@ -60,7 +61,7 @@ const ProductRecommendations = ({ title = 'Recommended For You', excludeProductI
                         key={product._id}
                         className="group relative bg-surface border border-default rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-brand-subtle/50 transition-all duration-300 transform hover:-translate-y-1 flex flex-col"
                     >
-                        <Link to={`/product/${product._id}`} className="block relative">
+                        <Link to={getProductUrl(product)} className="block relative">
                             <div className="aspect-square bg-page relative p-4 sm:p-6 flex flex-col items-center justify-center overflow-hidden">
                                 {product.images && product.images[0] ? (
                                     <img
@@ -96,7 +97,7 @@ const ProductRecommendations = ({ title = 'Recommended For You', excludeProductI
                                     {product.brand.name || product.brand}
                                 </span>
                             )}
-                            <Link to={`/product/${product._id}`}>
+                            <Link to={getProductUrl(product)}>
                                 <h4 className="text-sm font-semibold text-primary hover:text-brand transition-colors line-clamp-2 mb-2">
                                     {product.name}
                                 </h4>

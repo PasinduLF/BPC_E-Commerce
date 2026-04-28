@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { getProductImageUrl } from '../utils/imageUtils';
 import { getFirstAvailableVariant, hasProductStock } from '../utils/stockUtils';
 import { formatSoldCount } from '../utils/salesUtils';
+import { getProductUrl } from '../utils/slugUtils';
 import { toast } from 'sonner';
 
 const QuickViewModal = ({ product, onClose, isOpen }) => {
@@ -208,7 +209,7 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
 
                         {/* View Full Details Link */}
                         <Link
-                            to={`/product/${product._id}`}
+                            to={getProductUrl(product)}
                             onClick={onClose}
                             className="text-center text-sm font-bold text-brand hover:underline mt-2"
                         >

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Phone, MapPin, Clock, Send, Facebook, Instagram, Music2, MessageCircle, BookOpen, Radio, ExternalLink } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
+import SEO from '../components/SEO';
 
 const socialLinks = [
     {
@@ -74,6 +75,12 @@ const Contact = () => {
 
     return (
         <div className="bg-page min-h-screen py-12 sm:py-16 animate-fade-in">
+            <SEO
+                title="Contact Us"
+                description="Get in touch with Beauty P&C. We're here to help with your beauty product questions, orders, and feedback. Reach us via email, WhatsApp, or our contact form."
+                canonical="/contact"
+                keywords="contact Beauty P&C, customer support, beauty store contact, help, Beauty P&C email, WhatsApp"
+            />
             <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                 
                 {/* Header */}

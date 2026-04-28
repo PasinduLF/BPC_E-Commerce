@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import SEO from '../components/SEO';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Gift, ShoppingBag, Tag, ArrowRight, Sparkles, CheckCircle2, Heart, CreditCard } from 'lucide-react';
@@ -115,6 +116,12 @@ const Bundles = () => {
 
     return (
         <div className="bg-page min-h-screen py-12 animate-fade-in">
+            <SEO
+                title="Bundle Deals"
+                description="Save more with curated beauty bundle deals at Beauty P&C. Shop exclusive product sets at discounted prices, designed to simplify your beauty routine."
+                canonical="/bundles"
+                keywords="beauty bundles, cosmetics deals, bundle offers, beauty sets, discounted cosmetics, Beauty P&C"
+            />
             <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 animate-slide-up">
                 <Breadcrumbs />
 

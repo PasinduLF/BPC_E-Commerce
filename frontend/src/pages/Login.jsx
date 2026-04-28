@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import SEO from '../components/SEO';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../context/useAuthStore';
@@ -134,6 +135,7 @@ const Login = () => {
 
     return (
         <div className="min-h-screen bg-page flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+            <SEO title={isLogin ? 'Sign In' : 'Create Account'} noIndex />
 
             {/* Decorative blobs */}
             <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[280px] h-[280px] sm:w-[600px] sm:h-[600px] rounded-full bg-brand opacity-20 blur-3xl -z-10"></div>

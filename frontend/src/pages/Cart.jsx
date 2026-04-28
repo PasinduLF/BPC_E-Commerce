@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import SEO from '../components/SEO';
+import { getProductUrl } from '../utils/slugUtils';
 import { Link, useNavigate } from 'react-router-dom';
 import { getProductImageUrl } from '../utils/imageUtils';
 import { useCartStore } from '../context/useCartStore';
@@ -45,6 +47,7 @@ const Cart = () => {
 
     return (
         <div className="bg-page min-h-screen py-12">
+            <SEO title="Shopping Bag" noIndex />
             <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6 py-8 sm:py-12 animate-fade-in">
                 
                 {/* Step Indicator */}
@@ -95,7 +98,7 @@ const Cart = () => {
                                                             {item.name}
                                                         </Link>
                                                     ) : (
-                                                        <Link to={`/product/${item._id}`} className="text-base sm:text-lg font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
+                                                        <Link to={getProductUrl(item)} className="text-base sm:text-lg font-semibold text-primary hover:text-brand transition-colors line-clamp-1">
                                                             {item.name}
                                                         </Link>
                                                     )}

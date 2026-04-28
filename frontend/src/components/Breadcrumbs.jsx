@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
+import { getShopUrl } from '../utils/slugUtils';
 
 const Breadcrumbs = ({ category, subcategory, innerSubcategory, productName }) => {
     // Resolve subcategory name from category.subcategories if only ID is provided
@@ -12,7 +13,6 @@ const Breadcrumbs = ({ category, subcategory, innerSubcategory, productName }) =
         ? resSub.nestedSubcategories?.find(n => n._id === (typeof innerSubcategory === 'string' ? innerSubcategory : innerSubcategory._id))
         : innerSubcategory;
 
-    const subId = resSub?._id || subcategory?._id || subcategory;
     const subName = resSub?.name || subcategory?.name || subcategory;
     const innerName = resInner?.name || innerSubcategory?.name || innerSubcategory;
 
@@ -31,7 +31,7 @@ const Breadcrumbs = ({ category, subcategory, innerSubcategory, productName }) =
             {category && (
                 <>
                     <ChevronRight size={12} className="text-tertiary flex-shrink-0" />
-                    <Link to={`/shop?category=${category._id}`} className="hover:text-brand transition-colors">
+                    <Link to={getShopUrl({ category })} className="hover:text-brand transition-colors">
                         {category.name}
                     </Link>
                 </>
@@ -41,7 +41,7 @@ const Breadcrumbs = ({ category, subcategory, innerSubcategory, productName }) =
                 <>
                     <ChevronRight size={12} className="text-tertiary flex-shrink-0" />
                     <Link 
-                        to={`/shop?category=${category?._id}&subcategory=${subId}`} 
+                        to={getShopUrl({ category, subcategory: resSub || subcategory })} 
                         className="hover:text-brand transition-colors"
                     >
                         {subName}
@@ -53,7 +53,7 @@ const Breadcrumbs = ({ category, subcategory, innerSubcategory, productName }) =
                 <>
                     <ChevronRight size={12} className="text-tertiary flex-shrink-0" />
                     <Link 
-                        to={`/shop?category=${category?._id}&subcategory=${subId}&innerSubcategory=${innerName}`}
+                        to={getShopUrl({ category, subcategory: resSub || subcategory, innerSubcategory: resInner || innerSubcategory })}
                         className="hover:text-brand transition-colors"
                     >
                         {innerName}
@@ -64,7 +64,7 @@ const Breadcrumbs = ({ category, subcategory, innerSubcategory, productName }) =
             {productName && (
                 <>
                     <ChevronRight size={12} className="text-tertiary flex-shrink-0" />
-                    <span className="text-primary font-bold truncate max-w-[150px] sm:max-w-xs">{productName}</span>
+                    <span className="text-primary font-bold truncate max-w-[150px] sm:max-xs">{productName}</span>
                 </>
             )}
         </nav>

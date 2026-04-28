@@ -1,5 +1,6 @@
 import { ShieldCheck, Truck, Sparkles, Heart } from 'lucide-react';
 import { useConfigStore } from '../context/useConfigStore';
+import SEO from '../components/SEO';
 
 const About = () => {
     const { config } = useConfigStore();
@@ -29,6 +30,12 @@ const About = () => {
 
     return (
         <div className="bg-page min-h-screen">
+            <SEO
+                title="About Us"
+                description={`Learn about ${config?.businessName || 'Beauty P&C'} – our story, mission, and commitment to premium quality, cruelty-free cosmetics and beauty products.`}
+                canonical="/about"
+                keywords="about Beauty P&C, beauty company, cosmetics brand story, premium beauty, cruelty free cosmetics"
+            />
             {/* Hero Section */}
             <div className="relative py-16 sm:py-24 lg:py-32 overflow-hidden bg-brand-subtle animate-fade-in">
                 <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] rounded-full bg-brand opacity-10 blur-3xl mix-blend-multiply pointer-events-none"></div>

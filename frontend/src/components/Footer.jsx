@@ -71,23 +71,23 @@ const Footer = () => {
                         </div>
                     </div>
 
-                    <div>
+                    <nav aria-label="Shop navigation">
                         <h3 className="text-lg font-semibold mb-4 text-white">Shop</h3>
                         <ul className="space-y-3">
                             <li><Link to="/shop" className="text-gray-400 hover:text-brand transition-colors">All Products</Link></li>
                             <li><Link to="/categories" className="text-gray-400 hover:text-brand transition-colors">Categories</Link></li>
-                            <li><Link to="/offers" className="text-gray-400 hover:text-brand transition-colors">Special Offers</Link></li>
+                            <li><Link to="/bundles" className="text-gray-400 hover:text-brand transition-colors">Bundle Deals</Link></li>
+                            <li><Link to="/brands" className="text-gray-400 hover:text-brand transition-colors">Brands</Link></li>
                         </ul>
-                    </div>
+                    </nav>
 
-                    <div>
+                    <nav aria-label="Help navigation">
                         <h3 className="text-lg font-semibold mb-4 text-white">Help</h3>
                         <ul className="space-y-3">
                             <li><Link to="/contact" className="text-gray-400 hover:text-brand transition-colors">Contact Us</Link></li>
-                            <li><Link to="/shipping" className="text-gray-400 hover:text-brand transition-colors">Shipping Info</Link></li>
-                            <li><Link to="/faq" className="text-gray-400 hover:text-brand transition-colors">FAQ</Link></li>
+                            <li><Link to="/about" className="text-gray-400 hover:text-brand transition-colors">About Us</Link></li>
                         </ul>
-                    </div>
+                    </nav>
 
                 </div>
 

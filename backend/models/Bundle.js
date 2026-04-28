@@ -1,10 +1,16 @@
 const mongoose = require('mongoose');
+const slugify = require('../utils/slugify');
 
 const bundleSchema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, 'Please add a bundle name'],
         trim: true,
+    },
+    slug: {
+        type: String,
+        unique: true,
+        index: true,
     },
     description: {
         type: String,
@@ -56,6 +62,24 @@ const bundleSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
+});
+
+// Auto-generate unique slug from bundle name before saving
+bundleSchema.pre('save', async function () {
+    if (!this.isModified('name') && this.slug) return;
+
+    let baseSlug = slugify(this.name);
+    if (!baseSlug) baseSlug = 'bundle';
+
+    let slug = baseSlug;
+    let counter = 1;
+    while (true) {
+        const existing = await mongoose.model('Bundle').findOne({ slug, _id: { $ne: this._id } });
+        if (!existing) break;
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+    }
+    this.slug = slug;
 });
 
 module.exports = mongoose.model('Bundle', bundleSchema);

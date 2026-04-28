@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowRight, Layers } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
+import SEO from '../components/SEO';
+import { getShopUrl } from '../utils/slugUtils';
 
 const Categories = () => {
     const [categories, setCategories] = useState([]);
@@ -27,6 +29,12 @@ const Categories = () => {
 
     return (
         <div className="bg-page min-h-screen py-12">
+            <SEO
+                title="Categories"
+                description="Browse all beauty and cosmetics categories at Beauty P&C. Find skincare, makeup, haircare, fragrances, and more."
+                canonical="/categories"
+                keywords="beauty categories, cosmetics categories, skincare, makeup, haircare, Beauty P&C"
+            />
             <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
                 <Breadcrumbs />
 
@@ -63,7 +71,7 @@ const Categories = () => {
                         {categories.map((cat) => (
                             <Link
                                 key={cat._id}
-                                to={`/shop?category=${cat._id}`}
+                                to={getShopUrl({ category: cat })}
                                 className="group relative rounded-3xl overflow-hidden aspect-[4/5] bg-muted flex flex-col justify-end"
                             >
                                 {cat.image && (

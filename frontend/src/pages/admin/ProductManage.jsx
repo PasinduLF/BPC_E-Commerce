@@ -9,6 +9,7 @@ import StatusLegend from '../../components/admin/StatusLegend';
 
 const PRODUCT_DRAFT_KEY = 'admin-product-draft-v1';
 import { FALLBACK_PRODUCT_IMAGE, getProductImageUrl } from '../../utils/imageUtils';
+import { getProductUrl } from '../../utils/slugUtils';
 
 const ProductManage = () => {
     const { userInfo } = useAuthStore();
@@ -1037,7 +1038,7 @@ const ProductManage = () => {
                                 filteredProducts.map(product => (
                                     <tr key={product._id} className="hover:bg-page transition-colors">
                                         <td className="px-6 py-4">
-                                            <Link to={`/product/${product._id}`} target="_blank" className="flex items-center gap-4 group cursor-pointer inline-flex">
+                                            <Link to={getProductUrl(product)} target="_blank" className="flex items-center gap-4 group cursor-pointer inline-flex">
                                                 <div className="w-12 h-12 rounded-lg bg-brand-subtle border border-brand/20 overflow-hidden group-hover:ring-2 ring-brand/50 transition-all">
                                                     {product.images?.[0] ? (
                                                         <img src={getProductImageUrl(product)} alt={product.name} className="w-full h-full object-cover" />
@@ -1106,7 +1107,7 @@ const ProductManage = () => {
                                                 <span className="block mb-2 text-xs font-bold text-error bg-error-bg rounded px-1 py-0.5">Inactive</span>
                                             )}
                                             <Link
-                                                to={`/product/${product._id}`}
+                                                to={getProductUrl(product)}
                                                 target="_blank"
                                                 aria-label={`Open product ${product.name} in storefront`}
                                                 className="inline-flex text-tertiary hover:text-info p-2 rounded-lg transition-colors mr-1"

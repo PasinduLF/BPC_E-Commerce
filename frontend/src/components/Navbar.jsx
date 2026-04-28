@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Search, ShoppingBag, User, Menu, X, LogOut, ChevronDown, Heart, Package, Sun, Moon, Sparkles, ChevronRight } from 'lucide-react';
+import { getShopUrl } from '../utils/slugUtils';
 import { useAuthStore } from '../context/useAuthStore';
 import { useCartStore } from '../context/useCartStore';
 import { useWishlistStore } from '../context/useWishlistStore';
@@ -175,7 +176,7 @@ const Navbar = () => {
                                             }
                                         }}
                                     >
-                                        <Link to={`/shop?category=${category._id}`} className="nav-link text-sm uppercase tracking-wider" aria-expanded={activeMegaMenu === category._id}>
+                                        <Link to={getShopUrl({ category })} className="nav-link text-sm uppercase tracking-wider" aria-expanded={activeMegaMenu === category._id}>
                                             {category.name}
                                         </Link>
                                         
@@ -189,7 +190,7 @@ const Navbar = () => {
                                                     {category.subcategories.map(sub => (
                                                         <Link 
                                                             key={sub._id}
-                                                            to={`/shop?category=${category._id}&subcategory=${sub._id}`}
+                                                            to={getShopUrl({ category, subcategory: sub })}
                                                             onMouseEnter={() => setHoveredSubId(sub._id)}
                                                             className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all group/sub ${hoveredSubId === sub._id ? 'bg-surface text-brand shadow-sm font-bold' : 'text-secondary hover:bg-surface/50'}`}
                                                         >
@@ -208,7 +209,7 @@ const Navbar = () => {
                                                                     {category.subcategories.find(s => s._id === (hoveredSubId || category.subcategories[0]._id))?.name}
                                                                 </h4>
                                                                 <Link 
-                                                                    to={`/shop?category=${category._id}&subcategory=${hoveredSubId || category.subcategories[0]._id}`}
+                                                                    to={getShopUrl({ category, subcategory: category.subcategories.find(s => s._id === (hoveredSubId || category.subcategories[0]._id)) })}
                                                                     className="text-xs font-bold text-brand hover:underline"
                                                                 >
                                                                     View All
@@ -218,7 +219,7 @@ const Navbar = () => {
                                                                 {category.subcategories.find(s => s._id === (hoveredSubId || category.subcategories[0]._id))?.nestedSubcategories.map((nested, nIdx) => (
                                                                     <Link 
                                                                         key={nested._id || nIdx}
-                                                                        to={`/shop?category=${category._id}&subcategory=${hoveredSubId || category.subcategories[0]._id}&innerSubcategory=${nested._id}`}
+                                                                        to={getShopUrl({ category, subcategory: category.subcategories.find(s => s._id === (hoveredSubId || category.subcategories[0]._id)), innerSubcategory: nested })}
                                                                         className="text-sm text-secondary hover:text-brand transition-colors flex items-center gap-2 group/item"
                                                                     >
                                                                         <div className="w-1.5 h-1.5 rounded-full bg-brand/30 group-hover/item:bg-brand transition-colors"></div>
@@ -430,7 +431,7 @@ const Navbar = () => {
                                                         {sub.nestedSubcategories?.map((nested, nIdx) => (
                                                             <li key={nested._id || nIdx}>
                                                                 <Link 
-                                                                    to={`/shop?category=${category._id}&subcategory=${sub._id}&innerSubcategory=${nested._id}`} 
+                                                                    to={getShopUrl({ category, subcategory: sub, innerSubcategory: nested })} 
                                                                     className="text-sm font-medium text-secondary py-1 block hover:text-brand transition-colors"
                                                                     onClick={() => setIsOpen(false)}
                                                                 >
@@ -442,7 +443,7 @@ const Navbar = () => {
                                                 </div>
                                             ))}
                                             <Link 
-                                                to={`/shop?category=${category._id}`}
+                                                to={getShopUrl({ category })}
                                                 className="mt-4 flex items-center justify-between text-brand text-sm font-bold bg-brand-subtle px-4 py-2 rounded-lg"
                                                 onClick={() => setIsOpen(false)}
                                             >
