@@ -2,7 +2,7 @@ import { Helmet } from 'react-helmet-async';
 
 const SITE_NAME = 'Beauty P&C';
 const DEFAULT_DESCRIPTION = 'Shop premium beauty and cosmetics products at Beauty P&C. Discover skincare, makeup, haircare, and exclusive bundle deals with fast delivery and authentic guarantee.';
-const DEFAULT_URL = 'https://beautypandc.com';
+const DEFAULT_URL = 'https://beautypc.vercel.app';
 
 /**
  * SEO component for managing document head meta tags dynamically.

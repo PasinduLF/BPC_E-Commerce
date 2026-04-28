@@ -338,14 +338,14 @@ const Home = () => {
                     '@type': 'WebPage',
                     name: 'Beauty P&C – Premium Beauty & Cosmetics',
                     description: 'Shop premium beauty and cosmetics at Beauty P&C. Explore skincare, makeup, haircare, best sellers, new arrivals, and exclusive bundle deals.',
-                    url: 'https://beautypandc.com/',
+                    url: 'https://beautypc.vercel.app/',
                     breadcrumb: {
                         '@type': 'BreadcrumbList',
                         itemListElement: [{
                             '@type': 'ListItem',
                             position: 1,
                             name: 'Home',
-                            item: 'https://beautypandc.com/'
+                            item: 'https://beautypc.vercel.app/'
                         }]
                     }
                 }}
