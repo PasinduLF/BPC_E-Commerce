@@ -6,6 +6,7 @@ import axios from 'axios';
 import { Star, ShoppingBag, Filter, Heart, ChevronRight, ChevronLeft, XCircle, Eye } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 import QuickViewModal from '../components/QuickViewModal';
+import Rating from '../components/Rating';
 import { useConfigStore } from '../context/useConfigStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useCartStore } from '../context/useCartStore';
@@ -775,10 +776,7 @@ const Shop = () => {
                                         </button>
 
                                             <div className="p-4 sm:p-6 flex flex-col flex-1">
-                                                <div className="flex items-center gap-1 text-gold mb-2">
-                                                    {renderStars(product.rating, 18)}
-                                                <span className="text-tertiary text-xs ml-1">({product.numReviews || 0})</span>
-                                            </div>
+                                             <Rating value={product.rating} text={`(${product.numReviews || 0})`} className="mb-2" />
                                             {Number(product.soldCount || 0) > 0 && (
                                                 <p className="text-[11px] font-semibold text-tertiary mb-2">
                                                     {formatSoldCount(product.soldCount)} sold
@@ -790,32 +788,35 @@ const Shop = () => {
                                                 </span>
                                             )}
                                             <Link to={getProductUrl(product)}>
-                                                    <h3 className="text-base sm:text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
+                                                    <h3 className="text-sm sm:text-base md:text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug line-clamp-2">{product.name}</h3>
                                             </Link>
-                                                <p className="text-base text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
+                                                <p className="text-xs sm:text-sm font-medium text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
                                             <div className="flex items-center justify-between mt-auto pt-4">
                                                 <div className="flex flex-col">
                                                     {window.Number(product.discountPrice) > 0 && window.Number(product.discountPrice) < window.Number(product.price) ? (
                                                         <>
-                                                                <span className="text-xl font-bold text-brand">{currency}{product.discountPrice.toFixed(2)}</span>
-                                                                <span className="text-sm font-semibold text-tertiary line-through">{currency}{product.price.toFixed(2)}</span>
+                                                                <span className="text-lg sm:text-xl font-bold text-brand">{currency}{product.discountPrice.toFixed(2)}</span>
+                                                                <span className="text-xs sm:text-sm font-semibold text-tertiary line-through">{currency}{product.price.toFixed(2)}</span>
                                                         </>
                                                     ) : (
-                                                            <span className="text-xl font-bold text-primary">{currency}{product.price?.toFixed(2) || '0.00'}</span>
+                                                            <span className="text-lg sm:text-xl font-bold text-primary">{currency}{product.price?.toFixed(2) || '0.00'}</span>
                                                     )}
                                                 </div>
                                                 <button
                                                     onClick={() => {
                                                         const variant = getFirstAvailableVariant(product);
                                                         const ok = addToCart({ ...product, variant: variant || undefined, qty: 1 });
-                                                        if (!ok) {
+                                                        if (ok) {
+                                                            toast.success(`"${product.name}" added to cart!`);
+                                                        } else {
                                                             toast.error('This product is out of stock.');
                                                         }
                                                     }}
                                                     disabled={!hasProductStock(product, 1, getFirstAvailableVariant(product))}
-                                                    className="bg-brand-subtle hover:bg-brand text-brand hover:text-on-brand p-3 rounded-full transition-colors self-end disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="bg-brand-subtle hover:bg-brand text-brand hover:text-on-brand p-2.5 sm:p-3 rounded-full transition-colors self-end disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                                                 >
-                                                    <ShoppingBag size={22} />
+                                                    <ShoppingBag size={18} className="sm:hidden" />
+                                                    <ShoppingBag size={22} className="hidden sm:block" />
                                                 </button>
                                             </div>
                                         </div>

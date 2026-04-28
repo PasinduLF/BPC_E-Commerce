@@ -91,7 +91,7 @@ const MyOrders = () => {
                         <Package size={28} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-extrabold text-primary tracking-tight">My Orders</h1>
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">My Orders</h1>
                         <p className="text-secondary mt-1">Track, manage, and review your purchases.</p>
                     </div>
                 </div>

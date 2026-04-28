@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, Star, ShoppingBag, Heart, ChevronDown, Minus, Plus } from 'lucide-react';
+import Rating from './Rating';
 import { useCartStore } from '../context/useCartStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import { useConfigStore } from '../context/useConfigStore';
@@ -110,20 +111,7 @@ const QuickViewModal = ({ product, onClose, isOpen }) => {
                             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-primary mb-2 break-words">{product.name}</h2>
                             
                             {/* Rating */}
-                            {product.rating && (
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="flex items-center gap-1">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star
-                                                key={i}
-                                                size={16}
-                                                className={i < Math.round(product.rating) ? 'fill-gold text-gold' : 'text-muted'}
-                                            />
-                                        ))}
-                                    </div>
-                                    <span className="text-sm text-secondary">({product.numReviews || 0})</span>
-                                </div>
-                            )}
+                            <Rating value={product.rating} text={`(${product.numReviews || 0})`} size={16} className="mb-3" />
                         </div>
 
                         {/* Price */}

@@ -6,6 +6,7 @@ import { useAuthStore } from '../context/useAuthStore';
 import { useWishlistStore } from '../context/useWishlistStore';
 import axios from 'axios';
 import { Star, Truck, ShieldCheck, Minus, Plus, ShoppingBag, Heart, CreditCard, ChevronDown, Trash2 } from 'lucide-react';
+import Rating from '../components/Rating';
 import { useConfigStore } from '../context/useConfigStore';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { getProductImageUrl } from '../utils/imageUtils';
@@ -74,11 +75,11 @@ const ProductScreen = () => {
             variant: selectedVariant,
             qty
         });
-        if (!ok) {
+        if (ok) {
+            toast.success(`"${product.name}" added to cart!`);
+        } else {
             toast.error('This product is out of stock.');
-            return;
         }
-        navigate('/cart');
     };
 
     const buyNowHandler = () => {
@@ -157,18 +158,6 @@ const ProductScreen = () => {
         } finally {
             setDeletingReviewId('');
         }
-    };
-
-    const renderStars = (value, size = 18) => {
-        const filled = Math.round(Number(value || 0));
-        return Array.from({ length: 5 }).map((_, idx) => (
-            <Star
-                key={idx}
-                size={size}
-                fill={idx < filled ? 'currentColor' : 'none'}
-                className={idx < filled ? 'text-gold' : 'text-muted'}
-            />
-        ));
     };
 
     const formatDescription = (text = '') => {
@@ -330,7 +319,7 @@ const ProductScreen = () => {
                             )}
 
                             <div className="flex justify-between items-start gap-3 mb-4">
-                                <h1 className="text-3xl sm:text-4xl font-extrabold text-primary tracking-tight leading-tight pr-4">
+                                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary tracking-tight leading-tight pr-4">
                                     {product.name}
                                 </h1>
                                 <button
@@ -342,8 +331,8 @@ const ProductScreen = () => {
                             </div>
 
                             <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6">
-                                <div className="flex items-center gap-1 text-gold">
-                                    {renderStars(product.rating, 22)}
+                                <div className="flex items-center gap-1">
+                                    <Rating value={product.rating} size={22} />
                                 </div>
                                 <span className="text-secondary text-sm hover:text-brand cursor-pointer transition-colors border-b border-dashed border-default">
                                     {product.numReviews || 0} Reviews
@@ -355,18 +344,18 @@ const ProductScreen = () => {
                                 )}
                             </div>
 
-                            <p className="text-lg text-secondary leading-relaxed mb-6 max-w-2xl">
+                            <p className="text-base sm:text-lg text-secondary leading-relaxed mb-6 max-w-2xl">
                                 {formatDescription(product.description)}
                             </p>
 
                             <div className="flex items-center gap-3 mb-6">
                                 {hasDiscount ? (
                                     <>
-                                        <p className="text-3xl font-bold text-brand">{currency}{discountPrice.toFixed(2)}</p>
-                                        <p className="text-xl font-semibold text-tertiary line-through">{currency}{basePrice.toFixed(2)}</p>
+                                        <p className="text-2xl sm:text-3xl font-bold text-brand">{currency}{discountPrice.toFixed(2)}</p>
+                                        <p className="text-lg sm:text-xl font-semibold text-tertiary line-through">{currency}{basePrice.toFixed(2)}</p>
                                     </>
                                 ) : (
-                                    <p className="text-3xl font-bold text-primary">{currency}{basePrice.toFixed(2)}</p>
+                                    <p className="text-2xl sm:text-3xl font-bold text-primary">{currency}{basePrice.toFixed(2)}</p>
                                 )}
                             </div>
 
@@ -432,14 +421,14 @@ const ProductScreen = () => {
                                     <div className="flex flex-col sm:flex-row gap-2 w-full">
                                         <button
                                             onClick={addToCartHandler}
-                                            className="flex-1 bg-surface border-2 border-primary text-primary hover:bg-primary hover:text-surface py-3.5 sm:py-4 rounded-xl flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg font-bold transition-colors group"
+                                            className="flex-1 bg-surface border-2 border-primary text-primary hover:bg-primary hover:text-surface py-3 sm:py-4 rounded-xl flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg font-bold transition-colors group"
                                         >
                                             <ShoppingBag size={22} className="group-hover:-translate-y-1 transition-transform" />
                                             Add to Cart
                                         </button>
                                         <button
                                             onClick={buyNowHandler}
-                                            className="flex-1 btn-primary py-3.5 sm:py-4 rounded-xl flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg font-bold group"
+                                            className="flex-1 btn-primary py-3 sm:py-4 rounded-xl flex items-center justify-center gap-2 sm:gap-3 text-base sm:text-lg font-bold group"
                                         >
                                             <CreditCard size={22} className="group-hover:-translate-y-1 transition-transform" />
                                             Buy Now
@@ -513,7 +502,7 @@ const ProductScreen = () => {
                             <h2 className="text-2xl font-extrabold text-primary mb-3">Customer Reviews</h2>
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="flex items-center gap-1">
-                                    {renderStars(product.rating, 18)}
+                                    <Rating value={product.rating} size={18} />
                                 </div>
                                 <span className="font-semibold text-primary">{Number(product.rating || 0).toFixed(1)} / 5</span>
                             </div>
@@ -543,7 +532,7 @@ const ProductScreen = () => {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1 mt-2">
-                                                {renderStars(review.rating, 14)}
+                                                <Rating value={review.rating} size={14} />
                                             </div>
                                             <p className="text-secondary text-sm mt-3 leading-relaxed">{review.comment}</p>
                                         </div>

@@ -53,7 +53,7 @@ const Cart = () => {
                 {/* Step Indicator */}
                 <StepIndicator currentStep={1} steps={['Shopping Bag', 'Shipping', 'Payment']} />
                 
-                <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tight mb-8">Shopping Bag</h1>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-primary tracking-tight mb-8">Shopping Bag</h1>
 
                 {cartItems.length === 0 ? (
                     <div className="space-y-16">

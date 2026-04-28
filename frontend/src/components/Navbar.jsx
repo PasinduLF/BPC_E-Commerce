@@ -363,15 +363,31 @@ const Navbar = () => {
                             </Link>
                         </div>
 
-                        {/* Mobile right side (Theme Toggle) */}
-                        <div className="flex items-center gap-3 md:hidden">
+                        {/* Mobile right side (Theme Toggle, Wishlist, Cart) */}
+                        <div className="flex items-center gap-2 md:hidden">
                             <button
                                 onClick={toggleMode}
-                                className="text-secondary hover:text-brand p-1.5 rounded-lg focus:outline-none transition-colors"
+                                className="text-secondary hover:text-brand p-1.5 rounded-lg focus:outline-none transition-colors hidden sm:block"
                                 aria-label="Toggle dark mode"
                             >
                                 {isDark ? <Sun size={22} /> : <Moon size={22} />}
                             </button>
+                            <Link to="/wishlist" className="relative text-secondary hover:text-brand transition-colors p-1.5">
+                                <Heart size={22} />
+                                {wishlistItems.length > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 bg-brand text-on-brand text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center shadow-sm">
+                                        {wishlistItems.length}
+                                    </span>
+                                )}
+                            </Link>
+                            <Link to="/cart" className="relative text-secondary hover:text-brand transition-colors p-1.5">
+                                <ShoppingBag size={22} />
+                                {cartItems.length > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 bg-brand text-on-brand text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center shadow-sm">
+                                        {cartItems.reduce((a, c) => a + c.qty, 0)}
+                                    </span>
+                                )}
+                            </Link>
                         </div>
 
                     </div>

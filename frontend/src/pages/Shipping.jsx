@@ -60,7 +60,7 @@ const Shipping = () => {
                 <StepIndicator currentStep={2} steps={['Shopping Bag', 'Shipping', 'Payment']} />
 
                 <div className="bg-surface rounded-3xl shadow-sm border border-default p-5 sm:p-8 lg:p-12 animate-slide-up-delayed-1">
-                    <h1 className="text-3xl font-extrabold text-primary tracking-tight mb-8">Shipping Information</h1>
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight mb-8">Shipping Information</h1>
 
                     <div className="mb-8">
                         <h2 className="text-lg font-bold text-primary mb-4">Delivery Method</h2>

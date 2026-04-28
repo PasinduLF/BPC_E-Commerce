@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Star, ShoppingBag, Heart, ShieldCheck, Truck, CreditCard, Mail, Sparkles, Award } from 'lucide-react';
 import SEO from '../components/SEO';
+import Rating from '../components/Rating';
 import { getProductUrl, getShopUrl } from '../utils/slugUtils';
 import axios from 'axios';
 import { useConfigStore } from '../context/useConfigStore';
@@ -164,13 +165,7 @@ const Home = () => {
             </button>
 
             <div className="p-6 flex flex-col flex-1">
-                <div className="flex items-center gap-1 text-gold mb-3">
-                    <Star size={16} fill="currentColor" />
-                    <Star size={16} fill="currentColor" />
-                    <Star size={16} fill="currentColor" />
-                    <Star size={16} fill="currentColor" />
-                    <Star size={16} fill="currentColor" className="text-muted" />
-                </div>
+                <Rating value={product.rating} text={`(${product.numReviews || 0})`} className="mb-3" />
                 {Number(product.soldCount || 0) > 0 && (
                     <p className="text-xs font-semibold text-tertiary mb-2">
                         {formatSoldCount(product.soldCount)} sold
@@ -182,32 +177,35 @@ const Home = () => {
                     </span>
                 )}
                 <Link to={getProductUrl(product)}>
-                    <h3 className="text-xl font-bold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
+                    <h3 className="text-sm sm:text-base md:text-lg font-bold text-primary mb-1 hover:text-brand transition-colors leading-snug line-clamp-2">{product.name}</h3>
                 </Link>
-                <p className="text-base font-medium text-secondary mb-4 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
+                <p className="text-xs sm:text-sm font-medium text-secondary mb-3 capitalize line-clamp-1">{product.category ? product.category.name : 'Uncategorized'}</p>
 
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-default">
                     <div className="flex flex-col">
                         {window.Number(product.discountPrice) > 0 && window.Number(product.discountPrice) < window.Number(product.price) ? (
                             <>
-                                <span className="text-2xl font-black text-brand">{currency}{product.discountPrice.toFixed(2)}</span>
-                                <span className="text-base font-semibold text-tertiary line-through">{currency}{product.price.toFixed(2)}</span>
+                                <span className="text-lg sm:text-xl md:text-2xl font-black text-brand">{currency}{product.discountPrice.toFixed(2)}</span>
+                                <span className="text-xs sm:text-sm font-semibold text-tertiary line-through">{currency}{product.price.toFixed(2)}</span>
                             </>
                         ) : (
-                            <span className="text-2xl font-black text-primary">{currency}{product.price?.toFixed(2) || '0.00'}</span>
+                            <span className="text-lg sm:text-xl md:text-2xl font-black text-primary">{currency}{product.price?.toFixed(2) || '0.00'}</span>
                         )}
                     </div>
                     <button
                         onClick={() => {
                             const ok = addToCart({ ...product, variant: defaultVariant || undefined, qty: 1 });
-                            if (!ok) {
+                            if (ok) {
+                                toast.success(`"${product.name}" added to cart!`);
+                            } else {
                                 toast.error('This product is out of stock.');
                             }
                         }}
                         disabled={!canAdd}
-                        className="bg-primary hover:bg-brand text-surface p-4 rounded-full transition-colors self-end shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-primary hover:bg-brand text-surface p-2.5 sm:p-3 md:p-4 rounded-full transition-colors self-end shadow-md disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                     >
-                        <ShoppingBag size={22} />
+                        <ShoppingBag size={18} className="sm:hidden" />
+                        <ShoppingBag size={22} className="hidden sm:block" />
                     </button>
                 </div>
             </div>
@@ -272,17 +270,17 @@ const Home = () => {
                     </p>
                 )}
                 
-                <h3 className="text-xl font-bold text-primary mb-2 group-hover:text-brand transition-colors line-clamp-1">{bundle.name}</h3>
-                <p className="text-sm text-secondary mb-6 line-clamp-2 leading-relaxed">
+                <h3 className="text-base sm:text-xl font-bold text-primary mb-2 group-hover:text-brand transition-colors line-clamp-1">{bundle.name}</h3>
+                <p className="text-xs sm:text-sm text-secondary mb-6 line-clamp-2 leading-relaxed">
                     {bundle.description}
                 </p>
 
                 <div className="mt-auto space-y-4">
                     <div className="flex flex-col">
                         <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black text-brand">{currency}{bundle.bundlePrice.toFixed(2)}</span>
+                            <span className="text-xl sm:text-3xl font-black text-brand">{currency}{bundle.bundlePrice.toFixed(2)}</span>
                             {bundle.originalPrice > bundle.bundlePrice && (
-                                <span className="text-base font-semibold text-tertiary line-through">{currency}{bundle.originalPrice.toFixed(2)}</span>
+                                <span className="text-sm sm:text-base font-semibold text-tertiary line-through">{currency}{bundle.originalPrice.toFixed(2)}</span>
                             )}
                         </div>
                         {bundle.originalPrice > bundle.bundlePrice && (

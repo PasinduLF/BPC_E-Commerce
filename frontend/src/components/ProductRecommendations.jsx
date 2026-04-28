@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Star, ShoppingBag, Heart } from 'lucide-react';
+import Rating from './Rating';
 import { getProductUrl } from '../utils/slugUtils';
 import { useCartStore } from '../context/useCartStore';
 import { useWishlistStore } from '../context/useWishlistStore';
@@ -103,16 +104,7 @@ const ProductRecommendations = ({ title = 'Recommended For You', excludeProductI
                                 </h4>
                             </Link>
 
-                            <div className="flex items-center gap-1 text-yellow-400 mb-3">
-                                {[...Array(5)].map((_, i) => (
-                                    <Star
-                                        key={i}
-                                        size={12}
-                                        fill={i < Math.round(product.rating || 0) ? 'currentColor' : 'none'}
-                                    />
-                                ))}
-                                <span className="text-xs text-secondary ml-1">({product.numReviews || 0})</span>
-                            </div>
+                            <Rating value={product.rating} text={`(${product.numReviews || 0})`} size={12} className="mb-3" />
 
                             <div className="mt-auto pt-3 flex items-center justify-between">
                                 <div>

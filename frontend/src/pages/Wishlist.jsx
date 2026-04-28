@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
+import Rating from '../components/Rating';
 import { getProductUrl } from '../utils/slugUtils';
 import { Heart, ShoppingBag, Star, Trash2, ArrowRight, Trash } from 'lucide-react';
 import { useWishlistStore } from '../context/useWishlistStore';
@@ -55,7 +56,9 @@ const Wishlist = () => {
         }
 
         const ok = addToCart({ ...product, variant: variant || undefined, qty: 1 });
-        if (!ok) {
+        if (ok) {
+            toast.success(`"${product.name}" added to cart!`);
+        } else {
             toast.error('This product is out of stock.');
         }
     };
@@ -106,9 +109,7 @@ const Wishlist = () => {
             <SEO title="Wishlist" noIndex />
             <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
 
-                    <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl sm:text-4xl font-black text-primary tracking-tight">Your Wishlist</h1>
-                </div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-primary tracking-tight mb-8">Your Wishlist</h1>
 
                 {wishlistItems.length === 0 ? (
                     <div className="bg-surface rounded-3xl shadow-sm border border-default p-12 text-center">
@@ -215,36 +216,30 @@ const Wishlist = () => {
                                 </button>
 
                                 <div className="p-6 flex flex-col flex-1">
-                                    <div className="flex items-center gap-1 text-yellow-400 mb-2">
-                                        <Star size={18} fill="currentColor" />
-                                        <Star size={18} fill="currentColor" />
-                                        <Star size={18} fill="currentColor" />
-                                        <Star size={18} fill="currentColor" />
-                                        <Star size={18} fill="currentColor" className="text-default" />
-                                    </div>
+                                    <Rating value={product.rating} size={18} className="mb-2" />
                                     {product.brand && (
                                         <span className="block text-[11px] font-bold tracking-widest text-brand uppercase mb-1">
                                             {product.brand.name || product.brand}
                                         </span>
                                     )}
                                     <Link to={itemLink}>
-                                        <h3 className="text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug break-words">{product.name}</h3>
+                                        <h3 className="text-sm sm:text-base md:text-lg font-semibold text-primary mb-1 hover:text-brand transition-colors leading-snug line-clamp-2">{product.name}</h3>
                                     </Link>
                                     <div className="mt-auto pt-4 flex flex-col gap-3">
                                         <div className="flex items-center">
                                             {!isBundleItem && itemDiscountPrice > 0 && itemDiscountPrice < itemPrice ? (
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xl font-bold text-brand">{currency}{itemDiscountPrice.toFixed(2)}</span>
-                                                    <span className="text-sm font-semibold text-tertiary line-through">{currency}{itemPrice.toFixed(2)}</span>
+                                                    <span className="text-lg sm:text-xl font-bold text-brand">{currency}{itemDiscountPrice.toFixed(2)}</span>
+                                                    <span className="text-xs sm:text-sm font-semibold text-tertiary line-through">{currency}{itemPrice.toFixed(2)}</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-xl font-bold text-primary">{currency}{(isBundleItem ? bundlePrice : itemPrice).toFixed(2)}</span>
+                                                <span className="text-lg sm:text-xl font-bold text-primary">{currency}{(isBundleItem ? bundlePrice : itemPrice).toFixed(2)}</span>
                                             )}
                                         </div>
                                         <button
                                             onClick={() => handleAddToCart(product)}
                                             disabled={!canMoveToCart}
-                                            className="w-full flex items-center justify-center gap-2 btn-primary rounded-xl py-3.5 text-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-full flex items-center justify-center gap-2 btn-primary rounded-xl py-2.5 sm:py-3.5 text-sm sm:text-base md:text-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <ShoppingBag size={20} />
                                             {!canMoveToCart ? 'Out of Stock' : (isBundleItem ? 'Add Bundle to Cart' : 'Move to Cart')}
