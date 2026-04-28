@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Toaster } from 'sonner';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import WhatsAppButton from './components/WhatsAppButton';
 
 const Home = lazy(() => import('./pages/Home'));
 const Categories = lazy(() => import('./pages/Categories'));
@@ -144,6 +145,7 @@ function AppShell() {
           </Suspense>
         </main>
         {!location.pathname.startsWith('/admin') && <Footer />}
+        {!location.pathname.startsWith('/admin') && <WhatsAppButton />}
         <Toaster richColors position="top-right" />
       </div>
   );
