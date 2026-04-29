@@ -147,8 +147,8 @@
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
-    animation: skeletonShimmer 1.2s infinite;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-surface) 60%, transparent), transparent);
+    animation: skeletonShimmer 1.4s ease-in-out infinite;
   }
 
   @keyframes skeletonShimmer {

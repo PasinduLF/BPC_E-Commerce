@@ -26,6 +26,7 @@ const Home = () => {
     const [email, setEmail] = useState('');
     const [subscribed, setSubscribed] = useState(false);
     const [featuredBundles, setFeaturedBundles] = useState([]);
+    const [pageLoading, setPageLoading] = useState(true);
 
     const { isInWishlist, toggleWishlist } = useWishlistStore();
     const { addToCart, addBundleToCart, setBuyNowItem } = useCartStore();
@@ -91,6 +92,8 @@ const Home = () => {
                 setFeaturedBundles(activeFeatured);
             } catch (error) {
                 console.error("Failed to load home data:", error);
+            } finally {
+                setPageLoading(false);
             }
         };
         fetchHomeData();
@@ -319,6 +322,116 @@ const Home = () => {
             );
         })()
     );
+
+    if (pageLoading) {
+        return (
+            <div className="flex flex-col min-h-screen bg-page animate-fade-in">
+                {/* Skeleton Hero */}
+                <div className="relative bg-surface overflow-hidden border-b border-default pt-12 pb-24 sm:pt-24 lg:pb-32">
+                    <div className="absolute inset-0 z-0">
+                        <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-[300px] h-[300px] sm:w-[600px] sm:h-[600px] rounded-full bg-gradient-to-tr from-brand-subtle/30 to-brand/20 blur-3xl"></div>
+                        <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[220px] h-[220px] sm:w-[400px] sm:h-[400px] rounded-full bg-gradient-to-tr from-brand/20 to-brand-subtle/30 blur-3xl"></div>
+                    </div>
+                    <div className="relative max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
+                        <div className="lg:grid lg:grid-cols-2 lg:gap-12 items-center">
+                            <div className="mb-12 lg:mb-0 space-y-5">
+                                <div className="skeleton h-7 w-44 rounded-full"></div>
+                                <div className="space-y-3">
+                                    <div className="skeleton h-12 w-4/5 rounded-xl"></div>
+                                    <div className="skeleton h-12 w-3/5 rounded-xl"></div>
+                                    <div className="skeleton h-12 w-2/5 rounded-xl"></div>
+                                </div>
+                                <div className="space-y-2 pt-2">
+                                    <div className="skeleton h-5 w-full rounded-lg"></div>
+                                    <div className="skeleton h-5 w-5/6 rounded-lg"></div>
+                                </div>
+                                <div className="flex gap-4 pt-4">
+                                    <div className="skeleton h-14 w-44 rounded-full"></div>
+                                    <div className="skeleton h-14 w-48 rounded-full"></div>
+                                </div>
+                            </div>
+                            <div className="hidden lg:block">
+                                <div className="skeleton rounded-[2rem] aspect-square w-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Skeleton Categories */}
+                <div className="py-16 bg-page border-b border-default">
+                    <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
+                        <div className="flex items-end justify-between mb-10">
+                            <div className="space-y-2">
+                                <div className="skeleton h-9 w-56 rounded-xl"></div>
+                                <div className="skeleton h-4 w-72 rounded-lg"></div>
+                            </div>
+                            <div className="skeleton h-5 w-24 rounded-lg"></div>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <div key={i} className="skeleton rounded-2xl aspect-square w-full"></div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Skeleton Products */}
+                <div className="py-16 bg-surface border-b border-default">
+                    <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
+                        <div className="flex items-end justify-between mb-10">
+                            <div className="space-y-2">
+                                <div className="skeleton h-9 w-48 rounded-xl"></div>
+                                <div className="skeleton h-4 w-64 rounded-lg"></div>
+                            </div>
+                            <div className="skeleton h-5 w-20 rounded-lg"></div>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} className="bg-surface border border-default rounded-3xl overflow-hidden">
+                                    <div className="skeleton aspect-square w-full"></div>
+                                    <div className="p-5 space-y-3">
+                                        <div className="skeleton h-3 w-20 rounded"></div>
+                                        <div className="skeleton h-5 w-full rounded"></div>
+                                        <div className="skeleton h-4 w-3/4 rounded"></div>
+                                        <div className="flex items-center justify-between pt-2">
+                                            <div className="skeleton h-7 w-20 rounded"></div>
+                                            <div className="skeleton h-10 w-10 rounded-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Skeleton Bundles */}
+                <div className="py-16 bg-page">
+                    <div className="max-w-[1600px] mx-auto px-3 sm:px-4 lg:px-6">
+                        <div className="flex items-end justify-between mb-10">
+                            <div className="space-y-2">
+                                <div className="skeleton h-9 w-52 rounded-xl"></div>
+                                <div className="skeleton h-4 w-80 rounded-lg"></div>
+                            </div>
+                            <div className="skeleton h-5 w-24 rounded-lg"></div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} className="bg-surface border border-default rounded-3xl overflow-hidden">
+                                    <div className="skeleton aspect-[4/3] w-full"></div>
+                                    <div className="p-5 space-y-3">
+                                        <div className="skeleton h-5 w-5/6 rounded"></div>
+                                        <div className="skeleton h-4 w-full rounded"></div>
+                                        <div className="skeleton h-4 w-2/3 rounded"></div>
+                                        <div className="skeleton h-10 w-full rounded-xl mt-2"></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col min-h-screen">
